@@ -1,0 +1,16 @@
+#include <cplib/str/run_enumerate.hpp>
+#include <cplib/str/wildcard_matching.hpp>
+#include <cplib/str/palindromic_tree.hpp>
+#include <cplib/str/compressed_trie.hpp>
+#include <random>
+#include <map>
+using namespace cplib;
+int main(){std::mt19937 rng(655);
+    for(int q=0;q<500;++q){Int n=rng()%40;std::string s(n,'a');for(char& c:s)c='a'+rng()%3;std::vector<std::tuple<Int,Int,Int>> expected;for(Int l=0;l<n;++l)for(Int r=l+2;r<=n;++r){for(Int p=1;p*2<=r-l;++p){bool period=true;for(Int i=l+p;i<r;++i)if(s[i]!=s[i-p])period=false;if(!period)continue;if((l==0||s[l-1]!=s[l+p-1])&&(r==n||s[r]!=s[r-p]))expected.emplace_back(p,l,r);break;}}std::sort(expected.begin(),expected.end());assert(run_enumerate(s)==expected);std::vector<Int> v;for(char c:s)v.push_back(c);assert(RunEnumerate(v)==expected);
+        auto tree=initPalindromicTree(s);std::map<std::vector<Int>,Int> counts;for(Int l=0;l<n;++l)for(Int r=l+1;r<=n;++r){auto sub=s.substr(l,r-l),rev=sub;std::reverse(rev.begin(),rev.end());if(sub==rev){std::vector<Int> key;for(char c:sub)key.push_back(c-'a');++counts[key];}}assert(tree.nodes.size()==counts.size()+2);Int longest=0;for(const auto& [p,c]:counts){std::string text;for(Int x:p)text+=char('a'+x);if(s.ends_with(text))longest=std::max(longest,Int(p.size()));}assert(tree.last_node->len()==(n?longest:-1));auto before=tree;tree.update_count();std::map<std::vector<Int>,Int> actual;for(std::size_t i=2;i<tree.nodes.size();++i){auto p=tree.get_palindrome(tree.nodes[i]);assert(Int(p.size())==tree.nodes[i]->len()&&tree.nodes[i]->id()==Int(i));actual[p]=tree.nodes[i]->count();assert(before.nodes[i].get()!=tree.nodes[i].get());}assert(actual==counts);
+    }
+    for(int q=0;q<500;++q){std::string s(rng()%350,'a'),t(rng()%200,'a');char wild=q%2?'?':'\0';for(char& c:s)c=rng()%4==0?wild:char(rng()%256);for(char& c:t)c=rng()%4==0?wild:char(rng()%256);auto answer=wildcard_match(s,t,wild);std::vector<bool> expected;if(t.size()<=s.size()){expected.resize(s.size()-t.size()+1,true);for(std::size_t i=0;i<expected.size();++i)for(std::size_t j=0;j<t.size();++j)if(s[i+j]!=wild&&t[j]!=wild&&s[i+j]!=t[j])expected[i]=false;}assert(answer==expected);}
+    for(int q=0;q<200;++q){std::vector<std::string> strings(rng()%100);for(auto& s:strings){s.resize(rng()%30);for(char& c:s)c='a'+rng()%3;}auto parts=toStaticStrings(strings);auto trie=initCompressedTrie(parts);assert(trie->subtree_sum==Int(strings.size()));for(int k=0;k<200;++k){std::string pattern;if(!strings.empty()&&rng()%2){pattern=strings[rng()%strings.size()];pattern.resize(rng()%(pattern.size()+1));}else{pattern.resize(rng()%30);for(char& c:pattern)c='a'+rng()%3;}auto node=get_virtualnode(trie);bool valid=true;for(char c:pattern){if(!node.has_child(c)){valid=false;break;}node=node.get_child(c);}Int count=0,prefixes=0;for(const auto& s:strings){count+=s==pattern;prefixes+=s.starts_with(pattern);}if(valid)assert(node.get_cnt()==count&&node.get_subtree_sum()==prefixes);else assert(prefixes==0);}
+        auto graph=toGraph(trie);assert(graph.edge_count()==graph.len-1);std::vector<std::string> prefixes(graph.len);for(Int i=0;i<graph.len;++i)for(auto e:graph.adjacency(i))prefixes[e.dst]=prefixes[i]+e.cost.to_string();for(auto e:graph.edge_info)assert(!e.cost.to_string().empty());
+    }
+}

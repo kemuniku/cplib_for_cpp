@@ -1,0 +1,4 @@
+#include <cplib/collections/group_unionfind.hpp>
+#include <random>
+using namespace cplib;
+int main(){std::mt19937 rng(781);for(Int n:{1,5,35,100}){auto u=initUnionFind(n);std::vector<Int> label(n);std::iota(label.begin(),label.end(),0);std::vector<std::pair<Int,Int>> edges;for(int t=0;t<500;++t){Int x=rng()%n,y=rng()%n,a=label[x],b=label[y];u.unite(x,y);edges.emplace_back(x,y);for(auto& z:label)if(z==b)z=a;for(Int v=0;v<n;++v){Int ec=0;std::vector<Int> members;for(Int i=0;i<n;++i)if(label[i]==label[v])members.push_back(i);for(auto [i,j]:edges)if(label[i]==label[v])++ec;auto got=u.get_group(v);std::sort(got.begin(),got.end());assert(got==members&&u.siz(v)==Int(members.size())&&u.edge_count(v)==ec);assert(u.is_tree(v)==(ec==Int(members.size())-1));assert(u.has_cycle(v)==(ec>=Int(members.size())));}}}}

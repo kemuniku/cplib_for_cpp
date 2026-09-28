@@ -1,0 +1,19 @@
+#pragma once
+#include <cplib/common.hpp>
+#include <tuple>
+#include <type_traits>
+namespace cplib {
+namespace detail {
+template<class K> struct RectangleEvent{K coordinate;Int index;};
+template<class K> void sort_rectangle_events(std::vector<RectangleEvent<K>>& events){if constexpr(std::is_integral_v<K>){if(events.size()<2)return;auto key=[](K x)->UInt{if constexpr(std::is_signed_v<K>)return UInt(Int(x))^(UInt(1)<<63);else return UInt(x);};UInt first=key(events[0].coordinate),varying=0;for(auto e:events)varying|=key(e.coordinate)^first;std::vector<RectangleEvent<K>> scratch(events.size());for(Int shift=0;shift<64&&(varying>>shift);shift+=11){if(!((varying>>shift)&2047))continue;std::array<std::size_t,2048> offsets{};for(auto e:events)++offsets[(key(e.coordinate)>>shift)&2047];std::size_t total=0;for(auto& x:offsets){auto count=x;x=total;total+=count;}for(auto e:events)scratch[offsets[(key(e.coordinate)>>shift)&2047]++]=e;events.swap(scratch);}}else std::stable_sort(events.begin(),events.end(),[](auto a,auto b){return a.coordinate<b.coordinate;});}
+template<class T> struct RectangleCoefficients{T w{},wx{},wy{},wxy{};RectangleCoefficients& operator+=(const RectangleCoefficients& b){w+=b.w;wx+=b.wx;wy+=b.wy;wxy+=b.wxy;return *this;}};
+}
+template<class K,class T> std::vector<T> static_rectangle_add_rectangle_sum(std::span<const std::tuple<K,K,K,K,T>> rectangles,std::span<const std::tuple<K,K,K,K>> queries){
+ using C=detail::RectangleCoefficients<T>;Int n=rectangles.size(),updates=0;std::vector<T> out(queries.size());std::vector<detail::RectangleEvent<K>> events;events.reserve(2*(n+queries.size()));for(Int i=0;i<n;++i){auto [l,d,r,u,w]=rectangles[i];(void)w;assert(!(r<l)&&!(u<d));if(!(l<r)||!(d<u))continue;events.push_back({d,2*i});events.push_back({u,2*i+1});++updates;}for(Int i=0;i<Int(queries.size());++i){auto [l,d,r,u]=queries[i];assert(!(r<l)&&!(u<d));if(!(l<r)||!(d<u))continue;events.push_back({d,2*(n+i)});events.push_back({u,2*(n+i)+1});}if(!updates||Int(events.size())==2*updates)return out;
+ detail::sort_rectangle_events(events);std::vector<Int> indices(2*(n+queries.size()));Int size=0;K previous{};for(auto e:events){if(e.index<2*n){if(!size||previous<e.coordinate){previous=e.coordinate;++size;}indices[e.index]=size-1;}else{Int rank=size;if(size&&!(previous<e.coordinate))--rank;indices[e.index]=rank;}}
+ for(auto& e:events){Int i=e.index>>1;bool right=e.index&1;if(i<n)e.coordinate=right?std::get<2>(rectangles[i]):std::get<0>(rectangles[i]);else e.coordinate=right?std::get<2>(queries[i-n]):std::get<0>(queries[i-n]);}detail::sort_rectangle_events(events);
+ auto slot=[](Int i){return i+(i>>10);};std::vector<C> bit(slot(size)+1);auto add=[&](Int l,Int r,C bottom,C top){++l;++r;while(l<r){bit[slot(l)]+=bottom;l+=l&-l;}while(r<l&&r<=size){bit[slot(r)]+=top;r+=r&-r;}T wy=bottom.wy,wxy=bottom.wxy;wy+=top.wy;wxy+=top.wxy;while(l<=size){bit[slot(l)].wy+=wy;bit[slot(l)].wxy+=wxy;l+=l&-l;}};auto prefix=[&](Int r){C a;for(;r;r&=r-1)a+=bit[slot(r)];return a;};auto value=[](C a,K x,K y)->T{T result=(a.w*x-a.wx)*y-a.wy*x;result+=a.wxy;return result;};T zero{};
+ for(auto e:events){Int i=e.index>>1;bool right=e.index&1;if(i<n){auto [l,d,r,u,weight]=rectangles[i];(void)l;(void)r;T w=right?zero-weight:weight,wx=w*e.coordinate;add(indices[2*i],indices[2*i+1],C{w,wx,w*d,wx*d},C{zero-w,zero-wx,zero-w*u,zero-wx*u});}else{Int q=i-n;auto [l,d,r,u]=queries[q];(void)l;(void)r;T v=value(prefix(indices[2*i+1]),e.coordinate,u)-value(prefix(indices[2*i]),e.coordinate,d);if(right)out[q]+=v;else out[q]=out[q]-v;}}return out;
+}
+template<class K,class T> auto static_rectangle_add_rectangle_sum(const std::vector<std::tuple<K,K,K,K,T>>& r,const std::vector<std::tuple<K,K,K,K>>& q){return static_rectangle_add_rectangle_sum<K,T>(std::span<const std::tuple<K,K,K,K,T>>(r),std::span<const std::tuple<K,K,K,K>>(q));}
+}

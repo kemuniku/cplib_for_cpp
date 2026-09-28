@@ -1,0 +1,22 @@
+#pragma once
+#include <cplib/graph/graph.hpp>
+#include <unordered_set>
+namespace cplib {
+// Left-Right 平面性判定。期待 O(V log V + E)、追加領域 O(V+E)。
+// 自己ループ・多重辺を除いて判定。静的グラフは build 前でも使用可能。
+template<UnDirectedGraph G> bool is_planar_graph(const G& g){
+    Int n=g.len;std::unordered_set<UInt> seen;std::vector<std::pair<Int,Int>> ends;std::vector<std::vector<Int>> adj(n);
+    for(const auto& edge:g.edge_info){Int u=std::min(edge.src,edge.dst),v=std::max(edge.src,edge.dst);if(u==v||!seen.insert(UInt(u)*UInt(n)+UInt(v)).second)continue;Int id=ends.size();ends.emplace_back(u,v);adj[u].push_back(id);adj[v].push_back(id);}
+    Int m=ends.size();if(n>2&&m>3*n-6)return false;std::vector<Int> height(n,-1),parent(n,-1),low(m),low2(m),nesting(m),cursor(n),roots;std::vector<bool> oriented(m);std::vector<std::vector<Int>> outgoing(n);
+    auto finishEdge=[&](Int e,Int p){nesting[e]=2*low[e]+Int(low2[e]<height[ends[e].first]);if(p==-1)return;if(low[e]<low[p]){low2[p]=std::min(low[p],low2[e]);low[p]=low[e];}else if(low[e]>low[p])low2[p]=std::min(low2[p],low[e]);else low2[p]=std::min(low2[p],low2[e]);};
+    for(Int root=0;root<n;++root){if(height[root]!=-1)continue;roots.push_back(root);height[root]=0;std::vector<Int> stack{root};while(!stack.empty()){Int v=stack.back();if(cursor[v]==Int(adj[v].size())){stack.pop_back();Int e=parent[v];if(e!=-1)finishEdge(e,parent[ends[e].first]);continue;}Int e=adj[v][cursor[v]++];if(oriented[e])continue;oriented[e]=true;Int w=ends[e].first^ends[e].second^v;ends[e]={v,w};outgoing[v].push_back(e);low[e]=low2[e]=height[v];if(height[w]==-1){parent[w]=e;height[w]=height[v]+1;stack.push_back(w);}else{low[e]=height[w];finishEdge(e,parent[v]);}}}
+    for(auto& list:outgoing)std::stable_sort(list.begin(),list.end(),[&](Int a,Int b){return nesting[a]<nesting[b];});
+    struct Interval {Int low=-1,high=-1;};struct Conflict {Interval left,right;};std::vector<Conflict> conflicts;std::vector<Int> bottom(m),reference(m,-1),lowEdge(m,-1);
+    auto conflicting=[&](Interval interval,Int e){return interval.high!=-1&&low[interval.high]>low[e];};
+    auto addConstraints=[&](Int e,Int p){Conflict merged;for(;;){auto q=conflicts.back();conflicts.pop_back();if(q.left.low!=-1)std::swap(q.left,q.right);if(q.left.low!=-1)return false;if(low[q.right.low]>low[p]){if(merged.right.low==-1)merged.right=q.right;else reference[merged.right.low]=q.right.high;merged.right.low=q.right.low;}else reference[q.right.low]=lowEdge[p];if(Int(conflicts.size())==bottom[e])break;}
+        while(!conflicts.empty()&&(conflicting(conflicts.back().left,e)||conflicting(conflicts.back().right,e))){auto q=conflicts.back();conflicts.pop_back();if(conflicting(q.right,e))std::swap(q.left,q.right);if(conflicting(q.right,e))return false;if(merged.right.low!=-1)reference[merged.right.low]=q.right.high;if(q.right.low!=-1)merged.right.low=q.right.low;if(merged.left.low==-1)merged.left=q.left;else reference[merged.left.low]=q.left.high;merged.left.low=q.left.low;}if(merged.left.low!=-1||merged.right.low!=-1)conflicts.push_back(merged);return true;};
+    auto trimBackEdges=[&](Int e){Int u=ends[e].first;while(!conflicts.empty()){auto q=conflicts.back();Int l=q.left.low==-1?std::numeric_limits<Int>::max():low[q.left.low],r=q.right.low==-1?std::numeric_limits<Int>::max():low[q.right.low];if(std::min(l,r)!=height[u])break;conflicts.pop_back();}if(!conflicts.empty()){auto q=conflicts.back();conflicts.pop_back();while(q.left.high!=-1&&ends[q.left.high].second==u)q.left.high=reference[q.left.high];if(q.left.high==-1&&q.left.low!=-1){reference[q.left.low]=q.right.low;q.left.low=-1;}while(q.right.high!=-1&&ends[q.right.high].second==u)q.right.high=reference[q.right.high];if(q.right.high==-1&&q.right.low!=-1){reference[q.right.low]=q.left.low;q.right.low=-1;}conflicts.push_back(q);}if(low[e]<height[u]){Int l=conflicts.back().left.high,r=conflicts.back().right.high;reference[e]=l!=-1&&(r==-1||low[l]>low[r])?l:r;}};
+    std::fill(cursor.begin(),cursor.end(),0);std::vector<bool> entered(m);for(Int root:roots){std::vector<Int> stack{root};while(!stack.empty()){Int v=stack.back(),p=parent[v];if(cursor[v]==Int(outgoing[v].size())){stack.pop_back();if(p!=-1)trimBackEdges(p);continue;}Int e=outgoing[v][cursor[v]],w=ends[e].second;if(!entered[e]){entered[e]=true;bottom[e]=conflicts.size();if(parent[w]==e){stack.push_back(w);continue;}lowEdge[e]=e;conflicts.push_back({{}, {e,e}});}if(low[e]<height[v]){if(cursor[v]==0)lowEdge[p]=lowEdge[e];else if(!addConstraints(e,p))return false;}++cursor[v];}}
+    return true;
+}
+}

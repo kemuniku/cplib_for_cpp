@@ -1,0 +1,7 @@
+#pragma once
+#include <cplib/convolution/convolution.hpp>
+namespace cplib {
+// f(0)..f(n-1)からf(t)..f(t+m-1)。差分・階乗の3畳み込みでO(M(n+m))。
+template<Modint T> std::vector<T> shiftOfSamplingPoints(const std::vector<T>& ys,std::type_identity_t<T> t,Int m){assert(m>=0);Int n=ys.size(),modulus=T::umod();assert(n<=modulus);if(m==0)return {};if(n==0)return std::vector<T>(m);if(n==1)return std::vector<T>(m,ys[0]);Int count=std::min(m,modulus),size=std::max(n,count);std::vector<T> fact(size),factInv(size);fact[0]=1;for(Int i=1;i<size;++i)fact[i]=fact[i-1]*T(i);factInv.back()=fact.back().inv();for(Int i=size-1;i>=1;--i)factInv[i-1]=factInv[i]*T(i);std::vector<T> left(n),right(n);for(Int i=0;i<n;++i){left[i]=ys[i]*factInv[i];right[i]=(i&1)?-factInv[i]:factInv[i];}auto differences=convolution(left,right);T falling=1;for(Int i=0;i<n;++i){left[i]=differences[n-1-i]*fact[n-1-i];right[i]=falling*factInv[i];falling*=t-T(i);}auto shifted=convolution(left,right);left.resize(std::min(n,count));for(Int i=0;i<Int(left.size());++i)left[i]=shifted[n-1-i]*factInv[i];right={factInv.begin(),factInv.begin()+count};auto out=convolution(left,right);out.resize(count);for(Int i=0;i<count;++i)out[i]*=fact[i];out.resize(m);for(Int i=count;i<m;++i)out[i]=out[i-modulus];return out;}
+template<Modint T> auto shiftOfSamplingPoints(const std::vector<T>& ys,std::type_identity_t<T> t){return shiftOfSamplingPoints(ys,t,ys.size());}
+}

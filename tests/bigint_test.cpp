@@ -1,0 +1,20 @@
+#include <cplib/math/bigint.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
+#include <random>
+#include <unordered_set>
+using namespace cplib;using boost::multiprecision::cpp_int;
+std::string decimal(const cpp_int& x){return x.convert_to<std::string>();}
+void check(const BigInt& actual,const cpp_int& expected){assert(actual.str()==decimal(expected));}
+void pair(const std::string& sa,const std::string& sb,bool bits){BigInt a(sa),b(sb);cpp_int x(sa),y(sb);check(a,x);check(b,y);check(a+b,x+y);check(a-b,x-y);check(a*b,x*y);assert(cmp(a,b)==(x<y?-1:x>y?1:0));if(y!=0){cpp_int q=x/y,r=x%y;auto trunc=divmodTrunc(a,b);check(trunc.quotient,q);check(trunc.remainder,r);check(a/b,q);check(mod(a,b),r);if(r!=0&&((x<0)!=(y<0))){--q;r+=y;}auto floor=divmod(a,b);check(floor.quotient,q);check(floor.remainder,r);check(a%b,r);assert(floor.quotient*b+floor.remainder==a);}
+ if(bits){check(a&b,x&y);check(a|b,x|y);check(a^b,x^y);check(~a,~x);for(Int shift:{0,1,31,32,33,63,64,65,200,1000}){check(a<<shift,x<<shift);check(a>>shift,x>>shift);}}
+}
+std::string random_decimal(std::mt19937_64& rng,Int size){std::string out(size,'0');out[0]='1'+rng()%9;for(Int i=1;i<size;++i)out[i]='0'+rng()%10;return out;}
+int main(int argc,char**){using namespace cplib;assert(123'456'789_bi==BigInt(123456789));assert("-1_000_000"_bi==BigInt(-1000000));assert(BigInt("-000000000").sgn()==0);assert(BigInt("+00017")==17);for(std::string s:{"","-","+","12x"," 12","12 ","0x12"}){bool thrown=false;try{BigInt a(s);}catch(const std::invalid_argument&){thrown=true;}assert(thrown);}for(Int x:{std::numeric_limits<Int>::min(),Int(-1),Int(0),Int(1),std::numeric_limits<Int>::max()})assert(BigInt(x).toInt()==x);check(BigInt(std::numeric_limits<UInt>::max()),cpp_int(std::numeric_limits<UInt>::max()));for(BigInt x:{BigInt(std::numeric_limits<Int>::min())-1,BigInt(std::numeric_limits<Int>::max())+1}){bool thrown=false;try{x.toInt();}catch(const std::overflow_error&){thrown=true;}assert(thrown);}for(int kind=0;kind<3;++kind){bool thrown=false;try{if(kind==0)(void)(BigInt(1)/0);if(kind==1)(void)(BigInt(1)<<-1);if(kind==2)(void)BigInt(1).pow(-1);}catch(const std::exception&){thrown=true;}assert(thrown);}
+ std::mt19937_64 rng(963892);for(int trial=0;trial<1800;++trial){Int x=Int(rng()%2000000000000000001ULL)-1000000000000000000LL,y=Int(rng()%2000000000000000001ULL)-1000000000000000000LL;pair(std::to_string(x),std::to_string(y),trial<400);}pair("0","1",true);pair("0","0",true);pair("-1","0",true);
+ for(int trial=0;trial<250;++trial){auto a=random_decimal(rng,1+rng()%1000),b=random_decimal(rng,1+rng()%1000);if(rng()%2)a='-'+a;if(rng()%2)b='-'+b;pair(a,b,trial<20);}
+ for(auto shape:std::vector<std::pair<Int,Int>>{{576,576},{585,585},{1000,1000},{4617,2313},{4626,2313},{9000,2313},{9252,2313},{20000,3000},{18000,9000},{5000,4600},{18000,14000}}){auto [n,m]=shape;auto a=random_decimal(rng,n),b=random_decimal(rng,m);pair(a,b,false);pair('-'+a,b,false);pair(a,'-'+b,false);BigInt x(a),y(b);assert((x*y)/y==x);assert(divmod(x*y,y).remainder.isZero());}
+ for(Int n:{1,2,9,10,65,100,257,300,700}){std::string a(n*9,'9');BigInt x(a);assert((x*x).str()==std::string(n*9-1,'9')+'8'+std::string(n*9-1,'0')+'1');for(Int gap:{0,1,8,9,100}){BigInt y(std::string(std::max(Int(1),n*9-gap),'9'));auto q=divmod(x,y);assert(q.quotient*y+q.remainder==x&&q.remainder>=0&&q.remainder<y);}}
+ for(int trial=0;trial<100;++trial){Int x=Int(rng()%1000000)-500000,y=Int(rng()%1000000)-500000;assert(gcd(BigInt(x),BigInt(y))==std::gcd(x,y));if(x&&y)assert(lcm(BigInt(x),BigInt(y))==std::lcm(x,y));}assert(pow(BigInt(0),0)==1);check(pow(BigInt(-12),101),boost::multiprecision::pow(cpp_int(-12),101));std::unordered_set<BigInt> set;set.insert(BigInt("123456789012345678901234567890"));assert(set.contains(BigInt("123456789012345678901234567890")));
+ // 10^5進への切り替えは約213万桁。長い経路は明示実行で検証する。
+ if(argc>1){constexpr UInt max=(UInt(754974721)*469762049-1)/(UInt(999999)*999999);Int digits=(max*2/3+1)*9;BigInt x(std::string(digits,'9'));assert((x*x).str()==std::string(digits-1,'9')+'8'+std::string(digits-1,'0')+'1');}
+}
