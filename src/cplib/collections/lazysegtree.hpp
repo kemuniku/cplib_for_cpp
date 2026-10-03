@@ -1,5 +1,6 @@
 #pragma once
 #include <cplib/collections/private/lazysegtree_base.hpp>
+
 namespace cplib {
 using detail::lazysegtree_base::LazySegmentTree;
 using detail::lazysegtree_base::apply;

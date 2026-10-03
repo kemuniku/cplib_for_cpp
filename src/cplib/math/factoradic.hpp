@@ -1,73 +1,715 @@
 #pragma once
 #include <cplib/math/bigint.hpp>
+
 namespace cplib {
 class Factoradic;
-using FactoradicDivision=QuotientRemainder<Factoradic>;
-using FactoradicSmallDivision=QuotientRemainder<Factoradic,Int>;
+using FactoradicDivision = QuotientRemainder<Factoradic>;
+using FactoradicSmallDivision = QuotientRemainder<Factoradic, Int>;
+
 class Factoradic {
- bool negative_=false;std::vector<Int> data_;
- static constexpr Int BlockSize=32;
- void normalize(){while(!data_.empty()&&!data_.back())data_.pop_back();if(data_.empty())negative_=false;}
- static UInt magnitude(Int x){return x<0?UInt(-(x+1))+1:UInt(x);}
- struct ProductNode {Int first,last,left=-1,right=-1;BigInt product;};
- static Int buildProducts(std::vector<ProductNode>& nodes,Int first,Int last){ProductNode node{first,last,-1,-1,BigInt(1)};if(last-first<=BlockSize){for(Int i=first;i<last;++i)node.product*=BigInt(i+1);}else{Int mid=first+(last-first)/2;node.left=buildProducts(nodes,first,mid);node.right=buildProducts(nodes,mid,last);node.product=nodes[node.left].product*nodes[node.right].product;}Int out=nodes.size();nodes.push_back(std::move(node));return out;}
- static void restoreBlock(BigInt value,const std::vector<ProductNode>& nodes,Int index,std::vector<Int>& digits){if(value.isZero())return;const auto& node=nodes[index];if(node.left<0){for(Int i=node.first;i<node.last&&!value.isZero();++i){auto division=cplib::divmod(value,BigInt(i+1));digits[i]=division.remainder.toInt();value=std::move(division.quotient);}}else{auto division=cplib::divmod(value,nodes[node.left].product);restoreBlock(std::move(division.remainder),nodes,node.left,digits);restoreBlock(std::move(division.quotient),nodes,node.right,digits);}}
- static std::pair<BigInt,BigInt> blockValue(const std::vector<Int>& digits,Int first,Int last){if(last-first<=BlockSize){BigInt value=0,product=1;for(Int i=last-1;i>=first;--i){value=value*BigInt(i+1)+BigInt(digits[i]);product*=BigInt(i+1);}return {std::move(value),std::move(product)};}Int mid=first+(last-first)/2;auto left=blockValue(digits,first,mid),right=blockValue(digits,mid,last);return {left.first+left.second*right.first,left.second*right.second};}
- static int cmpAbs(const Factoradic& a,const Factoradic& b){if(a.data_.size()!=b.data_.size())return a.data_.size()<b.data_.size()?-1:1;for(Int i=Int(a.data_.size())-1;i>=0;--i)if(a.data_[i]!=b.data_[i])return a.data_[i]<b.data_[i]?-1:1;return 0;}
- static Factoradic addAbs(const Factoradic& a,const Factoradic& b){Factoradic out;Int n=std::max(a.data_.size(),b.data_.size());out.data_.resize(n);Int carry=0;for(Int i=0;i<n;++i){Int digit=carry;if(i<Int(a.data_.size()))digit+=a.data_[i];if(i<Int(b.data_.size()))digit+=b.data_[i];out.data_[i]=digit%(i+1);carry=digit/(i+1);}if(carry)out.data_.push_back(carry);return out;}
- static Factoradic subAbs(const Factoradic& a,const Factoradic& b){Factoradic out;Int n=std::max(a.data_.size(),b.data_.size());out.data_.resize(n);Int borrow=0;for(Int i=0;i<n;++i){Int digit=-borrow;if(i<Int(a.data_.size()))digit+=a.data_[i];if(i<Int(b.data_.size()))digit-=b.data_[i];borrow=digit<0;if(borrow)digit+=i+1;out.data_[i]=digit;}assert(!borrow);out.normalize();return out;}
- bool fitsInt()const{return *this>=Factoradic(std::numeric_limits<Int>::min())&&*this<=Factoradic(std::numeric_limits<Int>::max());}
- static std::vector<Int> counts(Int n){std::vector<Int> out(n+1);for(Int i=1;i<=n;++i)out[i]=i&-i;return out;}
- static void removeValue(std::vector<Int>& counts,Int value){for(Int i=value+1;i<Int(counts.size());i+=i&-i)--counts[i];}
+    bool negative_ = false;
+    std::vector<Int> data_;
+    static constexpr Int BlockSize = 32;
+
+    void normalize() {
+        while (!data_.empty() && !data_.back())
+            data_.pop_back();
+        if (data_.empty())
+            negative_ = false;
+    }
+
+    static UInt magnitude(Int x) {
+        return x < 0 ? UInt(-(x + 1)) + 1 : UInt(x);
+    }
+
+    struct ProductNode {
+        Int first, last, left = -1, right = -1;
+        BigInt product;
+    };
+
+    static Int buildProducts(std::vector<ProductNode> &nodes, Int first, Int last) {
+        ProductNode node{first, last, -1, -1, BigInt(1)};
+        if (last - first <= BlockSize) {
+            for (Int i = first; i < last; ++i)
+                node.product *= BigInt(i + 1);
+        } else {
+            Int mid = first + (last - first) / 2;
+            node.left = buildProducts(nodes, first, mid);
+            node.right = buildProducts(nodes, mid, last);
+            node.product = nodes[node.left].product * nodes[node.right].product;
+        }
+        Int out = nodes.size();
+        nodes.push_back(std::move(node));
+        return out;
+    }
+
+    static void restoreBlock(BigInt value, const std::vector<ProductNode> &nodes, Int index,
+                             std::vector<Int> &digits) {
+        if (value.isZero())
+            return;
+        const auto &node = nodes[index];
+        if (node.left < 0) {
+            for (Int i = node.first; i < node.last && !value.isZero(); ++i) {
+                auto division = cplib::divmod(value, BigInt(i + 1));
+                digits[i] = division.remainder.toInt();
+                value = std::move(division.quotient);
+            }
+        } else {
+            auto division = cplib::divmod(value, nodes[node.left].product);
+            restoreBlock(std::move(division.remainder), nodes, node.left, digits);
+            restoreBlock(std::move(division.quotient), nodes, node.right, digits);
+        }
+    }
+
+    static std::pair<BigInt, BigInt> blockValue(const std::vector<Int> &digits, Int first,
+                                                Int last) {
+        if (last - first <= BlockSize) {
+            BigInt value = 0, product = 1;
+            for (Int i = last - 1; i >= first; --i) {
+                value = value * BigInt(i + 1) + BigInt(digits[i]);
+                product *= BigInt(i + 1);
+            }
+            return {std::move(value), std::move(product)};
+        }
+        Int mid = first + (last - first) / 2;
+        auto left = blockValue(digits, first, mid), right = blockValue(digits, mid, last);
+        return {left.first + left.second * right.first, left.second * right.second};
+    }
+
+    static int cmpAbs(const Factoradic &a, const Factoradic &b) {
+        if (a.data_.size() != b.data_.size())
+            return a.data_.size() < b.data_.size() ? -1 : 1;
+        for (Int i = Int(a.data_.size()) - 1; i >= 0; --i)
+            if (a.data_[i] != b.data_[i])
+                return a.data_[i] < b.data_[i] ? -1 : 1;
+        return 0;
+    }
+
+    static Factoradic addAbs(const Factoradic &a, const Factoradic &b) {
+        Factoradic out;
+        Int n = std::max(a.data_.size(), b.data_.size());
+        out.data_.resize(n);
+        Int carry = 0;
+        for (Int i = 0; i < n; ++i) {
+            Int digit = carry;
+            if (i < Int(a.data_.size()))
+                digit += a.data_[i];
+            if (i < Int(b.data_.size()))
+                digit += b.data_[i];
+            out.data_[i] = digit % (i + 1);
+            carry = digit / (i + 1);
+        }
+        if (carry)
+            out.data_.push_back(carry);
+        return out;
+    }
+
+    static Factoradic subAbs(const Factoradic &a, const Factoradic &b) {
+        Factoradic out;
+        Int n = std::max(a.data_.size(), b.data_.size());
+        out.data_.resize(n);
+        Int borrow = 0;
+        for (Int i = 0; i < n; ++i) {
+            Int digit = -borrow;
+            if (i < Int(a.data_.size()))
+                digit += a.data_[i];
+            if (i < Int(b.data_.size()))
+                digit -= b.data_[i];
+            borrow = digit < 0;
+            if (borrow)
+                digit += i + 1;
+            out.data_[i] = digit;
+        }
+        assert(!borrow);
+        out.normalize();
+        return out;
+    }
+
+    bool fitsInt() const {
+        return *this >= Factoradic(std::numeric_limits<Int>::min()) &&
+               *this <= Factoradic(std::numeric_limits<Int>::max());
+    }
+
+    static std::vector<Int> counts(Int n) {
+        std::vector<Int> out(n + 1);
+        for (Int i = 1; i <= n; ++i)
+            out[i] = i & -i;
+        return out;
+    }
+
+    static void removeValue(std::vector<Int> &counts, Int value) {
+        for (Int i = value + 1; i < Int(counts.size()); i += i & -i)
+            --counts[i];
+    }
+
 public:
- Factoradic()=default;
- explicit Factoradic(std::span<const Int> digits,bool negative=false):negative_(negative),data_(digits.begin(),digits.end()){for(Int i=0;i<Int(data_.size());++i)assert(0<=data_[i]&&data_[i]<=i);normalize();}
- template<std::integral T> Factoradic(T value){UInt m;if constexpr(std::is_signed_v<T>){if(value<0){negative_=true;m=UInt(-(value+1))+1;}else m=UInt(value);}else m=UInt(value);for(UInt radix=1;m;++radix){data_.push_back(m%radix);m/=radix;}}
- // 積の木を倍々に拡張して桁数を求め、分割統治で変換する。O(M(B) log(N+1))。
- explicit Factoradic(const BigInt& input){if(BigInt(std::numeric_limits<Int>::min())<=input&&input<=BigInt(std::numeric_limits<Int>::max())){*this=Factoradic(input.toInt());return;}negative_=input.sgn()<0;auto value=input.abs();std::vector<ProductNode> nodes;Int last=BlockSize+1,root=buildProducts(nodes,1,last);while(nodes[root].product<=value){Int next=1+2*(last-1),right=buildProducts(nodes,last,next);nodes.push_back({1,next,root,right,nodes[root].product*nodes[right].product});root=nodes.size()-1;last=next;}data_.resize(last);restoreBlock(std::move(value),nodes,root,data_);normalize();}
- Factoradic abs()const{auto out=*this;out.negative_=false;return out;}Factoradic operator-()const{auto out=*this;if(!out.data_.empty())out.negative_=!out.negative_;return out;}Factoradic operator+()const{return *this;}int sgn()const{return data_.empty()?0:negative_?-1:1;}
- static Factoradic factorial(Int n){assert(n>=0);Factoradic out;Int index=std::max(n,Int(1));out.data_.resize(index+1);out.data_[index]=1;return out;}
- // k!による非負の余り。非負値O(min(N,k)+1)、負値O(k+1)。
- Factoradic modFactorial(Int k)const{assert(k>=0);Factoradic out;Int size=std::min(Int(data_.size()),k);out.data_.assign(data_.begin(),data_.begin()+size);out.normalize();if(negative_&&!out.data_.empty()){out.data_.resize(k);Int borrow=0;for(Int i=0;i<k;++i){Int digit=-out.data_[i]-borrow;borrow=digit<0;if(borrow)digit+=i+1;out.data_[i]=digit;}out.normalize();}return out;}
- std::vector<Int> digits()const{return data_;}
- template<std::integral T=Int> T toInt()const{UInt value=0,limit=std::numeric_limits<T>::max();if constexpr(std::is_signed_v<T>){if(negative_)++limit;}else assert(!negative_);for(Int i=Int(data_.size())-1;i>=1;--i){UInt digit=data_[i];assert(digit<=limit&&value<=(limit-digit)/UInt(i+1));value=value*UInt(i+1)+digit;}if constexpr(std::is_signed_v<T>){if(negative_){if(value==limit)return std::numeric_limits<T>::min();return -T(value);}}return T(value);}
- // 組み込み整数での余りは128bit積和による線形計算。追加領域O(1)。
- Int mod(Int divisor)const{if(!divisor)throw std::domain_error("階乗進数の 0 除算");UInt m=magnitude(divisor),rem=0;for(Int i=Int(data_.size())-1;i>=1;--i)rem=(static_cast<unsigned __int128>(rem)*UInt(i+1)+UInt(data_[i]))%m;return negative_?-Int(rem):Int(rem);}
- Int operator%(Int divisor)const{Int rem=mod(divisor);return rem&&negative_!=(divisor<0)?rem+divisor:rem;}
- BigInt toBigInt()const{BigInt out;if(Int(data_.size())<=BlockSize+1){for(Int i=Int(data_.size())-1;i>=1;--i)out=out*BigInt(i+1)+BigInt(data_[i]);}else out=blockValue(data_,1,data_.size()).first;return negative_?-out:out;}
- std::string str()const{return toBigInt().str();}
- friend int cmp(const Factoradic& a,const Factoradic& b){if(a.negative_!=b.negative_)return a.negative_?-1:1;Int out=cmpAbs(a,b);return a.negative_?-out:out;}
- friend bool operator==(const Factoradic& a,const Factoradic& b){return a.negative_==b.negative_&&a.data_==b.data_;}friend std::strong_ordering operator<=>(const Factoradic& a,const Factoradic& b){return cmp(a,b)<=>0;}
- std::size_t hash()const{std::size_t out=negative_;for(auto d:data_)out^=std::hash<Int>{}(d)+0x9e3779b97f4a7c15ULL+(out<<6)+(out>>2);return out;}
- friend Factoradic operator+(const Factoradic& a,const Factoradic& b){Factoradic out;if(a.negative_==b.negative_){out=addAbs(a,b);out.negative_=a.negative_&&!out.data_.empty();}else if(cmpAbs(a,b)>=0){out=subAbs(a,b);out.negative_=a.negative_&&!out.data_.empty();}else{out=subAbs(b,a);out.negative_=b.negative_&&!out.data_.empty();}return out;}
- friend Factoradic operator-(const Factoradic& a,const Factoradic& b){return a+(-b);}
- friend Factoradic operator*(const Factoradic& a,Int b){if(!b||a.data_.empty())return {};Factoradic out;out.negative_=a.negative_!=(b<0);UInt m=magnitude(b),carry=0;out.data_.resize(a.data_.size());for(std::size_t i=0;i<a.data_.size();++i){auto value=static_cast<unsigned __int128>(a.data_[i])*m+carry;out.data_[i]=Int(value%(i+1));carry=value/(i+1);}while(carry){UInt radix=out.data_.size()+1;out.data_.push_back(carry%radix);carry/=radix;}return out;}
- friend Factoradic operator*(Int a,const Factoradic& b){return b*a;}
- friend Factoradic operator*(const Factoradic& a,const Factoradic& b){if(a.data_.empty()||b.data_.empty())return {};if(a.fitsInt())return b*a.toInt();if(b.fitsInt())return a*b.toInt();return Factoradic(a.toBigInt()*b.toBigInt());}
- static FactoradicSmallDivision divmodTrunc(const Factoradic&,Int);static FactoradicSmallDivision divmod(const Factoradic&,Int);static FactoradicDivision divmod(const Factoradic&,const Factoradic&);
- friend Factoradic operator/(const Factoradic&,const Factoradic&);friend Factoradic operator/(const Factoradic&,Int);friend Factoradic operator/(Int a,const Factoradic& b){return Factoradic(a)/b;}
- friend Factoradic operator%(const Factoradic&,const Factoradic&);friend Factoradic operator%(Int a,const Factoradic& b){return Factoradic(a)%b;}
- static Factoradic mod(const Factoradic&,const Factoradic&);static Factoradic floorDiv(const Factoradic&,const Factoradic&);
- Factoradic& operator+=(const Factoradic& b){return *this=*this+b;}Factoradic& operator-=(const Factoradic& b){return *this=*this-b;}Factoradic& operator*=(const Factoradic& b){return *this=*this*b;}Factoradic& operator*=(Int b){return *this=*this*b;}Factoradic& operator/=(const Factoradic& b){return *this=*this/b;}Factoradic& operator/=(Int b){return *this=*this/b;}Factoradic& operator%=(const Factoradic& b){return *this=*this%b;}Factoradic& operator%=(Int b){return *this=Factoradic(*this%b);}
- // Fenwick木の個数でLehmer符号を求める。O(N log N)。
- static Factoradic permutationRank(std::span<const Int> permutation){Int n=permutation.size();auto bit=counts(n);std::vector<bool> used(n);Factoradic out;out.data_.resize(n);for(Int i=0;i<n;++i){Int value=permutation[i];assert(value>=0&&value<n&&!used[value]);used[value]=true;for(Int j=value;j>0;j-=j&-j)out.data_[n-1-i]+=bit[j];removeValue(bit,value);}out.normalize();return out;}
- std::vector<Int> toPermutation(Int n)const{assert(n>=0&&!negative_&&Int(data_.size())<=n);auto bit=counts(n);std::vector<Int> out(n);Int step=1;while(step<=n/2)step*=2;for(Int i=0;i<n;++i){Int index=n-1-i,rank=index<Int(data_.size())?data_[index]:0,value=0;for(Int width=step;width>0;width>>=1){Int next=value+width;if(next<=n&&bit[next]<=rank){rank-=bit[next];value=next;}}out[i]=value;removeValue(bit,value);}return out;}
+    Factoradic() = default;
+
+    // 絶対値の下位桁から並べたi!の係数digitsと符号で構築する。
+    // 0 <= digits[i] <= iとする。O(桁数)。空配列は0。
+    explicit Factoradic(std::span<const Int> digits, bool negative = false)
+        : negative_(negative), data_(digits.begin(), digits.end()) {
+        for (Int i = 0; i < Int(data_.size()); ++i)
+            assert(0 <= data_[i] && data_[i] <= i);
+        normalize();
+    }
+
+    template <std::integral T> Factoradic(T value) {
+        UInt m;
+        if constexpr (std::is_signed_v<T>) {
+            if (value < 0) {
+                negative_ = true;
+                m = UInt(-(value + 1)) + 1;
+            } else
+                m = UInt(value);
+        } else
+            m = UInt(value);
+        for (UInt radix = 1; m; ++radix) {
+            data_.push_back(m % radix);
+            m /= radix;
+        }
+    }
+
+    // 積の木を倍々に拡張して桁数を求め、分割統治で変換する。O(M(B) log(N+1))。
+    explicit Factoradic(const BigInt &input) {
+        if (BigInt(std::numeric_limits<Int>::min()) <= input &&
+            input <= BigInt(std::numeric_limits<Int>::max())) {
+            *this = Factoradic(input.toInt());
+            return;
+        }
+        negative_ = input.sgn() < 0;
+        auto value = input.abs();
+        std::vector<ProductNode> nodes;
+        Int last = BlockSize + 1, root = buildProducts(nodes, 1, last);
+        while (nodes[root].product <= value) {
+            Int next = 1 + 2 * (last - 1), right = buildProducts(nodes, last, next);
+            nodes.push_back({1, next, root, right, nodes[root].product * nodes[right].product});
+            root = nodes.size() - 1;
+            last = next;
+        }
+        data_.resize(last);
+        restoreBlock(std::move(value), nodes, root, data_);
+        normalize();
+    }
+
+    Factoradic abs() const {
+        auto out = *this;
+        out.negative_ = false;
+        return out;
+    }
+
+    Factoradic operator-() const {
+        auto out = *this;
+        if (!out.data_.empty())
+            out.negative_ = !out.negative_;
+        return out;
+    }
+
+    Factoradic operator+() const {
+        return *this;
+    }
+
+    int sgn() const {
+        return data_.empty() ? 0 : negative_ ? -1 : 1;
+    }
+
+    // n!を階乗進数で返す。O(n+1)時間・領域。0!=1、nは非負とする。
+    static Factoradic factorial(Int n) {
+        assert(n >= 0);
+        Factoradic out;
+        Int index = std::max(n, Int(1));
+        out.data_.resize(index + 1);
+        out.data_[index] = 1;
+        return out;
+    }
+
+    // k!による非負の余り。非負値O(min(N,k)+1)、負値O(k+1)。
+    Factoradic modFactorial(Int k) const {
+        assert(k >= 0);
+        Factoradic out;
+        Int size = std::min(Int(data_.size()), k);
+        out.data_.assign(data_.begin(), data_.begin() + size);
+        out.normalize();
+        if (negative_ && !out.data_.empty()) {
+            out.data_.resize(k);
+            Int borrow = 0;
+            for (Int i = 0; i < k; ++i) {
+                Int digit = -out.data_[i] - borrow;
+                borrow = digit < 0;
+                if (borrow)
+                    digit += i + 1;
+                out.data_[i] = digit;
+            }
+            out.normalize();
+        }
+        return out;
+    }
+
+    // 絶対値の下位桁から並べたi!の係数を返す。0は空配列。O(桁数)。
+    std::vector<Int> digits() const {
+        return data_;
+    }
+
+    // 整数型TにO(桁数)で変換する。Tの範囲外や負数の符号なし型への変換は不可。
+    template <std::integral T = Int> T toInt() const {
+        UInt value = 0, limit = std::numeric_limits<T>::max();
+        if constexpr (std::is_signed_v<T>) {
+            if (negative_)
+                ++limit;
+        } else
+            assert(!negative_);
+        for (Int i = Int(data_.size()) - 1; i >= 1; --i) {
+            UInt digit = data_[i];
+            assert(digit <= limit && value <= (limit - digit) / UInt(i + 1));
+            value = value * UInt(i + 1) + digit;
+        }
+        if constexpr (std::is_signed_v<T>) {
+            if (negative_) {
+                if (value == limit)
+                    return std::numeric_limits<T>::min();
+                return -T(value);
+            }
+        }
+        return T(value);
+    }
+
+    // 組み込み整数での余りは128bit積和による線形計算。追加領域O(1)。
+    // 0方向に丸めた除算の、被除数と同符号の余りをIntで返す。
+    // O(桁数+1)時間・O(1)領域。0除算はstd::domain_error。
+    Int mod(Int divisor) const {
+        if (!divisor)
+            throw std::domain_error("階乗進数の 0 除算");
+        UInt m = magnitude(divisor), rem = 0;
+        for (Int i = Int(data_.size()) - 1; i >= 1; --i)
+            rem = (static_cast<unsigned __int128>(rem) * UInt(i + 1) + UInt(data_[i])) % m;
+        return negative_ ? -Int(rem) : Int(rem);
+    }
+
+    Int operator%(Int divisor) const {
+        Int rem = mod(divisor);
+        return rem && negative_ != (divisor < 0) ? rem + divisor : rem;
+    }
+
+    BigInt toBigInt() const {
+        BigInt out;
+        if (Int(data_.size()) <= BlockSize + 1) {
+            for (Int i = Int(data_.size()) - 1; i >= 1; --i)
+                out = out * BigInt(i + 1) + BigInt(data_[i]);
+        } else
+            out = blockValue(data_, 1, data_.size()).first;
+        return negative_ ? -out : out;
+    }
+
+    std::string str() const {
+        return toBigInt().str();
+    }
+
+    friend int cmp(const Factoradic &a, const Factoradic &b) {
+        if (a.negative_ != b.negative_)
+            return a.negative_ ? -1 : 1;
+        Int out = cmpAbs(a, b);
+        return a.negative_ ? -out : out;
+    }
+
+    friend bool operator==(const Factoradic &a, const Factoradic &b) {
+        return a.negative_ == b.negative_ && a.data_ == b.data_;
+    }
+
+    friend std::strong_ordering operator<=>(const Factoradic &a, const Factoradic &b) {
+        return cmp(a, b) <=> 0;
+    }
+
+    std::size_t hash() const {
+        std::size_t out = negative_;
+        for (auto d : data_)
+            out ^= std::hash<Int>{}(d) + 0x9e3779b97f4a7c15ULL + (out << 6) + (out >> 2);
+        return out;
+    }
+
+    friend Factoradic operator+(const Factoradic &a, const Factoradic &b) {
+        Factoradic out;
+        if (a.negative_ == b.negative_) {
+            out = addAbs(a, b);
+            out.negative_ = a.negative_ && !out.data_.empty();
+        } else if (cmpAbs(a, b) >= 0) {
+            out = subAbs(a, b);
+            out.negative_ = a.negative_ && !out.data_.empty();
+        } else {
+            out = subAbs(b, a);
+            out.negative_ = b.negative_ && !out.data_.empty();
+        }
+        return out;
+    }
+
+    friend Factoradic operator-(const Factoradic &a, const Factoradic &b) {
+        return a + (-b);
+    }
+
+    friend Factoradic operator*(const Factoradic &a, Int b) {
+        if (!b || a.data_.empty())
+            return {};
+        Factoradic out;
+        out.negative_ = a.negative_ != (b < 0);
+        UInt m = magnitude(b), carry = 0;
+        out.data_.resize(a.data_.size());
+        for (std::size_t i = 0; i < a.data_.size(); ++i) {
+            auto value = static_cast<unsigned __int128>(a.data_[i]) * m + carry;
+            out.data_[i] = Int(value % (i + 1));
+            carry = value / (i + 1);
+        }
+        while (carry) {
+            UInt radix = out.data_.size() + 1;
+            out.data_.push_back(carry % radix);
+            carry /= radix;
+        }
+        return out;
+    }
+
+    friend Factoradic operator*(Int a, const Factoradic &b) {
+        return b * a;
+    }
+
+    friend Factoradic operator*(const Factoradic &a, const Factoradic &b) {
+        if (a.data_.empty() || b.data_.empty())
+            return {};
+        if (a.fitsInt())
+            return b * a.toInt();
+        if (b.fitsInt())
+            return a * b.toInt();
+        return Factoradic(a.toBigInt() * b.toBigInt());
+    }
+
+    static FactoradicSmallDivision divmodTrunc(const Factoradic &, Int);
+    static FactoradicSmallDivision divmod(const Factoradic &, Int);
+    static FactoradicDivision divmod(const Factoradic &, const Factoradic &);
+    friend Factoradic operator/(const Factoradic &, const Factoradic &);
+    friend Factoradic operator/(const Factoradic &, Int);
+
+    friend Factoradic operator/(Int a, const Factoradic &b) {
+        return Factoradic(a) / b;
+    }
+
+    friend Factoradic operator%(const Factoradic &, const Factoradic &);
+
+    friend Factoradic operator%(Int a, const Factoradic &b) {
+        return Factoradic(a) % b;
+    }
+
+    static Factoradic mod(const Factoradic &, const Factoradic &);
+    static Factoradic floorDiv(const Factoradic &, const Factoradic &);
+
+    Factoradic &operator+=(const Factoradic &b) {
+        return *this = *this + b;
+    }
+
+    Factoradic &operator-=(const Factoradic &b) {
+        return *this = *this - b;
+    }
+
+    Factoradic &operator*=(const Factoradic &b) {
+        return *this = *this * b;
+    }
+
+    Factoradic &operator*=(Int b) {
+        return *this = *this * b;
+    }
+
+    Factoradic &operator/=(const Factoradic &b) {
+        return *this = *this / b;
+    }
+
+    Factoradic &operator/=(Int b) {
+        return *this = *this / b;
+    }
+
+    Factoradic &operator%=(const Factoradic &b) {
+        return *this = *this % b;
+    }
+
+    Factoradic &operator%=(Int b) {
+        return *this = Factoradic(*this % b);
+    }
+
+    // Fenwick木の個数でLehmer符号を求める。O(N log N)。
+    // 0..<Nの順列の0始まりの辞書順順位を階乗進数で返す。O(N log N)時間・O(N)領域。
+    static Factoradic permutationRank(std::span<const Int> permutation) {
+        Int n = permutation.size();
+        auto bit = counts(n);
+        std::vector<bool> used(n);
+        Factoradic out;
+        out.data_.resize(n);
+        for (Int i = 0; i < n; ++i) {
+            Int value = permutation[i];
+            assert(value >= 0 && value < n && !used[value]);
+            used[value] = true;
+            for (Int j = value; j > 0; j -= j & -j)
+                out.data_[n - 1 - i] += bit[j];
+            removeValue(bit, value);
+        }
+        out.normalize();
+        return out;
+    }
+
+    // 辞書順でこの値を0始まりの順位とする0..<nの順列を復元する。O(n log n)時間・O(n)領域。
+    // n >= 0かつ0 <= この値 < n!を必要とする。n=0の順位0は空順列。
+    std::vector<Int> toPermutation(Int n) const {
+        assert(n >= 0 && !negative_ && Int(data_.size()) <= n);
+        auto bit = counts(n);
+        std::vector<Int> out(n);
+        Int step = 1;
+        while (step <= n / 2)
+            step *= 2;
+        for (Int i = 0; i < n; ++i) {
+            Int index = n - 1 - i, rank = index < Int(data_.size()) ? data_[index] : 0, value = 0;
+            for (Int width = step; width > 0; width >>= 1) {
+                Int next = value + width;
+                if (next <= n && bit[next] <= rank) {
+                    rank -= bit[next];
+                    value = next;
+                }
+            }
+            out[i] = value;
+            removeValue(bit, value);
+        }
+        return out;
+    }
 };
-inline FactoradicSmallDivision Factoradic::divmodTrunc(const Factoradic& a,Int b){if(!b)throw std::domain_error("階乗進数の 0 除算");FactoradicSmallDivision out;out.quotient.data_.resize(a.data_.size());UInt m=magnitude(b),rem=0;for(Int i=Int(a.data_.size())-1;i>=1;--i){auto value=static_cast<unsigned __int128>(rem)*UInt(i+1)+UInt(a.data_[i]);out.quotient.data_[i]=value/m;rem=value%m;}out.quotient.normalize();if(a.negative_!=(b<0))out.quotient=-out.quotient;out.remainder=a.negative_?-Int(rem):Int(rem);return out;}
-inline FactoradicSmallDivision Factoradic::divmod(const Factoradic& a,Int b){auto out=divmodTrunc(a,b);if(out.remainder&&a.negative_!=(b<0)){out.quotient-=1;out.remainder+=b;}return out;}
-inline FactoradicDivision Factoradic::divmod(const Factoradic& a,const Factoradic& b){if(b.data_.empty())throw std::domain_error("階乗進数の 0 除算");if(b.fitsInt()){auto out=divmod(a,b.toInt());return {std::move(out.quotient),Factoradic(out.remainder)};}Int order=cmpAbs(a,b);if(order<0){if(!a.data_.empty()&&a.negative_!=b.negative_)return {Factoradic(-1),a+b};return {Factoradic{},a};}if(order==0)return {Factoradic(a.negative_!=b.negative_?-1:1),Factoradic{}};auto out=cplib::divmod(a.toBigInt(),b.toBigInt());return {Factoradic(out.quotient),Factoradic(out.remainder)};}
-inline Factoradic operator/(const Factoradic& a,Int b){return Factoradic::divmodTrunc(a,b).quotient;}
-inline Factoradic operator/(const Factoradic& a,const Factoradic& b){if(b.data_.empty())throw std::domain_error("階乗進数の 0 除算");if(b.fitsInt())return Factoradic::divmodTrunc(a,b.toInt()).quotient;Int order=Factoradic::cmpAbs(a,b);if(order<0)return {};if(order==0)return Factoradic(a.negative_!=b.negative_?-1:1);return Factoradic(a.toBigInt()/b.toBigInt());}
-inline Factoradic Factoradic::mod(const Factoradic& a,const Factoradic& b){if(b.data_.empty())throw std::domain_error("階乗進数の 0 除算");if(b.fitsInt())return Factoradic(a.mod(b.toInt()));Int order=cmpAbs(a,b);if(order<0)return a;if(order==0)return {};return Factoradic(cplib::mod(a.toBigInt(),b.toBigInt()));}
-inline Factoradic Factoradic::floorDiv(const Factoradic& a,const Factoradic& b){if(b.data_.empty())throw std::domain_error("階乗進数の 0 除算");if(b.fitsInt())return divmod(a,b.toInt()).quotient;Int order=cmpAbs(a,b);if(order<0)return Factoradic(!a.data_.empty()&&a.negative_!=b.negative_?-1:0);if(order==0)return Factoradic(a.negative_!=b.negative_?-1:1);return Factoradic(cplib::floor_div(a.toBigInt(),b.toBigInt()));}
-inline Factoradic operator%(const Factoradic& a,const Factoradic& b){if(b.data_.empty())throw std::domain_error("階乗進数の 0 除算");if(b.fitsInt())return Factoradic(a%b.toInt());Int order=Factoradic::cmpAbs(a,b);if(order<0){if(!a.data_.empty()&&a.negative_!=b.negative_)return a+b;return a;}if(order==0)return {};return Factoradic(a.toBigInt()%b.toBigInt());}
-inline FactoradicDivision divmod(const Factoradic& a,const Factoradic& b){return Factoradic::divmod(a,b);}inline FactoradicSmallDivision divmod(const Factoradic& a,Int b){return Factoradic::divmod(a,b);}inline FactoradicDivision divmod(Int a,const Factoradic& b){return Factoradic::divmod(Factoradic(a),b);}
-inline FactoradicSmallDivision divmodTrunc(const Factoradic& a,Int b){return Factoradic::divmodTrunc(a,b);}
-inline Factoradic div(const Factoradic& a,const Factoradic& b){return a/b;}inline Factoradic div(const Factoradic& a,Int b){return a/b;}inline Factoradic div(Int a,const Factoradic& b){return Factoradic(a)/b;}
-inline Factoradic mod(const Factoradic& a,const Factoradic& b){return Factoradic::mod(a,b);}inline Int mod(const Factoradic& a,Int b){return a.mod(b);}inline Factoradic mod(Int a,const Factoradic& b){return Factoradic::mod(Factoradic(a),b);}
-inline Factoradic floor_div(const Factoradic& a,const Factoradic& b){return Factoradic::floorDiv(a,b);}inline Factoradic floor_div(const Factoradic& a,Int b){return Factoradic::divmod(a,b).quotient;}inline Factoradic floor_div(Int a,const Factoradic& b){return Factoradic::floorDiv(Factoradic(a),b);}
-inline Factoradic& div_assign(Factoradic& a,const Factoradic& b){return a=a/b;}inline Factoradic& div_assign(Factoradic& a,Int b){return a=a/b;}inline Factoradic& mod_assign(Factoradic& a,const Factoradic& b){return a=mod(a,b);}inline Factoradic& mod_assign(Factoradic& a,Int b){return a=Factoradic(mod(a,b));}
-template<class T> Factoradic initFactoradic(const T& x){return Factoradic(x);}inline Factoradic initFactoradic(std::span<const Int> digits,bool negative){return Factoradic(digits,negative);}inline Factoradic factorialFactoradic(Int n){return Factoradic::factorial(n);}inline Factoradic modFactorial(const Factoradic& a,Int k){return a.modFactorial(k);}inline Factoradic abs(const Factoradic& a){return a.abs();}inline int sgn(const Factoradic& a){return a.sgn();}inline auto digits(const Factoradic& a){return a.digits();}template<std::integral T=Int> T toInt(const Factoradic& a){return a.toInt<T>();}inline BigInt toBigInt(const Factoradic& a){return a.toBigInt();}inline std::size_t hash(const Factoradic& a){return a.hash();}inline Factoradic permutationRank(std::span<const Int> p){return Factoradic::permutationRank(p);}inline auto toPermutation(const Factoradic& a,Int n){return a.toPermutation(n);}
-inline std::ostream& operator<<(std::ostream& os,const Factoradic& a){return os<<a.str();}
+
+// 0方向に丸めた商とIntの余りをO(入力の桁数+1)時間・領域で返す。
+// 余りは被除数と同符号。0除算はstd::domain_error。
+inline FactoradicSmallDivision Factoradic::divmodTrunc(const Factoradic &a, Int b) {
+    if (!b)
+        throw std::domain_error("階乗進数の 0 除算");
+    FactoradicSmallDivision out;
+    out.quotient.data_.resize(a.data_.size());
+    UInt m = magnitude(b), rem = 0;
+    for (Int i = Int(a.data_.size()) - 1; i >= 1; --i) {
+        auto value = static_cast<unsigned __int128>(rem) * UInt(i + 1) + UInt(a.data_[i]);
+        out.quotient.data_[i] = value / m;
+        rem = value % m;
+    }
+    out.quotient.normalize();
+    if (a.negative_ != (b < 0))
+        out.quotient = -out.quotient;
+    out.remainder = a.negative_ ? -Int(rem) : Int(rem);
+    return out;
 }
-namespace std {template<> struct hash<cplib::Factoradic>{size_t operator()(const cplib::Factoradic& x)const{return x.hash();}};}
+
+// Pythonと同じ床除算の商とIntの余りをO(入力の桁数+1)時間・領域で返す。
+// 余りは除数と同符号。0除算はstd::domain_error。
+inline FactoradicSmallDivision Factoradic::divmod(const Factoradic &a, Int b) {
+    auto out = divmodTrunc(a, b);
+    if (out.remainder && a.negative_ != (b < 0)) {
+        out.quotient -= 1;
+        out.remainder += b;
+    }
+    return out;
+}
+
+// Pythonと同じ床除算の商と余りを返す。0除算はstd::domain_error。
+inline FactoradicDivision Factoradic::divmod(const Factoradic &a, const Factoradic &b) {
+    if (b.data_.empty())
+        throw std::domain_error("階乗進数の 0 除算");
+    if (b.fitsInt()) {
+        auto out = divmod(a, b.toInt());
+        return {std::move(out.quotient), Factoradic(out.remainder)};
+    }
+    Int order = cmpAbs(a, b);
+    if (order < 0) {
+        if (!a.data_.empty() && a.negative_ != b.negative_)
+            return {Factoradic(-1), a + b};
+        return {Factoradic{}, a};
+    }
+    if (order == 0)
+        return {Factoradic(a.negative_ != b.negative_ ? -1 : 1), Factoradic{}};
+    auto out = cplib::divmod(a.toBigInt(), b.toBigInt());
+    return {Factoradic(out.quotient), Factoradic(out.remainder)};
+}
+
+inline Factoradic operator/(const Factoradic &a, Int b) {
+    return Factoradic::divmodTrunc(a, b).quotient;
+}
+
+inline Factoradic operator/(const Factoradic &a, const Factoradic &b) {
+    if (b.data_.empty())
+        throw std::domain_error("階乗進数の 0 除算");
+    if (b.fitsInt())
+        return Factoradic::divmodTrunc(a, b.toInt()).quotient;
+    Int order = Factoradic::cmpAbs(a, b);
+    if (order < 0)
+        return {};
+    if (order == 0)
+        return Factoradic(a.negative_ != b.negative_ ? -1 : 1);
+    return Factoradic(a.toBigInt() / b.toBigInt());
+}
+
+inline Factoradic Factoradic::mod(const Factoradic &a, const Factoradic &b) {
+    if (b.data_.empty())
+        throw std::domain_error("階乗進数の 0 除算");
+    if (b.fitsInt())
+        return Factoradic(a.mod(b.toInt()));
+    Int order = cmpAbs(a, b);
+    if (order < 0)
+        return a;
+    if (order == 0)
+        return {};
+    return Factoradic(cplib::mod(a.toBigInt(), b.toBigInt()));
+}
+
+inline Factoradic Factoradic::floorDiv(const Factoradic &a, const Factoradic &b) {
+    if (b.data_.empty())
+        throw std::domain_error("階乗進数の 0 除算");
+    if (b.fitsInt())
+        return divmod(a, b.toInt()).quotient;
+    Int order = cmpAbs(a, b);
+    if (order < 0)
+        return Factoradic(!a.data_.empty() && a.negative_ != b.negative_ ? -1 : 0);
+    if (order == 0)
+        return Factoradic(a.negative_ != b.negative_ ? -1 : 1);
+    return Factoradic(cplib::floor_div(a.toBigInt(), b.toBigInt()));
+}
+
+inline Factoradic operator%(const Factoradic &a, const Factoradic &b) {
+    if (b.data_.empty())
+        throw std::domain_error("階乗進数の 0 除算");
+    if (b.fitsInt())
+        return Factoradic(a % b.toInt());
+    Int order = Factoradic::cmpAbs(a, b);
+    if (order < 0) {
+        if (!a.data_.empty() && a.negative_ != b.negative_)
+            return a + b;
+        return a;
+    }
+    if (order == 0)
+        return {};
+    return Factoradic(a.toBigInt() % b.toBigInt());
+}
+
+inline FactoradicDivision divmod(const Factoradic &a, const Factoradic &b) {
+    return Factoradic::divmod(a, b);
+}
+
+inline FactoradicSmallDivision divmod(const Factoradic &a, Int b) {
+    return Factoradic::divmod(a, b);
+}
+
+inline FactoradicDivision divmod(Int a, const Factoradic &b) {
+    return Factoradic::divmod(Factoradic(a), b);
+}
+
+inline FactoradicSmallDivision divmodTrunc(const Factoradic &a, Int b) {
+    return Factoradic::divmodTrunc(a, b);
+}
+
+inline Factoradic div(const Factoradic &a, const Factoradic &b) {
+    return a / b;
+}
+
+inline Factoradic div(const Factoradic &a, Int b) {
+    return a / b;
+}
+
+inline Factoradic div(Int a, const Factoradic &b) {
+    return Factoradic(a) / b;
+}
+
+inline Factoradic mod(const Factoradic &a, const Factoradic &b) {
+    return Factoradic::mod(a, b);
+}
+
+inline Int mod(const Factoradic &a, Int b) {
+    return a.mod(b);
+}
+
+inline Factoradic mod(Int a, const Factoradic &b) {
+    return Factoradic::mod(Factoradic(a), b);
+}
+
+inline Factoradic floor_div(const Factoradic &a, const Factoradic &b) {
+    return Factoradic::floorDiv(a, b);
+}
+
+inline Factoradic floor_div(const Factoradic &a, Int b) {
+    return Factoradic::divmod(a, b).quotient;
+}
+
+inline Factoradic floor_div(Int a, const Factoradic &b) {
+    return Factoradic::floorDiv(Factoradic(a), b);
+}
+
+inline Factoradic &div_assign(Factoradic &a, const Factoradic &b) {
+    return a = a / b;
+}
+
+inline Factoradic &div_assign(Factoradic &a, Int b) {
+    return a = a / b;
+}
+
+inline Factoradic &mod_assign(Factoradic &a, const Factoradic &b) {
+    return a = mod(a, b);
+}
+
+inline Factoradic &mod_assign(Factoradic &a, Int b) {
+    return a = Factoradic(mod(a, b));
+}
+
+template <class T> Factoradic initFactoradic(const T &x) {
+    return Factoradic(x);
+}
+
+inline Factoradic initFactoradic(std::span<const Int> digits, bool negative) {
+    return Factoradic(digits, negative);
+}
+
+inline Factoradic factorialFactoradic(Int n) {
+    return Factoradic::factorial(n);
+}
+
+inline Factoradic modFactorial(const Factoradic &a, Int k) {
+    return a.modFactorial(k);
+}
+
+inline Factoradic abs(const Factoradic &a) {
+    return a.abs();
+}
+
+inline int sgn(const Factoradic &a) {
+    return a.sgn();
+}
+
+inline auto digits(const Factoradic &a) {
+    return a.digits();
+}
+
+template <std::integral T = Int> T toInt(const Factoradic &a) {
+    return a.toInt<T>();
+}
+
+inline BigInt toBigInt(const Factoradic &a) {
+    return a.toBigInt();
+}
+
+inline std::size_t hash(const Factoradic &a) {
+    return a.hash();
+}
+
+inline Factoradic permutationRank(std::span<const Int> p) {
+    return Factoradic::permutationRank(p);
+}
+
+inline auto toPermutation(const Factoradic &a, Int n) {
+    return a.toPermutation(n);
+}
+
+inline std::ostream &operator<<(std::ostream &os, const Factoradic &a) {
+    return os << a.str();
+}
+}
+
+namespace std {
+template <> struct hash<cplib::Factoradic> {
+    size_t operator()(const cplib::Factoradic &x) const {
+        return x.hash();
+    }
+};
+}

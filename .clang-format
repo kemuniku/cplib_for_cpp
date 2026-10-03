@@ -1,0 +1,25 @@
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++20
+IndentWidth: 4
+ContinuationIndentWidth: 4
+ColumnLimit: 100
+AccessModifierOffset: -4
+NamespaceIndentation: None
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+BreakBeforeBraces: Attach
+BreakStringLiterals: false
+SortIncludes: Never
+IncludeBlocks: Preserve
+FixNamespaceComments: false
+ReflowComments: Never
+QualifierAlignment: Leave
+InsertBraces: false
+SortUsingDeclarations: Never
+SeparateDefinitionBlocks: Always
+StatementMacros:
+  - CPLIB_SEG_ELEM_ASSIGN
+  - CPLIB_GRID_PAIR_OVERLOAD

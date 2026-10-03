@@ -1,5 +1,6 @@
 #pragma once
 #include <cplib/collections/private/dualsegtree_base.hpp>
+
 namespace cplib {
 using detail::dualsegtree_base::DualSegmentTree;
 using detail::dualsegtree_base::apply;

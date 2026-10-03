@@ -1,2 +1,5 @@
 #pragma once
-namespace cplib {enum SortOrder{Ascending,Descending};}
+
+namespace cplib {
+enum SortOrder { Ascending, Descending };
+}
