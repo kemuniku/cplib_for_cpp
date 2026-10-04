@@ -1,5 +1,6 @@
 #pragma once
 #include <cplib/collections/private/segtree_base.hpp>
+
 namespace cplib {
 using detail::segtree_base::SegmentTree;
 using detail::segtree_base::get;

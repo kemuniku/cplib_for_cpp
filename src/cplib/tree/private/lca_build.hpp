@@ -1,12 +1,13 @@
 #pragma once
 
 #include <cstdint>
+
 namespace cplib::detail::lca_native {
-template<bool Ordered>
-static std::int64_t build(const std::int32_t* __restrict parent,
-        const std::int64_t* __restrict order, std::int64_t n, std::int64_t root,
-        std::int32_t* __restrict size, std::uint32_t* __restrict data,
-        std::uint8_t* __restrict branches, std::int32_t* __restrict head) {
+template <bool Ordered>
+static std::int64_t build(const std::int32_t *__restrict parent,
+                          const std::int64_t *__restrict order, std::int64_t n, std::int64_t root,
+                          std::int32_t *__restrict size, std::uint32_t *__restrict data,
+                          std::uint8_t *__restrict branches, std::int32_t *__restrict head) {
     // 葉の区間と縦パスの情報を、配列同士が重ならない条件で構築する。
     for (std::int64_t i = n - 1; i > 0; --i) {
         if (i > 16) {
@@ -18,7 +19,8 @@ static std::int64_t build(const std::int32_t* __restrict parent,
         size[v] = count;
         size[parent[v]] += count;
     }
-    if (size[root] == 0) size[root] = 1;
+    if (size[root] == 0)
+        size[root] = 1;
     const std::uint32_t root_label = 1U << (31 - __builtin_clz(static_cast<unsigned>(size[root])));
     data[3 * root] = data[3 * root + 1] = root_label;
     data[3 * root + 2] = 0;
@@ -49,8 +51,12 @@ static std::int64_t build(const std::int32_t* __restrict parent,
         data[3 * v + 1] = data[3 * p + 1] | bit;
         const std::uint32_t depth = data[3 * p + 2] + 1;
         data[3 * v + 2] = depth;
-        if (depth > max_depth) { max_depth = depth; deepest = v; }
-        if (label != data[3 * p]) head[label] = p;
+        if (depth > max_depth) {
+            max_depth = depth;
+            deepest = v;
+        }
+        if (label != data[3 * p])
+            head[label] = p;
     }
     return deepest;
 }

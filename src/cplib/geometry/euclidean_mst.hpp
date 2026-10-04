@@ -2,21 +2,194 @@
 #include <cplib/geometry/base.hpp>
 #include <cplib/collections/unionfind.hpp>
 #include <tuple>
+
 namespace cplib {
 // Exact divide-and-conquer Delaunay triangulation followed by Kruskal.
 // Coordinates must be signed integers with absolute value <= 10^9.
-template<class T> std::vector<std::pair<Int,Int>> euclidean_mst(std::span<const Point<T>> points){
- static_assert(std::is_integral_v<T>&&std::is_signed_v<T>);struct Site{Int x,y,id;};std::vector<Site> sorted;for(Int i=0;i<Int(points.size());++i){Int x=points[i].x,y=points[i].y;assert(-1000000000<=x&&x<=1000000000&&-1000000000<=y&&y<=1000000000);sorted.push_back({x,y,i});}std::vector<std::pair<Int,Int>> out;if(points.size()<=1)return out;std::sort(sorted.begin(),sorted.end(),[](auto a,auto b){return std::tie(a.x,a.y,a.id)<std::tie(b.x,b.y,b.id);});std::vector<Site> sites;for(auto p:sorted){if(!sites.empty()&&sites.back().x==p.x&&sites.back().y==p.y)out.emplace_back(sites.back().id,p.id);else sites.push_back(p);}if(sites.size()==1)return out;
- struct Quad{std::array<Int,4> next;std::array<Int,2> vertex;};std::vector<Quad> edges;edges.reserve(3*sites.size());std::vector<Int> unused;
- auto rotate=[](Int e){return (e&~Int(3))|((e+1)&3);};auto onext=[&](Int e){return edges[e>>2].next[e&3];};auto origin=[&](Int e){return edges[e>>2].vertex[(e>>1)&1];};auto destination=[&](Int e){return origin(e^2);};auto oprev=[&](Int e){return rotate(onext(rotate(e)));};auto lnext=[&](Int e){return rotate(onext(rotate(e)^2));};
- auto splice=[&](Int a,Int b){Int alpha=rotate(onext(a)),beta=rotate(onext(b));std::swap(edges[a>>2].next[a&3],edges[b>>2].next[b&3]);std::swap(edges[alpha>>2].next[alpha&3],edges[beta>>2].next[beta&3]);};
- auto makeEdge=[&](Int u,Int v){Int index;if(unused.empty()){index=edges.size();edges.emplace_back();}else{index=unused.back();unused.pop_back();}Int e=index<<2;edges[index]={{{e,e+3,e+2,e+1}},{{u,v}}};return e;};auto connect=[&](Int a,Int b){Int e=makeEdge(destination(a),origin(b));splice(e,lnext(a));splice(e^2,b);return e;};auto remove=[&](Int e){splice(e,oprev(e));splice(e^2,oprev(e^2));edges[e>>2].vertex[0]=-1;unused.push_back(e>>2);};
- auto orientation=[&](Int a,Int b,Int c){return (sites[b].x-sites[a].x)*(sites[c].y-sites[a].y)-(sites[b].y-sites[a].y)*(sites[c].x-sites[a].x);};auto leftOf=[&](Int p,Int e){return orientation(origin(e),destination(e),p)>0;};auto rightOf=[&](Int p,Int e){return orientation(origin(e),destination(e),p)<0;};
- auto inCircle=[&](Int a,Int b,Int c,Int d){Int ax=sites[a].x-sites[d].x,ay=sites[a].y-sites[d].y,bx=sites[b].x-sites[d].x,by=sites[b].y-sites[d].y,cx=sites[c].x-sites[d].x,cy=sites[c].y-sites[d].y;__int128 det=__int128(ax*ax+ay*ay)*(bx*cy-by*cx)-__int128(bx*bx+by*by)*(ax*cy-ay*cx)+__int128(cx*cx+cy*cy)*(ax*by-ay*bx);return det>0;};
- auto triangulate=[&](auto&& self,Int first,Int last)->std::pair<Int,Int>{if(last-first<=3){Int a=makeEdge(first,first+1);if(last-first==2)return {a,a^2};Int b=makeEdge(first+1,first+2);splice(a^2,b);Int turn=orientation(first,first+1,first+2);if(!turn)return {a,b^2};Int c=connect(b,a);return turn>0?std::pair{a,b^2}:std::pair{c^2,c};}Int mid=(first+last)/2;auto [lo,li]=self(self,first,mid);auto [ri,ro]=self(self,mid,last);while(true){if(leftOf(origin(ri),li))li=lnext(li);else if(rightOf(origin(li),ri))ri=onext(ri^2);else break;}Int base=connect(ri^2,li);if(origin(li)==origin(lo))lo=base^2;if(origin(ri)==origin(ro))ro=base;while(true){Int left=onext(base^2);if(rightOf(destination(left),base))while(inCircle(destination(base),origin(base),destination(left),destination(onext(left)))){Int next=onext(left);remove(left);left=next;}Int right=oprev(base);if(rightOf(destination(right),base))while(inCircle(destination(base),origin(base),destination(right),destination(oprev(right)))){Int next=oprev(right);remove(right);right=next;}bool lv=rightOf(destination(left),base),rv=rightOf(destination(right),base);if(!lv&&!rv)break;if(!lv||(rv&&inCircle(destination(left),origin(left),origin(right),destination(right))))base=connect(right,base^2);else base=connect(base^2,left^2);}return {lo,ro};};triangulate(triangulate,0,sites.size());
- std::vector<std::tuple<Int,Int,Int>> candidates;for(auto e:edges){Int u=e.vertex[0],v=e.vertex[1];if(u<0)continue;Int dx=sites[u].x-sites[v].x,dy=sites[u].y-sites[v].y;candidates.emplace_back(dx*dx+dy*dy,u,v);}std::sort(candidates.begin(),candidates.end());UnionFind uf(sites.size());for(auto [weight,u,v]:candidates){(void)weight;if(uf.issame(u,v))continue;uf.unite(u,v);out.emplace_back(std::min(sites[u].id,sites[v].id),std::max(sites[u].id,sites[v].id));if(uf.count==1)break;}return out;
+// 平面上の点のユークリッド最小全域木を、入力の頂点番号の組で返す。O(N log N)時間、O(N)領域。
+// 座標は絶対値10^9以下の符号付き整数。重複点も別頂点として扱い、N <= 1なら空列を返す。
+// 幾何判定は整数で厳密に行い、外接円判定に__int128を使う。
+template <class T>
+std::vector<std::pair<Int, Int>> euclidean_mst(std::span<const Point<T>> points) {
+    static_assert(std::is_integral_v<T> && std::is_signed_v<T>);
+
+    struct Site {
+        Int x, y, id;
+    };
+
+    std::vector<Site> sorted;
+    for (Int i = 0; i < Int(points.size()); ++i) {
+        Int x = points[i].x, y = points[i].y;
+        assert(-1000000000 <= x && x <= 1000000000 && -1000000000 <= y && y <= 1000000000);
+        sorted.push_back({x, y, i});
+    }
+    std::vector<std::pair<Int, Int>> out;
+    if (points.size() <= 1)
+        return out;
+    std::sort(sorted.begin(), sorted.end(),
+              [](auto a, auto b) { return std::tie(a.x, a.y, a.id) < std::tie(b.x, b.y, b.id); });
+    std::vector<Site> sites;
+    for (auto p : sorted) {
+        if (!sites.empty() && sites.back().x == p.x && sites.back().y == p.y)
+            out.emplace_back(sites.back().id, p.id);
+        else
+            sites.push_back(p);
+    }
+    if (sites.size() == 1)
+        return out;
+
+    struct Quad {
+        std::array<Int, 4> next;
+        std::array<Int, 2> vertex;
+    };
+
+    std::vector<Quad> edges;
+    edges.reserve(3 * sites.size());
+    std::vector<Int> unused;
+    auto rotate = [](Int e) { return (e & ~Int(3)) | ((e + 1) & 3); };
+    auto onext = [&](Int e) { return edges[e >> 2].next[e & 3]; };
+    auto origin = [&](Int e) { return edges[e >> 2].vertex[(e >> 1) & 1]; };
+    auto destination = [&](Int e) { return origin(e ^ 2); };
+    auto oprev = [&](Int e) { return rotate(onext(rotate(e))); };
+    auto lnext = [&](Int e) { return rotate(onext(rotate(e) ^ 2)); };
+    auto splice = [&](Int a, Int b) {
+        Int alpha = rotate(onext(a)), beta = rotate(onext(b));
+        std::swap(edges[a >> 2].next[a & 3], edges[b >> 2].next[b & 3]);
+        std::swap(edges[alpha >> 2].next[alpha & 3], edges[beta >> 2].next[beta & 3]);
+    };
+    auto makeEdge = [&](Int u, Int v) {
+        Int index;
+        if (unused.empty()) {
+            index = edges.size();
+            edges.emplace_back();
+        } else {
+            index = unused.back();
+            unused.pop_back();
+        }
+        Int e = index << 2;
+        edges[index] = {{{e, e + 3, e + 2, e + 1}}, {{u, v}}};
+        return e;
+    };
+    auto connect = [&](Int a, Int b) {
+        Int e = makeEdge(destination(a), origin(b));
+        splice(e, lnext(a));
+        splice(e ^ 2, b);
+        return e;
+    };
+    auto remove = [&](Int e) {
+        splice(e, oprev(e));
+        splice(e ^ 2, oprev(e ^ 2));
+        edges[e >> 2].vertex[0] = -1;
+        unused.push_back(e >> 2);
+    };
+    auto orientation = [&](Int a, Int b, Int c) {
+        return (sites[b].x - sites[a].x) * (sites[c].y - sites[a].y) -
+               (sites[b].y - sites[a].y) * (sites[c].x - sites[a].x);
+    };
+    auto leftOf = [&](Int p, Int e) { return orientation(origin(e), destination(e), p) > 0; };
+    auto rightOf = [&](Int p, Int e) { return orientation(origin(e), destination(e), p) < 0; };
+    auto inCircle = [&](Int a, Int b, Int c, Int d) {
+        Int ax = sites[a].x - sites[d].x, ay = sites[a].y - sites[d].y,
+            bx = sites[b].x - sites[d].x, by = sites[b].y - sites[d].y,
+            cx = sites[c].x - sites[d].x, cy = sites[c].y - sites[d].y;
+        __int128 det = __int128(ax * ax + ay * ay) * (bx * cy - by * cx) -
+                       __int128(bx * bx + by * by) * (ax * cy - ay * cx) +
+                       __int128(cx * cx + cy * cy) * (ax * by - ay * bx);
+        return det > 0;
+    };
+    auto triangulate = [&](auto &&self, Int first, Int last) -> std::pair<Int, Int> {
+        if (last - first <= 3) {
+            Int a = makeEdge(first, first + 1);
+            if (last - first == 2)
+                return {a, a ^ 2};
+            Int b = makeEdge(first + 1, first + 2);
+            splice(a ^ 2, b);
+            Int turn = orientation(first, first + 1, first + 2);
+            if (!turn)
+                return {a, b ^ 2};
+            Int c = connect(b, a);
+            return turn > 0 ? std::pair{a, b ^ 2} : std::pair{c ^ 2, c};
+        }
+        Int mid = (first + last) / 2;
+        auto [lo, li] = self(self, first, mid);
+        auto [ri, ro] = self(self, mid, last);
+        while (true) {
+            if (leftOf(origin(ri), li))
+                li = lnext(li);
+            else if (rightOf(origin(li), ri))
+                ri = onext(ri ^ 2);
+            else
+                break;
+        }
+        Int base = connect(ri ^ 2, li);
+        if (origin(li) == origin(lo))
+            lo = base ^ 2;
+        if (origin(ri) == origin(ro))
+            ro = base;
+        while (true) {
+            Int left = onext(base ^ 2);
+            if (rightOf(destination(left), base))
+                while (inCircle(destination(base), origin(base), destination(left),
+                                destination(onext(left)))) {
+                    Int next = onext(left);
+                    remove(left);
+                    left = next;
+                }
+            Int right = oprev(base);
+            if (rightOf(destination(right), base))
+                while (inCircle(destination(base), origin(base), destination(right),
+                                destination(oprev(right)))) {
+                    Int next = oprev(right);
+                    remove(right);
+                    right = next;
+                }
+            bool lv = rightOf(destination(left), base), rv = rightOf(destination(right), base);
+            if (!lv && !rv)
+                break;
+            if (!lv || (rv && inCircle(destination(left), origin(left), origin(right),
+                                       destination(right))))
+                base = connect(right, base ^ 2);
+            else
+                base = connect(base ^ 2, left ^ 2);
+        }
+        return {lo, ro};
+    };
+    triangulate(triangulate, 0, sites.size());
+    std::vector<std::tuple<Int, Int, Int>> candidates;
+    for (auto e : edges) {
+        Int u = e.vertex[0], v = e.vertex[1];
+        if (u < 0)
+            continue;
+        Int dx = sites[u].x - sites[v].x, dy = sites[u].y - sites[v].y;
+        candidates.emplace_back(dx * dx + dy * dy, u, v);
+    }
+    std::sort(candidates.begin(), candidates.end());
+    UnionFind uf(sites.size());
+    for (auto [weight, u, v] : candidates) {
+        (void)weight;
+        if (uf.issame(u, v))
+            continue;
+        uf.unite(u, v);
+        out.emplace_back(std::min(sites[u].id, sites[v].id), std::max(sites[u].id, sites[v].id));
+        if (uf.count == 1)
+            break;
+    }
+    return out;
 }
-template<class T> auto euclidean_mst(const std::vector<Point<T>>& p){return euclidean_mst<T>(std::span<const Point<T>>(p));}
-template<class T> auto euclidean_mst(std::span<const std::pair<T,T>> p){std::vector<Point<T>> v;v.reserve(p.size());for(auto [x,y]:p)v.push_back({x,y});return euclidean_mst(v);}
-template<class T> auto euclidean_mst(const std::vector<std::pair<T,T>>& p){return euclidean_mst<T>(std::span<const std::pair<T,T>>(p));}
+
+template <class T> auto euclidean_mst(const std::vector<Point<T>> &p) {
+    return euclidean_mst<T>(std::span<const Point<T>>(p));
+}
+
+template <class T> auto euclidean_mst(std::span<const std::pair<T, T>> p) {
+    std::vector<Point<T>> v;
+    v.reserve(p.size());
+    for (auto [x, y] : p)
+        v.push_back({x, y});
+    return euclidean_mst(v);
+}
+
+template <class T> auto euclidean_mst(const std::vector<std::pair<T, T>> &p) {
+    return euclidean_mst<T>(std::span<const std::pair<T, T>>(p));
+}
 }
