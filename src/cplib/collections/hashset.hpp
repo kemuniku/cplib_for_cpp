@@ -53,6 +53,10 @@ public:
         return length_;
     }
 
+    Int size() const {
+        return len();
+    }
+
     void incl(const T &x) {
         add_item(x);
         if (detail::open_hash_capacity(fill_) > values.size())

@@ -43,6 +43,10 @@ public:
         return data.size();
     }
 
+    Int size() const {
+        return len();
+    }
+
     // 内部配列の i 番目を参照する。最大値は添字 0 で、全体は未整列。O(1)。
     const T &operator[](Int i) const {
         return data.at(i);

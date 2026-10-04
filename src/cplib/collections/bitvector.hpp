@@ -12,12 +12,18 @@ inline Int bitvector_popcount(UInt x) {
 }
 
 class BitVector {
+    Int length_;
     std::vector<UInt> bits;
     std::vector<Int> csum;
 
 public:
     explicit BitVector(Int length = 0)
-        : bits((length + 63) / 64 + 1), csum((length + 63) / 64 + 1) {
+        : length_(length), bits((length + 63) / 64 + 1), csum((length + 63) / 64 + 1) {
+    }
+
+    // パディングを含まない論理ビット数。O(1)。
+    Int size() const {
+        return length_;
     }
 
     // buildする前にだけ呼ぶ

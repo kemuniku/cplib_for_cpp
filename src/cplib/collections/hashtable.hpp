@@ -52,6 +52,10 @@ public:
         return length_;
     }
 
+    Int size() const {
+        return len();
+    }
+
     bool contains(const K &k) const {
         return storage[find(k)].state == detail::OpenHashState::active;
     }

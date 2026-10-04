@@ -49,6 +49,10 @@ public:
         build();
     }
 
+    Int size() const {
+        return s_.size();
+    }
+
     void build(UInt maxa = 1000000000, Int seed = -1) {
         detail::initialize(maxa, seed);
         accum_.assign(s_.size() + 1, 0);

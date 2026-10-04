@@ -320,6 +320,10 @@ public:
         return root ? root->len : 0;
     }
 
+    Int size() const {
+        return len();
+    }
+
     Int lowerBound(const T &x) const {
         auto n = lower_bound_node(root, x).second;
         return n ? cplib::index(n) : len();

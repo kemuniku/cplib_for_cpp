@@ -12,6 +12,11 @@ public:
     explicit RollbackUnionFind(Int n) : components(n), par_or_siz(n, -1) {
     }
 
+    // 構築時の要素数を返す。count()は現在の連結成分数。O(1)。
+    Int size() const {
+        return par_or_siz.size();
+    }
+
     Int count() const {
         return components;
     }

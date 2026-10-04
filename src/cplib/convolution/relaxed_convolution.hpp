@@ -42,6 +42,10 @@ public:
         return currentIndex;
     }
 
+    Int size() const {
+        return len();
+    }
+
     // 次に確定する係数に既に加算済みの寄与を返す。
     T pendingCoefficient() const {
         assert(currentIndex < coefficientCount);
@@ -208,6 +212,10 @@ public:
         return currentIndex;
     }
 
+    Int size() const {
+        return len();
+    }
+
     std::vector<T> coefficients() const {
         return values;
     }
@@ -245,6 +253,10 @@ public:
 
     Int len() const {
         return currentIndex;
+    }
+
+    Int size() const {
+        return len();
     }
 
     std::vector<T> coefficients() const {
@@ -285,6 +297,10 @@ public:
         return currentIndex;
     }
 
+    Int size() const {
+        return len();
+    }
+
     std::vector<T> coefficients() const {
         return values;
     }
@@ -323,6 +339,10 @@ public:
 
     Int len() const {
         return currentIndex;
+    }
+
+    Int size() const {
+        return len();
     }
 
     std::optional<std::vector<T>> coefficients() const {
@@ -375,6 +395,10 @@ public:
 
     Int len() const {
         return currentIndex;
+    }
+
+    Int size() const {
+        return len();
     }
 
     std::vector<T> coefficients() const {

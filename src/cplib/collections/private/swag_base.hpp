@@ -49,6 +49,10 @@ public:
         return top.size() + bottom.size();
     }
 
+    Int size() const {
+        return len();
+    }
+
     const T &operator[](Int i) const {
         if (i < 0 || i >= len())
             throw std::out_of_range("SWAG index");

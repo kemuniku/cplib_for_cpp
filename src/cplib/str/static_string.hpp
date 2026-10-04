@@ -113,6 +113,10 @@ template <class T> struct StaticString {
         return Int(r) - l;
     }
 
+    Int size() const {
+        return len();
+    }
+
     T operator[](Int i) const {
         assert(0 <= i && i < len());
         return base->S[l + i];

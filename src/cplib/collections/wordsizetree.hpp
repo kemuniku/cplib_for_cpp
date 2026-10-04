@@ -4,6 +4,7 @@
 namespace cplib {
 // 64 分岐・4段の固定容量集合。更新と前後検索は O(1)。
 class WordsizeTree {
+    Int count_ = 0;
     UInt a0_ = 0;
     std::array<UInt, 64> a1_{};
     std::array<UInt, 4096> a2_{};
@@ -25,6 +26,7 @@ class WordsizeTree {
             for (std::size_t bit = 0; bit < std::min(std::size_t(64), v.size() - block * 64); ++bit)
                 bits |= UInt(bool(v[block * 64 + bit])) << bit;
             a3_[block] = bits;
+            count_ += std::popcount(bits);
         }
         for (std::size_t i = 0; i < (v.size() + 63) / 64; ++i)
             if (a3_[i])
@@ -48,8 +50,15 @@ public:
         build(v);
     }
 
+    // 登録されている要素数。固定容量とは異なる。O(1)。
+    Int size() const {
+        return count_;
+    }
+
     void incl(Int x) {
         assert(0 <= x && x < capacity);
+        if (!(*this)[x])
+            ++count_;
         a3_[x >> 6] |= UInt(1) << (x & 63);
         x >>= 6;
         a2_[x >> 6] |= UInt(1) << (x & 63);
@@ -68,6 +77,7 @@ public:
         assert(0 <= x && x < capacity);
         if (!(*this)[x])
             return;
+        --count_;
         a3_[x >> 6] &= ~(UInt(1) << (x & 63));
         x >>= 6;
         if (a3_[x])

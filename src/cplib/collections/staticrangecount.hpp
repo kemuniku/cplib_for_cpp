@@ -5,12 +5,17 @@
 
 namespace cplib {
 template <class T> class StaticRangeCount {
+    Int length_;
     std::unordered_map<T, std::vector<Int>> t;
 
 public:
-    explicit StaticRangeCount(std::span<const T> v) {
+    explicit StaticRangeCount(std::span<const T> v) : length_(v.size()) {
         for (Int i = 0; i < Int(v.size()); ++i)
             t[v[i]].push_back(i);
+    }
+
+    Int size() const {
+        return length_;
     }
 
     // 構築は期待O(N)、区間内の出現回数はO(log N)。

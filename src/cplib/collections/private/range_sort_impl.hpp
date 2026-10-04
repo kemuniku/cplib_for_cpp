@@ -27,7 +27,7 @@ template <class T, bool Products> class RangeSortEngine {
     std::vector<Int> freeNodes, roots, next, starts;
     std::vector<bool> reversed;
     std::vector<T> products;
-    Int keyLimit, size = 1;
+    Int keyLimit, treeBase_ = 1;
     std::function<T(T, T)> merge;
     T e;
 #ifndef NDEBUG
@@ -137,7 +137,7 @@ template <class T, bool Products> class RangeSortEngine {
     Int blockStart(Int index) const {
         if (roots[index])
             return index;
-        for (Int n = index + size; n > 1; n >>= 1)
+        for (Int n = index + treeBase_; n > 1; n >>= 1)
             if ((n & 1) && starts[n - 1] != -1)
                 return starts[n - 1];
         return -1;
@@ -145,7 +145,7 @@ template <class T, bool Products> class RangeSortEngine {
 
     // ブロック境界を更新し、値の変わらない祖先で打ち切ります。O(log(N+1))。
     void setStart(Int i, Int v) {
-        Int n = i + size;
+        Int n = i + treeBase_;
         starts[n] = v;
         while ((n >>= 1) > 0) {
             Int value = std::max(starts[n * 2], starts[n * 2 + 1]);
@@ -157,7 +157,7 @@ template <class T, bool Products> class RangeSortEngine {
 
     void setProduct(Int i, T v) {
         if constexpr (Products) {
-            Int n = i + size;
+            Int n = i + treeBase_;
             products[n] = v;
             while ((n >>= 1) > 0)
                 products[n] = merge(products[n * 2], products[n * 2 + 1]);
@@ -174,7 +174,7 @@ template <class T, bool Products> class RangeSortEngine {
 
     T product(Int l, Int r) const {
         T a = e, b = e;
-        for (l += size, r += size; l < r; l >>= 1, r >>= 1) {
+        for (l += treeBase_, r += treeBase_; l < r; l >>= 1, r >>= 1) {
             if (l & 1)
                 a = merge(a, products[l++]);
             if (r & 1)
@@ -261,11 +261,11 @@ public:
         assert(limit >= 0);
         if constexpr (Products)
             assert(keys.size() == values.size());
-        while (size < len())
-            size *= 2;
-        starts.assign(size * 2, -1);
+        while (treeBase_ < len())
+            treeBase_ *= 2;
+        starts.assign(treeBase_ * 2, -1);
         if constexpr (Products)
-            products.assign(size * 2, e);
+            products.assign(treeBase_ * 2, e);
         nodes.reserve(std::max<Int>(1, len() * 2));
         nodes.emplace_back();
         for (Int i = 0; i < len(); ++i) {
@@ -276,11 +276,11 @@ public:
 #endif
             roots[i] = singleton(key, Products ? values[i] : e);
             next[i] = i + 1;
-            starts[size + i] = i;
+            starts[treeBase_ + i] = i;
             if constexpr (Products)
-                products[size + i] = values[i];
+                products[treeBase_ + i] = values[i];
         }
-        for (Int i = size - 1; i > 0; --i) {
+        for (Int i = treeBase_ - 1; i > 0; --i) {
             starts[i] = std::max(starts[i * 2], starts[i * 2 + 1]);
             if constexpr (Products)
                 products[i] = merge(products[i * 2], products[i * 2 + 1]);
@@ -290,6 +290,10 @@ public:
     // 要素数をO(1)で返す。
     Int len() const {
         return roots.size();
+    }
+
+    Int size() const {
+        return len();
     }
 
     // 現在の位置iのキーを返す。O(log(N+1)+log(U+1))。

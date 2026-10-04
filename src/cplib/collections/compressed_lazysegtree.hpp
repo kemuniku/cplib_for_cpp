@@ -160,6 +160,10 @@ public:
         return intervals ? std::max<Int>(0, Int(coords.size()) - 1) : Int(coords.size());
     }
 
+    Int size() const {
+        return len();
+    }
+
     std::string str() {
         return tree.str();
     }

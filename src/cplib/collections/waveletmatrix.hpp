@@ -222,6 +222,10 @@ public:
         }
     }
 
+    Int size() const {
+        return N;
+    }
+
     WaveletChildren get_child(Int h, Int l, Int r) const {
         Int c0 = dat[h].zero_count, lr = dat[h].bits.rank(l), rr = dat[h].bits.rank(r);
         return {l - lr, r - rr, lr + c0, rr + c0};

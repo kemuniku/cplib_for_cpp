@@ -121,6 +121,10 @@ public:
         return length;
     }
 
+    Int size() const {
+        return len();
+    }
+
     struct Reference {
         DualSegmentTree *tree;
         Int index;

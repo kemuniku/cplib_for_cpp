@@ -98,6 +98,10 @@ template <class Derived, class S> struct LinkCutTreeOperations {
         return Int(self().nodes.size()) - 1;
     }
 
+    Int size() const {
+        return len();
+    }
+
     void check(Int v) const {
         assert(v >= 0 && v < len());
         (void)v;
@@ -218,6 +222,10 @@ public:
 
     Int len() const {
         return impl_->len();
+    }
+
+    Int size() const {
+        return len();
     }
 
     void makeRoot(Int v) const {

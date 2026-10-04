@@ -59,6 +59,10 @@ public:
         return size_;
     }
 
+    Int size() const {
+        return len();
+    }
+
     bool contains(const T &x) const {
         if (!size_)
             return false;
