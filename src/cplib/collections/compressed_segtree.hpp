@@ -161,6 +161,10 @@ public:
         return coords.size();
     }
 
+    Int size() const {
+        return len();
+    }
+
     std::string str() const {
         return tree.str();
     }

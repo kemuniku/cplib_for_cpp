@@ -68,6 +68,10 @@ public:
         return entries.size();
     }
 
+    Int size() const {
+        return len();
+    }
+
     // 同じスコープでは同じアドレス・サイズの最初の値だけを保存する。重複判定は期待O(1)。
     template <class T> void remember(T *p) {
         Location key{p, sizeof(T)};

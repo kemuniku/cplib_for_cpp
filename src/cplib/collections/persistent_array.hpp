@@ -14,19 +14,19 @@ template <int Shift, class T> class PersistentArray {
     static_assert(Shift > 0 && Shift < 31);
     using Node = PersistentArrayNode<Shift, T>;
     using Ptr = std::shared_ptr<Node>;
-    Int size = 0, h = 0;
+    Int size_ = 0, h = 0;
     Ptr root;
 
-    PersistentArray(Int n, Int height, Ptr r) : size(n), h(height), root(std::move(r)) {
+    PersistentArray(Int n, Int height, Ptr r) : size_(n), h(height), root(std::move(r)) {
     }
 
 public:
     explicit PersistentArray(std::span<const T> values)
-        : size(values.size()), h((std::bit_width(UInt(size)) + Shift - 1) / Shift),
+        : size_(values.size()), h((std::bit_width(UInt(size_)) + Shift - 1) / Shift),
           root(std::make_shared<Node>()) {
         auto dfs = [&](auto &&self, Ptr node, Int now, Int depth) -> bool {
             if (depth == h) {
-                if (now < size)
+                if (now < size_)
                     node->value = values[now];
                 else
                     return false;
@@ -41,12 +41,16 @@ public:
         dfs(dfs, root, 0, 0);
     }
 
+    Int size() const {
+        return size_;
+    }
+
     std::vector<T> toseq() const {
         std::vector<T> result;
-        result.reserve(size);
+        result.reserve(size_);
         auto dfs = [&](auto &&self, Ptr node, Int now, Int depth) -> bool {
             if (depth == h) {
-                if (now < size)
+                if (now < size_)
                     result.push_back(node->value);
                 else
                     return false;
@@ -65,7 +69,7 @@ public:
     }
 
     T operator[](Int index) const {
-        assert(0 <= index && index < size);
+        assert(0 <= index && index < size_);
         std::vector<Int> indices(h);
         for (Int i = h - 1; i >= 0; --i) {
             indices[i] = index & ((Int(1) << Shift) - 1);
@@ -78,7 +82,7 @@ public:
     }
 
     PersistentArray change_value(Int index, const T &value) const {
-        assert(0 <= index && index < size);
+        assert(0 <= index && index < size_);
         std::vector<Int> indices(h);
         for (Int i = h - 1; i >= 0; --i) {
             indices[i] = index & ((Int(1) << Shift) - 1);
@@ -99,7 +103,7 @@ public:
             tmp->arr[indices[i]] = now;
             now = tmp;
         }
-        return PersistentArray(size, h, now);
+        return PersistentArray(size_, h, now);
     }
 };
 

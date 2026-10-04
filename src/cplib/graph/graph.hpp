@@ -62,6 +62,11 @@ public:
             edges.resize(n);
     }
 
+    // 頂点数を返す。辺数はedge_info.size()。O(1)。
+    Int size() const {
+        return len;
+    }
+
     // 辺を追加し、辺番号を返す。償却O(1)。静的版は再buildが必要。
     Int add_edge_impl(Int u, Int v, cost_type cost, bool dir) {
         Int id = edge_info.size();

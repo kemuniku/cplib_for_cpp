@@ -53,6 +53,10 @@ public:
         return row_.len();
     }
 
+    Int size() const {
+        return len();
+    }
+
     // 同じjでiより小さい座標の最寄りの壁を返す。
     // 見つからなければstd::nullopt。
     Maybe up(Int i, Int j) const {

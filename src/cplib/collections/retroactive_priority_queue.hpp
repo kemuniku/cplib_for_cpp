@@ -7,7 +7,7 @@ template <class T> class RetroactivePriorityQueue {
         Int balance = 0, minPrefix = 0, remaining = -1, removed = -1;
     };
 
-    Int capacity, size = 1, count_ = 0, dummyRemoved = 0;
+    Int capacity, treeBase_ = 1, count_ = 0, dummyRemoved = 0;
     SortOrder order;
     std::vector<QueueDebugKind> operations;
     std::vector<T> values;
@@ -59,7 +59,7 @@ template <class T> class RetroactivePriorityQueue {
         } else if (operations[t] == qdkPop)
             node.balance = -1;
         node.minPrefix = node.balance;
-        Int i = size + t;
+        Int i = treeBase_ + t;
         tree[i] = node;
         while (i > 1) {
             i /= 2;
@@ -84,16 +84,16 @@ template <class T> class RetroactivePriorityQueue {
     }
 
     Int previousBridge(Int t) const {
-        return std::max<Int>(0, findBridge(1, 0, size, t, 0, false));
+        return std::max<Int>(0, findBridge(1, 0, treeBase_, t, 0, false));
     }
 
     Int nextBridge(Int t) const {
-        return findBridge(1, 0, size, t, 0, true);
+        return findBridge(1, 0, treeBase_, t, 0, true);
     }
 
     Int candidate(Int l, Int r, bool remains) const {
         Int out = -1;
-        for (l += size, r += size; l < r; l /= 2, r /= 2) {
+        for (l += treeBase_, r += treeBase_; l < r; l /= 2, r /= 2) {
             if (l & 1) {
                 out = choose(out, remains ? tree[l].remaining : tree[l].removed, remains);
                 ++l;
@@ -153,12 +153,12 @@ template <class T> class RetroactivePriorityQueue {
 public:
     explicit RetroactivePriorityQueue(Int n, SortOrder ord = Ascending) : capacity(n), order(ord) {
         assert(n >= 0);
-        while (size < n + 1)
-            size *= 2;
+        while (treeBase_ < n + 1)
+            treeBase_ *= 2;
         operations.resize(n + 1);
         values.resize(n + 1);
         remaining.resize(n + 1);
-        tree.resize(size * 2);
+        tree.resize(treeBase_ * 2);
         refresh(0);
     }
 
@@ -207,6 +207,10 @@ public:
     // 全操作の実行後に残る実要素数を返します。O(1)。
     Int len() const {
         return count_;
+    }
+
+    Int size() const {
+        return len();
     }
 
     // 全操作の実行後に残る値の総和をT型で返します。O(1)。

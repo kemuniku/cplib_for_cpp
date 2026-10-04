@@ -355,6 +355,10 @@ public:
         return length_;
     }
 
+    Int size() const {
+        return len();
+    }
+
     // 半開区間[l, r)を反転します。
     void reverse(Int l, Int r) {
         check_range(l, r);

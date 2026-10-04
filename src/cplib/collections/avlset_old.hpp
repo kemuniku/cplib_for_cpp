@@ -48,6 +48,10 @@ public:
         return root->len;
     }
 
+    Int size() const {
+        return len();
+    }
+
     Int lowerBound(const T &x) const {
         auto n = lower_bound_node(root, x).second;
         return n != get_avltree_nilnode<T>() ? cplib::index(n) : len();

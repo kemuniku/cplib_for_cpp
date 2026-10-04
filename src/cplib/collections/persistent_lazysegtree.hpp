@@ -96,6 +96,10 @@ public:
         return n;
     }
 
+    Int size() const {
+        return len();
+    }
+
     // pをvalueに置き換えた新しい版を、時間・追加領域O(log N)で返します。
     PersistentLazySegmentTree update(Int p, S value) const {
         assert(0 <= p && p < n);

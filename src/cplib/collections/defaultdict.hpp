@@ -63,6 +63,10 @@ public:
         return table.size();
     }
 
+    Int size() const {
+        return len();
+    }
+
     bool pop(const K &key, V &value) {
         auto it = table.find(key);
         if (it == table.end())

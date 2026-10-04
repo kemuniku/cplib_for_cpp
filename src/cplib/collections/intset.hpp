@@ -44,6 +44,10 @@ public:
         return count_;
     }
 
+    Int size() const {
+        return len();
+    }
+
     // xが含まれるかを返します。範囲外はfalseです。O(1)。
     bool contains(Int x) const {
         Int p = offset(x);

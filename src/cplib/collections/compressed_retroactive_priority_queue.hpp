@@ -71,6 +71,10 @@ public:
         return queue.len();
     }
 
+    Int size() const {
+        return len();
+    }
+
     T sum() const {
         return queue.sum();
     }

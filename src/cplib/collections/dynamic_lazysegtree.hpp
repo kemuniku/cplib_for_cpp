@@ -291,6 +291,10 @@ public:
         return length;
     }
 
+    Int size() const {
+        return len();
+    }
+
     // 保持する区間数K（確保したノード数）をO(1)で返します。
     Int node_count() const {
         return nodes;

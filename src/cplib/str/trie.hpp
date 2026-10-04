@@ -80,6 +80,10 @@ public:
         return nodes.empty() ? 0 : nodes[0].subtree;
     }
 
+    Int size() const {
+        return len();
+    }
+
     // sに対応する節点IDを個数が0でも返す。存在しなければ -1。O(|s|)。
     Int findNode(std::string_view s) const {
         if (nodes.empty())

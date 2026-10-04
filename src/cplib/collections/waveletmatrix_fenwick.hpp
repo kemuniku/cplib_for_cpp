@@ -62,6 +62,10 @@ public:
         return weights.size();
     }
 
+    Int size() const {
+        return len();
+    }
+
     Int operator[](Int i) const {
         assert(0 <= i && i < len());
         return weights[i];

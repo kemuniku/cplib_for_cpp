@@ -55,6 +55,10 @@ public:
         return root->value;
     }
 
+    Int size() const {
+        return len();
+    }
+
     Int count(Int x) const {
         assert(x >= 0);
         auto now = root;

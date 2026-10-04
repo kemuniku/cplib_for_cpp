@@ -191,6 +191,10 @@ public:
         return length;
     }
 
+    Int size() const {
+        return len();
+    }
+
     void update(Int p, const S &value) {
         assert(0 <= p && p < length);
         p += lastnode;

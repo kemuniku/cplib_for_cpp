@@ -32,6 +32,10 @@ public:
         return tree.len();
     }
 
+    Int size() const {
+        return len();
+    }
+
     // pをvに置き換えた新しい版を、時間・追加領域O(log N)で返す。
     PSegmentTree update(Int p, T v) const {
         return PSegmentTree(tree.update(p, std::move(v)));

@@ -96,6 +96,10 @@ public:
         return seg.len();
     }
 
+    Int size() const {
+        return len();
+    }
+
     void update(Int p, T value) {
         seg.update(p, init_S(value, inf));
     }

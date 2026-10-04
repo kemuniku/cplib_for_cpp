@@ -55,6 +55,11 @@ public:
         return issame(u, v, last);
     }
 
+    // 構築時の要素数。size(x[, t])は連結成分の要素数。O(1)。
+    Int size() const {
+        return par_or_siz.size();
+    }
+
     Int size(Int x, Int t) const {
         assert(t >= -1);
         x = root(x, t);

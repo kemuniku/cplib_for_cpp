@@ -25,6 +25,11 @@ template <class T, bool Static, bool Directed, bool Weighted> struct BasicGraph 
             edges.resize(n);
     }
 
+    // 頂点数を返す。辺数とは異なる。O(1)。
+    Int size() const {
+        return len;
+    }
+
     void add_edge_dynamic_impl(Int u, Int v, T w, bool directed) {
         edges[u].emplace_back(v, w);
         if (!directed)

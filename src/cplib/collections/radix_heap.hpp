@@ -49,6 +49,10 @@ public:
         return size_;
     }
 
+    Int size() const {
+        return len();
+    }
+
     bool isEmpty() const {
         return size_ == 0;
     }

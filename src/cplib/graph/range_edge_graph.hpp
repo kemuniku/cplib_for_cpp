@@ -88,6 +88,10 @@ public:
         return G.len;
     }
 
+    Int size() const {
+        return len();
+    }
+
     Int original_len() const {
         return n;
     }

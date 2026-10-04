@@ -85,6 +85,10 @@ public:
         return nodes_.empty() ? 0 : nodes_[0].count;
     }
 
+    Int size() const {
+        return len();
+    }
+
     Int count(const T &x) const {
         check(x);
         Int node = 0;
