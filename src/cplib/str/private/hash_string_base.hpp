@@ -181,6 +181,10 @@ template <bool Reverse> struct BasicRollingHash {
         Int len() const {
             return S.size();
         }
+
+        Int size() const {
+            return len();
+        }
     };
 
     std::shared_ptr<Base> R;
@@ -210,6 +214,10 @@ template <bool Reverse> struct BasicRollingHash {
 
     Int len() const {
         return r - l;
+    }
+
+    Int size() const {
+        return len();
     }
 
     char operator[](Int i) const {

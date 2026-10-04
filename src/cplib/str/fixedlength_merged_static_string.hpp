@@ -22,6 +22,10 @@ template <class T, std::size_t N> struct FixedLengthMergedStaticString {
         return detail::merged_length(*this);
     }
 
+    Int size() const {
+        return len();
+    }
+
     T operator[](Int i) const {
         assert(0 <= i && i < len());
         return detail::merged_at(*this, i);

@@ -99,6 +99,10 @@ public:
         return length;
     }
 
+    Int size() const {
+        return len();
+    }
+
     Int node_count() const {
         return nodes;
     }

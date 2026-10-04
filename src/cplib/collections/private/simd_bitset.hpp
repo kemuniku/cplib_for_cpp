@@ -444,6 +444,10 @@ public:
         return size_;
     }
 
+    Int size() const {
+        return len();
+    }
+
     std::span<const UInt> words() const {
         return bits_;
     }

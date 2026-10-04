@@ -130,6 +130,10 @@ public:
         return data.size();
     }
 
+    Int size() const {
+        return len();
+    }
+
     // 現在の文字列が空かを O(1) で返す。
     bool isEmpty() const {
         return data.empty();

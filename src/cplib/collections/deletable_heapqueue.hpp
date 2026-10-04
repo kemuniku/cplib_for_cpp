@@ -56,6 +56,10 @@ public:
     Int len() const {
         return Int(hq.size()) - Int(dlhq.size());
     }
+
+    Int size() const {
+        return len();
+    }
 };
 
 template <class T> auto initDeletableHeapQueue() {

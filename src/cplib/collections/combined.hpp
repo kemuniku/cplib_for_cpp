@@ -226,6 +226,10 @@ public:
         return N;
     }
 
+    static constexpr Int size() {
+        return len();
+    }
+
     bool operator[](Int i) const {
         check(i);
         return (bits_[i >> 6] >> (i & 63)) & 1;

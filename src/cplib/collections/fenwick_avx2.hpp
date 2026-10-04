@@ -4,13 +4,13 @@
 
 namespace cplib {
 class FenwickTreeAvx2 {
-    Int size, height = 0;
+    Int size_, height = 0;
     std::array<Int, 16> offsets{};
     std::vector<Int> data;
 
 public:
     // 16分岐の部分累積和。O(N)構築、約16N/15個の64ビット整数。
-    explicit FenwickTreeAvx2(Int n = 0) : size(n) {
+    explicit FenwickTreeAvx2(Int n = 0) : size_(n) {
         assert(n >= 0);
         Int m = n, total = 0;
         while (true) {
@@ -28,27 +28,31 @@ public:
 
     explicit FenwickTreeAvx2(std::span<const Int> values) : FenwickTreeAvx2(values.size()) {
         std::copy(values.begin(), values.end(), data.begin() + offsets[0]);
-        detail::fenwick_avx2::cplib_fw16_build(data.data(), offsets.data(), height, size);
+        detail::fenwick_avx2::cplib_fw16_build(data.data(), offsets.data(), height, size_);
     }
 
     Int len() const {
-        return size;
+        return size_;
+    }
+
+    Int size() const {
+        return len();
     }
 
     void add(Int p, Int delta) {
-        assert(0 <= p && p < size);
+        assert(0 <= p && p < size_);
         detail::fenwick_avx2::cplib_fw16_add(data.data(), offsets.data(), height, p, delta);
     }
 
     // [0,r)の和をIntとしてO(log_16 n)で返します。
     Int prefix(Int r) const {
-        assert(0 <= r && r <= size);
+        assert(0 <= r && r <= size_);
         return r == 0 ? 0 : detail::fenwick_avx2::cplib_fw16_prefix(data.data(), offsets.data(), r);
     }
 
     // [l,r)の和をIntとしてO(log_16 n)で返します。
     Int get(Int l, Int r) const {
-        assert(0 <= l && l <= r && r <= size);
+        assert(0 <= l && l <= r && r <= size_);
         return l == r ? 0 : detail::fenwick_avx2::cplib_fw16_get(data.data(), offsets.data(), l, r);
     }
 

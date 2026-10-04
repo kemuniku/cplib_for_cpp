@@ -33,6 +33,10 @@ public:
         return size_;
     }
 
+    Int size() const {
+        return len();
+    }
+
     // 一点加算。O(log n)。
     void add(Int p, const T &delta) {
         assert(0 <= p && p < size_);

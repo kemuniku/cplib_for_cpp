@@ -7,14 +7,18 @@ namespace cplib {
 inline constexpr Int WordsizeTreeAvx2Capacity = Int(1) << 24;
 
 class WordsizeTreeAvx2 {
+    Int count_ = 0;
     std::array<std::uint64_t, 1 << 18> leaf_{};
     std::array<std::uint64_t, 1 << 10> middle_{};
     std::array<std::uint64_t, 4> top_{};
 
     void initialize(const void *p, std::size_t n, unsigned char one) {
         assert(n <= std::size_t(WordsizeTreeAvx2Capacity));
-        if (n)
+        if (n) {
             detail::wordsize_avx2::wst_init(p, n, one, leaf_.data(), middle_.data(), top_.data());
+            for (std::size_t i = 0; i < (n + 63) / 64; ++i)
+                count_ += std::popcount(leaf_[i]);
+        }
     }
 
 public:
@@ -37,13 +41,22 @@ public:
         initialize(bytes.data(), bytes.size(), 1);
     }
 
+    // 登録されている要素数。固定容量とは異なる。O(1)。
+    Int size() const {
+        return count_;
+    }
+
     void incl(Int x) {
         assert(0 <= x && x < WordsizeTreeAvx2Capacity);
+        if (!(*this)[x])
+            ++count_;
         detail::wordsize_avx2::wst_incl(leaf_.data(), middle_.data(), top_.data(), x);
     }
 
     void excl(Int x) {
         assert(0 <= x && x < WordsizeTreeAvx2Capacity);
+        if ((*this)[x])
+            --count_;
         detail::wordsize_avx2::wst_excl(leaf_.data(), middle_.data(), top_.data(), x);
     }
 

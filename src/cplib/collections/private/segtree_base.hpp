@@ -34,6 +34,10 @@ public:
         return length;
     }
 
+    Int size() const {
+        return len();
+    }
+
     // xの要素をvalueに変更する。
     void update(Int x, const T &value) {
         assert(0 <= x && x < length);

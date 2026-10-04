@@ -142,6 +142,10 @@ public:
         return length_;
     }
 
+    Int size() const {
+        return len();
+    }
+
     // 半開区間[l,r)のa[i]にb*i+cを加えます。iは配列全体での添字です。O(log² N)。
     void add(Int l, Int r, Int b, Int c) {
         assert(0 <= l && l <= r && r <= length_);

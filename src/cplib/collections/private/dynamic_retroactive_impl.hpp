@@ -555,6 +555,10 @@ public:
         return count_;
     }
 
+    Int size() const {
+        return len();
+    }
+
     T sum() const
         requires(std::is_void_v<S> && std::is_arithmetic_v<T>)
     {

@@ -10,6 +10,10 @@ template <class T> struct Polygon {
         return v.size();
     }
 
+    Int size() const {
+        return len();
+    }
+
     auto begin() const {
         return v.begin();
     }

@@ -14,6 +14,11 @@ public:
         std::iota(next.begin(), next.end(), 0);
     }
 
+    // 構築時の要素数を返す。連結成分数countとは異なる。O(1)。
+    Int size() const {
+        return par_or_siz.size();
+    }
+
     Int root(Int x) {
         return par_or_siz[x] < 0 ? x : par_or_siz[x] = root(par_or_siz[x]);
     }

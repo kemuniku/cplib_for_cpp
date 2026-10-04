@@ -22,6 +22,10 @@ public:
         return arr_.size();
     }
 
+    Int size() const {
+        return len();
+    }
+
     void update(Int i, const T &value) {
         assert(0 <= i && i < len());
         blocks_[i / blocksize_] = blocks_[i / blocksize_] + value - arr_[i];

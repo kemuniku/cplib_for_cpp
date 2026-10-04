@@ -15,6 +15,10 @@ public:
         return online.size();
     }
 
+    Int size() const {
+        return len();
+    }
+
     // 現在までに確定した積の係数を返す。
     std::vector<T> coefficients() const {
         std::vector<T> out(online.size());

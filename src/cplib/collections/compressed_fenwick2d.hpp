@@ -151,6 +151,10 @@ public:
         return pointYs.size();
     }
 
+    Int size() const {
+        return len();
+    }
+
     // 登録点(x,y)にdeltaをO(log² N)で加算します。未登録点は更新できません。
     void add(const K &x, const K &y, const T &delta) {
         Int xi = std::lower_bound(xs.begin(), xs.end(), x) - xs.begin();

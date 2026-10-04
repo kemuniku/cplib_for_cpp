@@ -13,6 +13,11 @@ public:
     explicit WeightedUnionFind(Int n) : par_or_siz(n, -1), potential_diff(n, T(0)), count(n) {
     }
 
+    // 構築時の要素数を返す。連結成分数countとは異なる。O(1)。
+    Int size() const {
+        return par_or_siz.size();
+    }
+
     Int root(Int x) {
         if (par_or_siz[x] < 0)
             return x;

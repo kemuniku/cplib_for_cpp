@@ -27,6 +27,10 @@ template <class T> struct MergedStaticString {
         return detail::merged_length(*this);
     }
 
+    Int size() const {
+        return len();
+    }
+
     // 要素取得の計算量はO(結合数)である点に注意。
     T operator[](Int i) const {
         return detail::merged_at(*this, i);

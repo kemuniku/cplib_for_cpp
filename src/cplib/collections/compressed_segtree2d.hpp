@@ -226,6 +226,10 @@ public:
         return count;
     }
 
+    Int size() const {
+        return len();
+    }
+
     template <class Op> void specialize(Op op) {
         updateImpl = [op](Self &t, K x, K y, T value) { t.updateBody(x, y, value, op); };
         rangeImpl = [op](const Self &t, K xl, K xr, K yl, K yr) {
