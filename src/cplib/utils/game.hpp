@@ -8,6 +8,8 @@
 
 namespace cplib {
 template <class T> using NextStates = std::function<std::vector<T>(T)>;
+template <class T> using TerminalWin = std::function<bool(T)>;
+template <class T> using TerminalWinByTurn = std::function<bool(T, bool)>;
 template <class T> using NextStatesByTurn = std::function<std::vector<T>(T, bool)>;
 
 template <class T> struct OptimalPlay {
@@ -59,12 +61,14 @@ template <class T, class Next, int Mode> class GameSolver {
     struct Engine {
         Next next;
         bool terminal;
+        std::function<bool(const T &, bool)> terminal_win;
         std::function<bool(const T &, const T &)> prefer;
         std::array<std::unordered_map<T, Value>, 2> memo;
         std::array<std::unordered_set<T>, 2> visiting;
 
-        Engine(Next n, bool t, std::function<bool(const T &, const T &)> p)
-            : next(std::move(n)), terminal(t), prefer(std::move(p)) {
+        Engine(Next n, bool t, std::function<bool(const T &, const T &)> p,
+               std::function<bool(const T &, bool)> win)
+            : next(std::move(n)), terminal(t), terminal_win(std::move(win)), prefer(std::move(p)) {
         }
 
         static constexpr bool by_turn = std::is_invocable_v<Next, const T &, bool>;
@@ -83,6 +87,10 @@ template <class T, class Next, int Mode> class GameSolver {
                 else
                     return next(state);
             }();
+            bool terminalResult = terminal;
+            if constexpr (Mode != 0)
+                if (next_states.empty() && terminal_win)
+                    terminalResult = terminal_win(state, first);
             if constexpr (Mode == 0) {
                 std::vector<bool> seen(next_states.size() + 1);
                 for (const auto &s : next_states) {
@@ -96,7 +104,7 @@ template <class T, class Next, int Mode> class GameSolver {
                 cache[state] = value;
                 return value;
             } else if constexpr (Mode == 1) {
-                bool winning = next_states.empty() ? terminal : false;
+                bool winning = next_states.empty() ? terminalResult : false;
                 for (const auto &s : next_states)
                     if (!solve(s, !first)) {
                         winning = true;
@@ -105,7 +113,7 @@ template <class T, class Next, int Mode> class GameSolver {
                 cache[state] = winning;
                 return winning;
             } else {
-                Evaluation result{terminal, 0, state};
+                Evaluation result{terminalResult, 0, state};
                 bool initial = true;
                 for (const auto &s : next_states) {
                     auto child = solve(s, !first);
@@ -128,8 +136,9 @@ template <class T, class Next, int Mode> class GameSolver {
 
 public:
     GameSolver(Next next, bool terminal = false,
-               std::function<bool(const T &, const T &)> prefer = {})
-        : engine_(std::make_shared<Engine>(std::move(next), terminal, std::move(prefer))) {
+               std::function<bool(const T &, const T &)> prefer = {},
+               std::function<bool(const T &, bool)> terminalWin = {})
+        : engine_(std::make_shared<Engine>(std::move(next), terminal, std::move(prefer), std::move(terminalWin))) {
     }
 
     auto operator()(T state) const {
@@ -225,5 +234,56 @@ template <class T, class Next, class Evaluate>
     requires(!std::is_same_v<std::remove_cvref_t<Evaluate>, bool>)
 auto optimal_play(T state, Next next, Evaluate evaluate, bool terminal = false) {
     return init_optimal_play<T>(std::move(next), std::move(evaluate), terminal)(state);
+}
+}
+
+namespace cplib {
+namespace detail {
+template <class State, class Callback> auto gameTerminalCallback(Callback callback) {
+    return [callback = std::move(callback)](const State &state, bool first) {
+        if constexpr (std::is_invocable_v<Callback, const State &, bool>)
+            return callback(state, first);
+        else
+            return callback(state);
+    };
+}
+}
+// 終端状態の勝敗を関数で指定してメモ化判定器を作る。構築 O(1)、新規V状態E遷移の評価は期待 O(V+E)。
+// terminalWinは(state)または(state,is_first)を受け取る。遷移・終端判定の結果は使用中一定であること。
+template <class T = void, class Next, class Callback>
+auto init_can_win(Next next, bool terminal, Callback terminalWin) {
+    using State = typename detail::GameArgument<T, Next>::type;
+    return detail::GameSolver<State, Next, 1>(std::move(next), terminal, {},
+        detail::gameTerminalCallback<State>(std::move(terminalWin)));
+}
+// 終端判定を指定し、新しいメモで勝敗を求める。期待時間 O(V+E)、領域 O(V+E)。
+template <class T, class Next, class Callback>
+bool can_win(T state, Next next, bool terminal, Callback terminalWin) {
+    return init_can_win<T>(std::move(next), terminal, std::move(terminalWin))(state);
+}
+// 終端判定を指定して最適手順の計算器を作る。評価は期待 O(V+E+手順長)、領域 O(V+E)。
+template <class T = void, class Next, class Callback>
+auto init_optimal_play(Next next, bool terminal, Callback terminalWin) {
+    using State = typename detail::GameArgument<T, Next>::type;
+    return detail::GameSolver<State, Next, 2>(std::move(next), terminal, {},
+        detail::gameTerminalCallback<State>(std::move(terminalWin)));
+}
+// 終端判定を指定し、新しいメモで最適手順を求める。期待時間 O(V+E+手順長)、領域 O(V+E)。
+template <class T, class Next, class Callback>
+auto optimal_play(T state, Next next, bool terminal, Callback terminalWin) {
+    return init_optimal_play<T>(std::move(next), terminal, std::move(terminalWin))(state);
+}
+// 評価値と終端判定を指定した最適手順の計算器を作る。評価は期待 O(V+E+手順長)、領域 O(V+E)。
+template <class T = void, class Next, class Evaluate, class Callback>
+auto init_optimal_play(Next next, Evaluate evaluate, bool terminal, Callback terminalWin) {
+    using State = typename detail::GameArgument<T, Next>::type;
+    return detail::GameSolver<State, Next, 2>(std::move(next), terminal,
+        [evaluate = std::move(evaluate)](const State &a, const State &b) { return evaluate(b) < evaluate(a); },
+        detail::gameTerminalCallback<State>(std::move(terminalWin)));
+}
+// 評価値と終端判定を指定し、新しいメモで最適手順を求める。期待時間 O(V+E+手順長)、領域 O(V+E)。
+template <class T, class Next, class Evaluate, class Callback>
+auto optimal_play(T state, Next next, Evaluate evaluate, bool terminal, Callback terminalWin) {
+    return init_optimal_play<T>(std::move(next), std::move(evaluate), terminal, std::move(terminalWin))(state);
 }
 }

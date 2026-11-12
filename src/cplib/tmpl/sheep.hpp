@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bits/stdc++.h>
+#include <cplib/tmpl/fastio.hpp>
 
 namespace cplib {
 using namespace std;
@@ -117,6 +118,15 @@ inline Nyan nyan;
         sort(all(a));                                                                              \
         (a).erase(unique(all(a)), (a).end());                                                      \
     }
+
+// 整数範囲に対する写像・絞り込みを公開する。時間は範囲長と各コールバックの費用に比例する。
+using detail::template_support::mapIt;
+using detail::template_support::filterIt;
+
+// 真ならYes、偽ならNoを出力する。計算量 O(1) と出力費用。
+inline void yes(bool value = true) {
+    print(value ? "Yes" : "No");
+}
 
 // ★★ Yes, No なくても困らない
 // 真ならYes、偽ならNoを出力し0を返す。O(1) と出力費用。

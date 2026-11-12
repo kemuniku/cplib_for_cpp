@@ -73,7 +73,7 @@ inline void cplib_fio_initialize(cplib_fio_InputState *state) {
         return;
     state->initialized = true;
 
-#if defined(CPLIB_FASTIO_MMAP) && !defined(CPLIB_FASTIO_NO_MMAP)
+#if defined(CPLIB_FASTIO_MMAP) && !defined(CPLIB_FASTIO_NO_MMAP) && !defined(CPLIB_FASTIO_INTERACTIVE)
     struct stat st;
     const int fd = fileno(stdin);
     if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) && st.st_size > 0) {
@@ -88,7 +88,15 @@ inline void cplib_fio_initialize(cplib_fio_InputState *state) {
 }
 
 inline bool cplib_fio_refill(cplib_fio_InputState *state) {
+#ifdef CPLIB_FASTIO_INTERACTIVE
+    // 相手の次の応答を先読みして待たないよう、一文字ずつ要求する。
+    const int value = getchar_unlocked();
+    state->length = value == EOF ? 0 : 1;
+    if (value != EOF)
+        state->buffer[0] = char(value);
+#else
     state->length = fread_unlocked(state->buffer, 1, cplib_fio_buffer_size, stdin);
+#endif
     state->cursor = 0;
     return state->length != 0;
 }
@@ -643,7 +651,11 @@ inline char cplib_fio_stdout_buffer[1U << 16] __attribute__((aligned(64)));
 
 inline void cplib_fio_init_stdout(void) {
     // 標準出力のバッファを初期化します。O(1)。
+#ifdef CPLIB_FASTIO_INTERACTIVE
+    setvbuf(stdout, nullptr, _IONBF, 0);
+#else
     setvbuf(stdout, cplib_fio_stdout_buffer, _IOFBF, sizeof(cplib_fio_stdout_buffer));
+#endif
 }
 
 typedef struct {

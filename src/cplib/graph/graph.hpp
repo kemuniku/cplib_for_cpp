@@ -154,6 +154,11 @@ public:
         return edge_info.size();
     }
 
+    // 頂点vの次数（有向は出次数）を返す。無向の自己ループは2と数える。計算量 O(1)。
+    Int degree(Int v) const {
+        return adjacency(v).size();
+    }
+
     // 辺番号から追加時の向きで、重みなしは (src, dst)、重みありは (src, dst, cost) を返す。O(1)。
     auto get_edge(Int id) const {
         auto e = edge_info[id];
@@ -418,5 +423,12 @@ template <class G, class V> auto to_and_cost(const G &g, const V &v) {
 // 隣接頂点、重み、辺番号のビューを返す。取得は期待O(1)、走査O(deg(v))。
 template <class G, class V> auto to_and_cost_and_id(const G &g, const V &v) {
     return g.to_and_cost_and_id(v);
+}
+}
+
+namespace cplib {
+// 頂点vの次数（有向は出次数）を返す。計算量 O(1)。
+template <GraphTypes G> Int degree(const G &g, Int v) {
+    return g.degree(v);
 }
 }

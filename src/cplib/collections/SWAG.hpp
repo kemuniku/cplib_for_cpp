@@ -77,6 +77,11 @@ template <class Op, class T> SWAG<T> initSWAG(Op op, T e) {
     return SWAG<T>(op, e);
 }
 
+// 演算と単位元から空のSWAGを作る。計算量 O(1)。
+template <class Op, class T> auto newSwagWith(Op op, T e) {
+    return initSWAG(op, e);
+}
+
 // 先頭に追加する。償却O(1)回のモノイド演算。
 template <class T> void addFirst(SWAG<T> &s, const T &x) {
     s.addFirst(x);

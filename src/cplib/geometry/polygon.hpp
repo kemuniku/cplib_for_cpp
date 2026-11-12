@@ -87,9 +87,15 @@ template <class T> bool is_convex(const Polygon<T> &p, bool strict = true) {
 // 点 p が多角形 poly の辺上にあるかどうかを判定する。頂点数をNとして計算量 O(N)。
 // 隣り合う頂点は異なること。
 template <class T> bool on_edge(const Polygon<T> &poly, Point<T> p) {
-    for (Int i = 0; i < poly.len(); ++i)
-        if (ccw(poly.v[i], poly.v[(i + 1) % poly.len()], p) == ON_SEGMENT)
+    for (Int i = 0; i < poly.size(); ++i) {
+        auto a = poly.v[i], b = poly.v[(i + 1) % poly.size()];
+        if (exact_equal(a, b) || a == b) {
+            if (p == a || p == b)
+                return true;
+        } else if (ccw(a, b, p) == ON_SEGMENT) {
             return true;
+        }
+    }
     return false;
 }
 
@@ -109,32 +115,44 @@ template <class T> bool contains(const Polygon<T> &poly, Point<T> p, bool strict
     return out;
 }
 
-// 単調鎖法で凸包を返す。元実装どおり小入力の順序と、最後に先頭要素を消す出力順を保持。O(N log N)。
-// N>=3の場合は重複点を含まないこと。
+// 辞書順最小点から反時計回りの凸包を返す。EPSを使わず重複点を除く。時間 O(N log N)、領域 O(N)。
+// strict=falseは辺上の点も残す。全点共線ならstrict時は両端、それ以外は各点を一度返す。
 template <class T> Polygon<T> convex_hull(std::span<const Point<T>> v, bool strict = true) {
-    Int n = v.size();
-    if (n < 3)
-        return {{v.begin(), v.end()}};
-    std::vector<Point<T>> s(v.begin(), v.end());
-    std::stable_sort(s.begin(), s.end());
-    std::vector<Point<T>> vi = {s[0], s[1]};
-    for (Int i = 2; i < n; ++i) {
-        while (vi.size() >= 2 &&
-               (strict ? ccw(vi[vi.size() - 2], vi.back(), s[i]) != COUNTER_CLOCKWISE
-                       : ccw(vi[vi.size() - 2], vi.back(), s[i]) == CLOCKWISE))
-            vi.pop_back();
-        vi.push_back(s[i]);
+    std::vector<Point<T>> points(v.begin(), v.end());
+    std::sort(points.begin(), points.end());
+    points.erase(std::unique(points.begin(), points.end(), [](auto a, auto b) {
+        return exact_equal(a, b);
+    }), points.end());
+    if (points.size() <= 2)
+        return {std::move(points)};
+    const T zero = T(0);
+    bool collinear = true;
+    for (std::size_t i = 1; i + 1 < points.size(); ++i)
+        if (cross(points.back() - points.front(), points[i] - points.front()) != zero)
+            collinear = false;
+    if (collinear) {
+        if (strict)
+            return {{points.front(), points.back()}};
+        return {std::move(points)};
     }
-    std::size_t lower = vi.size();
-    for (Int i = n - 2; i >= 0; --i) {
-        while (vi.size() > lower &&
-               (strict ? ccw(vi[vi.size() - 2], vi.back(), s[i]) != COUNTER_CLOCKWISE
-                       : ccw(vi[vi.size() - 2], vi.back(), s[i]) == CLOCKWISE))
-            vi.pop_back();
-        vi.push_back(s[i]);
-    }
-    vi.erase(vi.begin());
-    return {std::move(vi)};
+    std::vector<Point<T>> lower, upper;
+    auto append = [&](auto &chain, Point<T> p) {
+        while (chain.size() >= 2) {
+            T turn = cross(chain.back() - chain[chain.size() - 2], p - chain[chain.size() - 2]);
+            if (strict ? turn > zero : turn >= zero)
+                break;
+            chain.pop_back();
+        }
+        chain.push_back(p);
+    };
+    for (auto p : points)
+        append(lower, p);
+    for (auto it = points.rbegin(); it != points.rend(); ++it)
+        append(upper, *it);
+    lower.pop_back();
+    upper.pop_back();
+    lower.insert(lower.end(), upper.begin(), upper.end());
+    return {std::move(lower)};
 }
 
 // N個の点の凸包を返す。計算量 O(N log N)。

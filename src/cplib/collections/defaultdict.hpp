@@ -31,6 +31,12 @@ public:
         : table(std::move(table)), defaultValue(std::move(value)) {
     }
 
+    // キーを挿入せず登録値または既定値を返す。期待 O(1)、最悪 O(N) と値のコピー費用。
+    V get(const K &key) const {
+        auto it = table.find(key);
+        return it == table.end() ? defaultValue : it->second;
+    }
+
     // constでの参照は挿入せず、非constでは既定値を挿入する。期待O(1)。
     V operator[](const K &key) const {
         auto it = table.find(key);

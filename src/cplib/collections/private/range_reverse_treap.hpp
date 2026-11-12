@@ -189,7 +189,7 @@ template <class S, class F, bool Aggregate, bool Lazy> class RangeReverseTreap {
     }
 
     Ptr insert_node(Ptr root, Ptr node, Int k)
-        requires(Aggregate && !Lazy)
+        requires(!Lazy)
     {
         if (!root)
             return node;
@@ -209,7 +209,7 @@ template <class S, class F, bool Aggregate, bool Lazy> class RangeReverseTreap {
     }
 
     Ptr erase_node(Ptr node, Int k)
-        requires(Aggregate && !Lazy)
+        requires(!Lazy)
     {
         push(node);
         Int left = size(node->left);
@@ -462,10 +462,50 @@ public:
         return (*this)[length_ - i.value];
     }
 
+    // 先頭k要素で分割し、元の列を空にする。期待時間 O(log(N+1))。
+    auto split(Int k) {
+        check_range(0, k);
+        RangeReverseTreap left(std::vector<S>{}, op_, identity_, mapping_, composition_, id_);
+        RangeReverseTreap right(std::vector<S>{}, op_, identity_, mapping_, composition_, id_);
+        auto roots = split(root_, k);
+        left.root_ = std::move(roots.first);
+        right.root_ = std::move(roots.second);
+        left.length_ = k;
+        right.length_ = length_ - k;
+        root_.reset();
+        length_ = 0;
+        return std::pair{std::move(left), std::move(right)};
+    }
+    // 同じ演算・作用の列を結合し、両方を空にする。期待時間 O(log(N+1))。
+    static RangeReverseTreap merge(RangeReverseTreap &left, RangeReverseTreap &right) {
+        assert(&left != &right);
+        RangeReverseTreap result(std::vector<S>{}, left.op_, left.identity_, left.mapping_, left.composition_, left.id_);
+        result.root_ = result.merge(left.root_, right.root_);
+        result.length_ = left.length_ + right.length_;
+        left.root_.reset();
+        right.root_.reset();
+        left.length_ = right.length_ = 0;
+        return result;
+    }
+    // 昇順の列で同値の末尾に挿入して位置を返す。期待時間 O(log(N+1))。
+    template <class Less = std::less<S>> Int insort(const S &value, Less less = {}) {
+        Int index = 0;
+        auto node = root_;
+        while (node) {
+            push(node);
+            if (less(value, node->value)) {
+                node = node->left;
+            } else {
+                index += size(node->left) + 1;
+                node = node->right;
+            }
+        }
+        insert(index, value);
+        return index;
+    }
     // indexの直前にvalueを挿入します。index=len()なら末尾です。期待O(log N)。
     // 遅延版では挿入前の区間更新は新しい要素には作用しません。
     void insert(Int index, const S &value)
-        requires(Aggregate || Lazy)
     {
         assert(0 <= index && index <= length_);
         auto node = make_node(value);
@@ -480,7 +520,6 @@ public:
 
     // index番目の要素を削除する。要素数をnとして期待O(log(n+1))。
     void erase(Int index)
-        requires(Aggregate || Lazy)
     {
         assert(0 <= index && index < length_);
         if constexpr (!Lazy) {
@@ -493,7 +532,6 @@ public:
     // 半開区間 [l, r) を削除する。木の操作は期待 O(log N)。
     // 削除した K 個のノードの解放には別途 O(K) かかりうる。
     void erase(Int l, Int r)
-        requires(Aggregate || Lazy)
     {
         check_range(l, r);
         if (l == r)
@@ -507,7 +545,6 @@ public:
     // 両端を含む区間を削除する。要素数n、削除数kとして期待O(log(n+1)+k)。
     template <class L, class R>
     void erase(ClosedSlice<L, R> range)
-        requires(Aggregate || Lazy)
     {
         erase(resolve_index(length_, range.a), resolve_index(length_, range.b) + 1);
     }
@@ -760,6 +797,18 @@ CPLIB_REVERSE_TEMPLATE Int len(const CPLIB_REVERSE_TYPE &tree) {
     return tree.len();
 }
 
+// 先頭k要素で分割して元を空にする。期待時間 O(log(N+1))。
+CPLIB_REVERSE_TEMPLATE auto split(CPLIB_REVERSE_TYPE &tree, Int k) {
+    return tree.split(k);
+}
+// 同じ演算・作用の列を結合して両方を空にする。期待時間 O(log(N+1))。
+CPLIB_REVERSE_TEMPLATE auto merge(CPLIB_REVERSE_TYPE &left, CPLIB_REVERSE_TYPE &right) {
+    return CPLIB_REVERSE_TYPE::merge(left, right);
+}
+// 昇順の列へ同値の末尾に挿入し位置を返す。期待時間 O(log(N+1))。
+CPLIB_REVERSE_TEMPLATE Int insort(CPLIB_REVERSE_TYPE &tree, const S &value) {
+    return tree.insort(value);
+}
 // 半開区間[l,r)を反転する。要素数nとして期待O(log(n+1))。
 CPLIB_REVERSE_TEMPLATE void reverse(CPLIB_REVERSE_TYPE &tree, Int l, Int r) {
     tree.reverse(l, r);
@@ -798,21 +847,18 @@ CPLIB_REVERSE_TEMPLATE void update(CPLIB_REVERSE_TYPE &tree, Int i, const S &val
 
 // i番目の直前に値を挿入する。要素数nとして期待O(log(n+1))。
 CPLIB_REVERSE_TEMPLATE void insert(CPLIB_REVERSE_TYPE &tree, Int i, const S &value)
-    requires(A || L)
 {
     tree.insert(i, value);
 }
 
 // i番目を削除する。要素数nとして期待O(log(n+1))。
 CPLIB_REVERSE_TEMPLATE void erase(CPLIB_REVERSE_TYPE &tree, Int i)
-    requires(A || L)
 {
     tree.erase(i);
 }
 
 // 半開区間[l,r)を削除する。要素数n、削除数kとして期待O(log(n+1)+k)。
 CPLIB_REVERSE_TEMPLATE void erase(CPLIB_REVERSE_TYPE &tree, Int l, Int r)
-    requires(A || L)
 {
     tree.erase(l, r);
 }
@@ -820,7 +866,6 @@ CPLIB_REVERSE_TEMPLATE void erase(CPLIB_REVERSE_TYPE &tree, Int l, Int r)
 // 両端を含む区間を削除する。要素数nとして期待O(log(n+1)+k)、kは削除数。
 template <class S, class F, bool A, bool L, class I, class J>
 void erase(CPLIB_REVERSE_TYPE &tree, ClosedSlice<I, J> range)
-    requires(A || L)
 {
     tree.erase(range);
 }

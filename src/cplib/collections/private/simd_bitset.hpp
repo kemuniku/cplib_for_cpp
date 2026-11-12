@@ -1041,6 +1041,16 @@ public:
                      : 0;
     }
 
+    // 符号なし整数としてx+yを確保済みの自身へ書き込む。自身と入力の同一領域も許す。
+    // 全て同じビット長nが必要。上位の桁あふれを捨てる。時間 O(1+n/64)、追加領域 O(1)。
+    void addInto(const SimdBitSet &x, const SimdBitSet &y) requires (Width == 512) {
+        same(x);
+        same(y);
+        if (size_) {
+            Kernel::avxAdd(bits_.data(), x.bits_.data(), y.bits_.data(), bits_.size());
+            trim();
+        }
+    }
     // ビット列を符号なし整数として加算し、長さを超える桁を捨てた結果を返す。長さnとしてO(1+n/64)。
     SimdBitSet operator+(const SimdBitSet &y) const
         requires(Width == 512)
@@ -1416,4 +1426,12 @@ struct SimdBitSetAccess {
         x.trim();
     }
 };
+}
+
+namespace cplib {
+// 確保済みのdstに固定長整数の和を書き込む。入力との同一領域も許す。時間 O(1+n/64)、追加領域 O(1)。
+template <Int N>
+void addInto(SimdBitSet<512, N> &dst, const SimdBitSet<512, N> &x, const SimdBitSet<512, N> &y) {
+    dst.addInto(x, y);
+}
 }

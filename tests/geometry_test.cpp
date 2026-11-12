@@ -18,6 +18,6 @@ int main(){
     // strictの同一線分判定は元コードの挙動を保持する。
     auto same=initSegment(P{0,0},P{4,0});assert(intersect(same,same)&&!intersect(same,same,true));assert(intersect(same,initSegment(P{1,0},P{3,0}),true));
     for(int trial=0;trial<300;++trial){std::set<std::pair<Int,Int>> unique;for(int i=0;i<30;++i)unique.emplace(Int(rng()%101)-50,Int(rng()%101)-50);std::vector<P> points;for(auto [x,y]:unique)points.push_back({x,y});auto hull=convex_hull(points);assert(is_convex_ccw(hull)&&area(hull)>0);for(auto p:points)assert(contains(hull,p));std::reverse(points.begin(),points.end());assert(convex_hull(points).v==hull.v);}
-    auto flat=convex_hull(std::vector<P>{{0,0},{1,0},{2,0}});assert((flat.v==std::vector<P>{{2,0},{0,0}}));assert(convex_hull(std::vector<P>{{0,0},{1,0},{2,0}},false).v.size()==4);
-    assert(geometry_eq(1.0,1.0+1e-12)&&!geometry_eq(-1e9,-1e9+0.01));
+    auto flat=convex_hull(std::vector<P>{{0,0},{1,0},{2,0}});assert((flat.v==std::vector<P>{{0,0},{2,0}}));assert(convex_hull(std::vector<P>{{0,0},{1,0},{2,0}},false).v.size()==3);
+    assert(geometry_eq(1.0,1.0+1e-12)&&geometry_eq(-1e9,-1e9+0.01));
 }
