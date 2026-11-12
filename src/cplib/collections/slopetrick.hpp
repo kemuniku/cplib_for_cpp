@@ -24,32 +24,38 @@ class SlopeTrick {
     }
 
 public:
+    // O(1)。
     // 定数関数f(x)=aで初期化する。
     explicit SlopeTrick(Int a = 0) : minimum_(a) {
         clearL();
         clearR();
     }
 
+    // 保持する折れ点数をnとしてO(n)。
     // f(x)をmin_{y>=x} f(y)に置き換える。
     void clearL() {
         left_.clear();
         push(left_, INF64 + left_add_);
     }
 
+    // 保持する折れ点数をnとしてO(n)。
     // f(x)をmin_{y<=x} f(y)に置き換える。
     void clearR() {
         right_.clear();
         push(right_, INF64 - right_add_);
     }
 
+    // 関数の最小値を返す。O(1)。
     Int min() const {
         return minimum_;
     }
 
+    // 関数全体に定数aを加算する。O(1)。
     void add_all(Int a) {
         minimum_ += a;
     }
 
+    // 折れ点数をnとして償却O(log(n+1))。
     // f(x)にmax(x-a,0)を加算します。
     void add_x_minus_a(Int a) {
         minimum_ += std::max(-left_.front() + left_add_ - a, Int(0));
@@ -57,6 +63,7 @@ public:
         push(right_, x - right_add_);
     }
 
+    // 折れ点数をnとして償却O(log(n+1))。
     // f(x)にmax(a-x,0)を加算します。
     void add_a_minus_x(Int a) {
         minimum_ += std::max(a - right_.front() - right_add_, Int(0));
@@ -64,24 +71,29 @@ public:
         push(left_, -x + left_add_);
     }
 
+    // f(x)に|x-a|を加算する。折れ点数をnとして償却O(log(n+1))。
     void add_abs(Int a) {
         add_x_minus_a(a);
         add_a_minus_x(a);
     }
 
+    // 最小値をとる区間の左端を返す。左に無限の場合は番兵値。O(1)。
     Int min_index() const {
         return -left_.front() + left_add_;
     }
 
+    // f(x)をf(x-a)に平行移動する。O(1)。
     void shift(Int a) {
         shift(a, a);
     }
 
+    // f(x)をmin_{x-b≤y≤x-a} f(y)に変える。a≤bが必要。O(1)。
     void shift(Int a, Int b) {
         left_add_ += a;
         right_add_ += b;
     }
 
+    // xでの関数値を返す。保持する折れ点数をnとしてO(n)。
     Int get_value(Int x) const {
         Int result = minimum_;
         for (Int y : left_)
@@ -92,6 +104,7 @@ public:
     }
 };
 
+// 定数関数f(x)=aから構築する。O(1)。
 inline SlopeTrick initSlopeTrick(Int a) {
     return SlopeTrick(a);
 }

@@ -68,10 +68,12 @@ template <> struct ReverseHashField<true> {
 }
 
 namespace cplib {
+// 文字列の長さとハッシュを保持する。ハッシュの衝突により異なる文字列を等しいと判定する可能性がある。
 template <bool Reverse> struct BasicHashString : detail::ReverseHashField<Reverse> {
     UInt hash = 0, bpow = 1;
     Int size = 0;
 
+    // 1要素からハッシュを作る。計算量 O(1)。
     static BasicHashString character(Int s) {
         if constexpr (Reverse)
             assert(0 <= s && UInt(s) < detail::hash_string_mod);
@@ -84,6 +86,7 @@ template <bool Reverse> struct BasicHashString : detail::ReverseHashField<Revers
         return out;
     }
 
+    // 長さNの列からハッシュを作る。計算量 O(N+1)。
     template <class Range> static BasicHashString sequence(const Range &s) {
         BasicHashString out;
         UInt tmp = 1;
@@ -108,10 +111,12 @@ template <bool Reverse> struct BasicHashString : detail::ReverseHashField<Revers
         return out;
     }
 
+    // 列の長さを返す。計算量 O(1)。
     Int len() const {
         return size;
     }
 
+    // 2つのハッシュを結合する。計算量 O(1)。
     friend BasicHashString operator&(const BasicHashString &l, const BasicHashString &r) {
         BasicHashString out;
         out.hash = detail::hash_string_modulo(
@@ -124,10 +129,12 @@ template <bool Reverse> struct BasicHashString : detail::ReverseHashField<Revers
         return out;
     }
 
+    // 長さとハッシュが等しいか判定する。計算量 O(1)。
     bool operator==(const BasicHashString &r) const {
         return size == r.size && hash == r.hash;
     }
 
+    // 同じ列をx回繰り返したハッシュを返す。計算量 O(log(x+1))。
     BasicHashString operator*(Int x) const {
         BasicHashString out, tmp = *this;
         Int total = size * x;
@@ -142,6 +149,7 @@ template <bool Reverse> struct BasicHashString : detail::ReverseHashField<Revers
         return out;
     }
 
+    // 指定した接頭辞のハッシュを取り除く。残り長が表の範囲内なら O(1)、範囲外は O(log(残り長+1))。
     BasicHashString removePrefix(const BasicHashString &prefix) const
         requires(!Reverse)
     {
@@ -156,12 +164,14 @@ template <bool Reverse> struct BasicHashString : detail::ReverseHashField<Revers
         return out;
     }
 
+    // 正逆のハッシュを比べて回文か判定する。計算量 O(1)。
     bool isPalindrome() const
         requires Reverse
     {
         return hash == this->rhash;
     }
 
+    // 反転した列のハッシュを返す。計算量 O(1)。
     BasicHashString reversed() const
         requires Reverse
     {
@@ -178,10 +188,12 @@ template <bool Reverse> struct BasicRollingHash {
         std::string S;
         std::vector<UInt> prefixs, rprefixs;
 
+        // 基底文字列の長さを返す。計算量 O(1)。
         Int len() const {
             return S.size();
         }
 
+        // 基底文字列の長さを返す。計算量 O(1)。
         Int size() const {
             return len();
         }
@@ -189,8 +201,10 @@ template <bool Reverse> struct BasicRollingHash {
 
     std::shared_ptr<Base> R;
     Int l = 0, r = 0;
+    // 空のハンドルを作る。計算量 O(1)。
     BasicRollingHash() = default;
 
+    // 長さNの文字列をコピーして累積ハッシュを作る。計算量 O(N+1)。
     explicit BasicRollingHash(std::string_view s) : R(std::make_shared<Base>()), r(s.size()) {
         R->S = s;
         R->prefixs.resize(s.size() + 1);
@@ -212,24 +226,28 @@ template <bool Reverse> struct BasicRollingHash {
         }
     }
 
+    // ビューの長さを返す。計算量 O(1)。
     Int len() const {
         return r - l;
     }
 
+    // ビューの長さを返す。計算量 O(1)。
     Int size() const {
         return len();
     }
 
+    // i番目の文字を返す。計算量 O(1)。
     char operator[](Int i) const {
         assert(0 <= i && i < len());
         return R->S[l + i];
     }
 
+    // 末尾基準の添字で文字を返す。計算量 O(1)。
     char operator[](BackwardsIndex i) const {
         return (*this)[len() - i.value];
     }
 
-    // 半開区間[a,b)の部分文字列を返す。空区間は返り値のl = r = 0へ正規化する。
+    // 半開区間[a,b)の部分文字列を返す。空区間は返り値のl = r = 0へ正規化する。計算量 O(1)。
     BasicRollingHash substr(Int a, Int b) const {
         assert(0 <= a && a <= b && b <= len());
         auto out = *this;
@@ -242,10 +260,12 @@ template <bool Reverse> struct BasicRollingHash {
         return out;
     }
 
+    // 両端を含む区間のビューを返す。計算量 O(1)。
     template <class A, class B> auto operator[](ClosedSlice<A, B> s) const {
         return substr(resolve_index(len(), s.a), resolve_index(len(), s.b) + 1);
     }
 
+    // 半開区間のハッシュを返す。長さが累乗表の範囲内なら O(1)、範囲外は O(log(長さ+1))。
     UInt gethash(Int a, Int b) const {
         return detail::hash_string_modulo(
             R->prefixs[l + b] + detail::hash_string_mod -
@@ -253,6 +273,7 @@ template <bool Reverse> struct BasicRollingHash {
                 R->prefixs[l + a], detail::hash_string_config<Reverse>.power(b - a))));
     }
 
+    // ビューのハッシュを作る。長さと開始位置が累乗表の範囲内なら O(1)、範囲外は O(log(基底長+1))。
     operator Hash() const {
         Hash out;
         out.hash = gethash(0, len());
@@ -266,18 +287,22 @@ template <bool Reverse> struct BasicRollingHash {
         return out;
     }
 
+    // 2つのビューの長さとハッシュが等しいか判定する。計算量はgethashの2回分。
     bool operator==(const BasicRollingHash &t) const {
         return len() == t.len() && gethash(0, len()) == t.gethash(0, t.len());
     }
 
+    // ビューの文字列をコピーする。長さNとして O(N+1)。
     std::string to_string() const {
         return R->S.substr(l, len());
     }
 
+    // 2つのビューのハッシュを結合する。計算量は各ビューのHash変換と O(1)。
     friend Hash operator&(const BasicRollingHash &a, const BasicRollingHash &b) {
         return Hash(a) & Hash(b);
     }
 
+    // 正逆のハッシュを比べて回文か判定する。計算量はHash変換と同じ。
     bool isPalindrome() const
         requires Reverse
     {
@@ -285,18 +310,22 @@ template <bool Reverse> struct BasicRollingHash {
     }
 };
 
+// ハッシュの表す列の長さを返す。計算量 O(1)。
 template <bool R> Int len(const BasicHashString<R> &s) {
     return s.len();
 }
 
+// ビューの長さを返す。計算量 O(1)。
 template <bool R> Int len(const BasicRollingHash<R> &s) {
     return s.len();
 }
 
+// ビューのハッシュを作る。計算量はHash変換と同じ。
 template <bool R> auto toHashString(const BasicRollingHash<R> &s) {
     return BasicHashString<R>(s);
 }
 
+// ハッシュを二分探索して最長共通接頭辞長を返す。短い方の長さNとして表内は O(log(N+1))、表外は O(log²(N+1))。
 template <bool R> Int LCP(const BasicRollingHash<R> &s, const BasicRollingHash<R> &t) {
     Int ok = 0, ng = std::min(s.len(), t.len()) + 1;
     while (ng - ok > 1) {
@@ -309,6 +338,7 @@ template <bool R> Int LCP(const BasicRollingHash<R> &s, const BasicRollingHash<R
     return ok;
 }
 
+// ハッシュを用いて辞書順に比較する。計算量はLCPと同じ。
 template <bool R> int cmp(const BasicRollingHash<R> &s, const BasicRollingHash<R> &t) {
     Int n = LCP(s, t);
     if (n == std::min(s.len(), t.len()))
@@ -316,30 +346,37 @@ template <bool R> int cmp(const BasicRollingHash<R> &s, const BasicRollingHash<R
     return static_cast<unsigned char>(s[n]) < static_cast<unsigned char>(t[n]) ? -1 : 1;
 }
 
+// ハッシュを用いて辞書順に比較する。計算量はLCPと同じ。
 template <bool R> bool operator<(const BasicRollingHash<R> &s, const BasicRollingHash<R> &t) {
     return cmp(s, t) < 0;
 }
 
+// ビューの文字列をコピーする。長さNとして O(N+1)。
 template <bool R> std::string to_string(const BasicRollingHash<R> &s) {
     return s.to_string();
 }
 
+// 接頭辞のハッシュを取り除く。計算量はBasicHashString::removePrefixと同じ。
 inline auto removePrefix(const BasicHashString<false> &s, const BasicHashString<false> &p) {
     return s.removePrefix(p);
 }
 
+// 正逆ハッシュを比べて回文か判定する。計算量 O(1)。
 inline bool isPalindrome(const BasicHashString<true> &s) {
     return s.isPalindrome();
 }
 
+// 反転した列のハッシュを返す。計算量 O(1)。
 inline auto reversed(const BasicHashString<true> &s) {
     return s.reversed();
 }
 
+// 正逆ハッシュを比べて回文か判定する。計算量はHash変換と同じ。
 inline bool isPalindrome(const BasicRollingHash<true> &s) {
     return s.isPalindrome();
 }
 
+// 反転した列のハッシュを返す。計算量はHash変換と同じ。
 inline auto reversed(const BasicRollingHash<true> &s) {
     return BasicHashString<true>(s).reversed();
 }

@@ -4,7 +4,7 @@
 #include <memory>
 
 namespace cplib {
-// f を x^n で打ち切る。返り値の長さは max(n, 0) になる。
+// f を x^n で打ち切る。返り値の長さは max(n, 0)。計算量 O(max(n, 0))。
 template <class T> std::vector<T> prefix(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return {};
@@ -13,18 +13,19 @@ template <class T> std::vector<T> prefix(const std::vector<T> &f, Int n) {
     return out;
 }
 
-// 指定した次数の係数を返す。範囲外なら零を返す。
+// 指定した次数の係数を返す。範囲外なら零を返す。計算量 O(1)。
 template <Modint T> T coefficient(const std::vector<T> &f, Int degree) {
     return degree < 0 || degree >= Int(f.size()) ? T(0) : f[degree];
 }
 
-// 高次側の不要な零係数を取り除く。
+// 高次側の不要な零係数を取り除く。計算量 O(f.size())。
 template <Modint T> std::vector<T> normalized(std::vector<T> f) {
     while (!f.empty() && f.back().val() == 0)
         f.pop_back();
     return f;
 }
 
+// 二つの級数の和を返す。計算量 O(max(f.size(), g.size()))。
 template <Modint T> std::vector<T> operator+(const std::vector<T> &f, const std::vector<T> &g) {
     auto out = prefix(f, std::max(f.size(), g.size()));
     for (std::size_t i = 0; i < g.size(); ++i)
@@ -32,6 +33,7 @@ template <Modint T> std::vector<T> operator+(const std::vector<T> &f, const std:
     return out;
 }
 
+// 定数項に整数 c を加えた級数を返す。計算量 O(f.size())。
 template <Modint T, std::integral I> std::vector<T> operator+(std::vector<T> f, I c) {
     if (f.empty())
         f.push_back(T(c));
@@ -40,10 +42,12 @@ template <Modint T, std::integral I> std::vector<T> operator+(std::vector<T> f, 
     return f;
 }
 
+// 整数 c と級数の和を返す。計算量 O(f.size())。
 template <Modint T, std::integral I> auto operator+(I c, const std::vector<T> &f) {
     return f + c;
 }
 
+// 二つの級数の差を返す。計算量 O(max(f.size(), g.size()))。
 template <Modint T> std::vector<T> operator-(const std::vector<T> &f, const std::vector<T> &g) {
     auto out = prefix(f, std::max(f.size(), g.size()));
     for (std::size_t i = 0; i < g.size(); ++i)
@@ -51,30 +55,36 @@ template <Modint T> std::vector<T> operator-(const std::vector<T> &f, const std:
     return out;
 }
 
+// 各係数を符号反転した級数を返す。計算量 O(f.size())。
 template <Modint T> std::vector<T> operator-(std::vector<T> f) {
     for (auto &x : f)
         x = -x;
     return f;
 }
 
+// 二つの級数の畳み込みを返す。計算量は convolution と同じ。
 template <Modint T> auto operator*(const std::vector<T> &f, const std::vector<T> &g) {
     return convolution(f, g);
 }
 
+// 各係数に c を掛けた級数を返す。計算量 O(f.size())。
 template <Modint T> std::vector<T> operator*(std::vector<T> f, std::type_identity_t<T> c) {
     for (auto &x : f)
         x *= c;
     return f;
 }
 
+// 各係数に c を掛けた級数を返す。計算量 O(f.size())。
 template <Modint T> auto operator*(std::type_identity_t<T> c, const std::vector<T> &f) {
     return f * c;
 }
 
+// 各係数を c で割る。計算量 O(f.size() + log mod)。
 template <Modint T> auto operator/(const std::vector<T> &f, std::type_identity_t<T> c) {
     return f * c.inv();
 }
 
+// f に g を加算する。計算量 O(max(f.size(), g.size()))。
 template <Modint T> auto &operator+=(std::vector<T> &f, const std::vector<T> &g) {
     if (f.size() < g.size())
         f.resize(g.size());
@@ -83,6 +93,7 @@ template <Modint T> auto &operator+=(std::vector<T> &f, const std::vector<T> &g)
     return f;
 }
 
+// f の定数項に整数 c を加算する。計算量 O(1)。
 template <Modint T, std::integral I> auto &operator+=(std::vector<T> &f, I c) {
     if (f.empty())
         f.push_back(T(c));
@@ -91,6 +102,7 @@ template <Modint T, std::integral I> auto &operator+=(std::vector<T> &f, I c) {
     return f;
 }
 
+// f から g を減算する。計算量 O(max(f.size(), g.size()))。
 template <Modint T> auto &operator-=(std::vector<T> &f, const std::vector<T> &g) {
     if (f.size() < g.size())
         f.resize(g.size());
@@ -99,16 +111,19 @@ template <Modint T> auto &operator-=(std::vector<T> &f, const std::vector<T> &g)
     return f;
 }
 
+// f の各係数に c を掛ける。計算量 O(f.size())。
 template <Modint T> auto &operator*=(std::vector<T> &f, std::type_identity_t<T> c) {
     for (auto &x : f)
         x *= c;
     return f;
 }
 
+// f の各係数を c で割る。計算量 O(f.size() + log mod)。
 template <Modint T> auto &operator/=(std::vector<T> &f, std::type_identity_t<T> c) {
     return f *= c.inv();
 }
 
+// 形式的微分を返す。計算量 O(f.size())。
 template <Modint T> std::vector<T> derivative(const std::vector<T> &f) {
     if (f.size() <= 1)
         return {};
@@ -228,11 +243,12 @@ template <Modint T> std::vector<T> inv(const std::vector<T> &f, Int n) {
     return out;
 }
 
+// f.size() 項までの乗法逆元を返す。計算量は inv(f, f.size()) と同じ。
 template <Modint T> auto inv(const std::vector<T> &f) {
     return inv(f, Int(f.size()));
 }
 
-// f / g の先頭 max(f.size(), g.size()) 項を求める。
+// f / g の先頭 max(f.size(), g.size()) 項を求める。NTT使用時の計算量 O(n log(n+1))、nはその項数。
 template <Modint T> std::vector<T> operator/(const std::vector<T> &f, const std::vector<T> &g) {
     Int n = std::max(f.size(), g.size());
     if (!n)
@@ -240,11 +256,12 @@ template <Modint T> std::vector<T> operator/(const std::vector<T> &f, const std:
     return prefix(f * inv(g, n), n);
 }
 
+// f を g で形式的に除算した結果に置き換える。計算量は operator/(f, g) と同じ。
 template <Modint T> auto &operator/=(std::vector<T> &f, const std::vector<T> &g) {
     return f = f / g;
 }
 
-// x^n で打ち切った形式的対数を求める。f(0) = 1 を仮定する。
+// x^n で打ち切った形式的対数を求める。f(0) = 1 を仮定する。NTT使用時 O(n log(n+1))。
 template <Modint T> std::vector<T> log(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return {};
@@ -253,6 +270,7 @@ template <Modint T> std::vector<T> log(const std::vector<T> &f, Int n) {
     return integral(prefix(derivative(fp) * inv(fp, n - 1), n - 1));
 }
 
+// f.size() 項までの形式的対数を返す。計算量は log(f, f.size()) と同じ。
 template <Modint T> auto log(const std::vector<T> &f) {
     return log(f, Int(f.size()));
 }
@@ -289,11 +307,12 @@ template <Modint T> std::vector<T> exp(const std::vector<T> &f, Int n) {
     return out;
 }
 
+// f.size() 項までの形式的指数を返す。計算量は exp(f, f.size()) と同じ。
 template <Modint T> auto exp(const std::vector<T> &f) {
     return exp(f, Int(f.size()));
 }
 
-// x^n で打ち切った整数冪を求める。k は非負でなければならない。
+// x^n で打ち切った整数冪を求める。k は非負。NTT使用時 O(n log(n+1) + log(k+1))。
 template <Modint T> std::vector<T> pow(const std::vector<T> &f, Int k, Int n) {
     assert(k >= 0);
     if (n <= 0)
@@ -323,11 +342,14 @@ template <Modint T> std::vector<T> pow(const std::vector<T> &f, Int k, Int n) {
     return out;
 }
 
+// f.size() 項までの整数冪を返す。計算量は pow(f, k, f.size()) と同じ。
 template <Modint T> auto pow(const std::vector<T> &f, Int k) {
     return pow(f, k, Int(f.size()));
 }
 
 // x^nを法とした形式的平方根を求める。存在しない場合は空のstd::optionalを返す。
+// NTT使用時 O(n log(n+1) + S(mod))。S(p) は法上の平方根の計算量で、
+// 非平方剰余の探索も含めた保守的上界は O(p log(p+1) + log²(p+1))。
 template <Modint T> std::optional<std::vector<T>> sqrt(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return std::vector<T>{};
@@ -365,6 +387,7 @@ template <Modint T> std::optional<std::vector<T>> sqrt(const std::vector<T> &f, 
     return out;
 }
 
+// f.size() 項までの形式的平方根を返す。計算量は sqrt(f, f.size()) と同じ。
 template <Modint T> auto sqrt(const std::vector<T> &f) {
     return sqrt(f, Int(f.size()));
 }
@@ -374,6 +397,7 @@ template <class T> struct PolynomialDivMod {
 };
 
 // 多項式としての商と余りを求める。末尾の零係数は無視する。
+// NTT使用時 O(N log(N+1))。N = max(f.size(), g.size())。
 template <Modint T> PolynomialDivMod<T> divmod(const std::vector<T> &f, const std::vector<T> &g) {
     auto a = normalized(f), b = normalized(g);
     assert(!b.empty());
@@ -390,18 +414,22 @@ template <Modint T> PolynomialDivMod<T> divmod(const std::vector<T> &f, const st
     return {std::move(q), std::move(r)};
 }
 
+// 多項式 f を g で割った商を返す。計算量は divmod と同じ。
 template <Modint T> auto div(const std::vector<T> &f, const std::vector<T> &g) {
     return divmod(f, g).q;
 }
 
+// 多項式 f を g で割った余りを返す。計算量は divmod と同じ。
 template <Modint T> auto mod(const std::vector<T> &f, const std::vector<T> &g) {
     return divmod(f, g).r;
 }
 
+// 多項式 f を g で割った余りを返す。計算量は divmod と同じ。
 template <Modint T> auto operator%(const std::vector<T> &f, const std::vector<T> &g) {
     return mod(f, g);
 }
 
+// 多項式 f の x における値を返す。計算量 O(f.size())。
 template <Modint T> T eval(const std::vector<T> &f, std::type_identity_t<T> x) {
     T out = 0;
     for (Int i = Int(f.size()) - 1; i >= 0; --i)

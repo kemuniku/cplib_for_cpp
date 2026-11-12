@@ -3,10 +3,12 @@
 #include <functional>
 
 namespace cplib {
+// Barrett還元用の逆数を返す。計算量 O(1)。
 constexpr UInt get_im(std::uint32_t m) {
     return std::numeric_limits<UInt>::max() / m + 1;
 }
 
+// 64ビット値の積の上位64ビットを返す。計算量 O(1)。
 constexpr UInt calc_mul(UInt a, UInt b) {
     return UInt((__uint128_t(a) * b) >> 64);
 }
@@ -34,6 +36,7 @@ public:
         return *this *= inverse;
     }
 
+    // 還元用パラメータを返す。計算量 O(1)。
     static constexpr BarrettParam get_param() {
         if constexpr (Dynamic)
             return dynamicParam;
@@ -43,14 +46,17 @@ public:
         }
     }
 
+    // 符号なしの法を返す。計算量 O(1)。
     static constexpr std::uint32_t umod() {
         return get_param().M;
     }
 
+    // 符号付きの法を返す。計算量 O(1)。
     static constexpr std::int32_t mod() {
         return std::int32_t(umod());
     }
 
+    // 動的法を設定する。計算量 O(1)。
     template <std::integral I>
     static void setMod(I m)
         requires Dynamic
@@ -70,16 +76,20 @@ public:
         return std::uint32_t(r);
     }
 
+    // 零を構築する。計算量 O(1)。
     constexpr BasicBarrettModint() = default;
 
+    // 整数の剰余を構築する。計算量 O(1)。
     template <std::integral I>
     constexpr BasicBarrettModint(I value) : a(detail::normalizeModint(value, umod())) {
     }
 
+    // 正規化された剰余を返す。計算量 O(1)。
     constexpr Int val() const {
         return a;
     }
 
+    // 加法逆元を返す。計算量 O(1)。
     constexpr BasicBarrettModint operator-() const {
         auto result = *this;
         if (a)
@@ -87,6 +97,7 @@ public:
         return result;
     }
 
+    // 剰余を加算する。計算量 O(1)。
     constexpr BasicBarrettModint &operator+=(BasicBarrettModint b) {
         a += b.a;
         if (a >= umod())
@@ -94,6 +105,7 @@ public:
         return *this;
     }
 
+    // 剰余を減算する。計算量 O(1)。
     constexpr BasicBarrettModint &operator-=(BasicBarrettModint b) {
         a -= b.a;
         if (a >= umod())
@@ -101,11 +113,13 @@ public:
         return *this;
     }
 
+    // 剰余を乗算する。計算量 O(1)。
     constexpr BasicBarrettModint &operator*=(BasicBarrettModint b) {
         a = rem(UInt(a) * b.a);
         return *this;
     }
 
+    // 剰余が等しいか判定する。計算量 O(1)。
     constexpr bool operator==(const BasicBarrettModint &b) const {
         return a == b.a;
     }
@@ -116,6 +130,7 @@ template <std::uint32_t Id> using DynamicBarrettModint = BasicBarrettModint<Id, 
 template <class T>
 concept BarrettModint = requires { typename T::barrett_tag; };
 
+// 指定型の法で剰余を求める。計算量 O(1)。
 template <BarrettModint T> constexpr auto rem(UInt value) {
     return T::rem(value);
 }
@@ -123,6 +138,7 @@ template <BarrettModint T> constexpr auto rem(UInt value) {
 
 namespace std {
 template <uint32_t M, bool D> struct hash<cplib::BasicBarrettModint<M, D>> {
+    // 剰余のハッシュ値を返す。計算量 O(1)。
     size_t operator()(cplib::BasicBarrettModint<M, D> x) const {
         return hash<cplib::Int>{}(x.val());
     }

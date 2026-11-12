@@ -45,14 +45,17 @@ template <class Sequence> class RollingHash {
     std::vector<UInt> accum_, powers_, inverse_powers_;
 
 public:
+    // 長さNの列からハッシュを構築する。O(N) に初回の乱数基数選択時間を加える。
     explicit RollingHash(Sequence s) : s_(std::move(s)) {
         build();
     }
 
+    // 列の長さを返す。計算量 O(1)。
     Int size() const {
         return s_.size();
     }
 
+    // 累積ハッシュと累乗表を再構築する。O(N) に初回の乱数基数選択時間を加える。
     void build(UInt maxa = 1000000000, Int seed = -1) {
         detail::initialize(maxa, seed);
         accum_.assign(s_.size() + 1, 0);
@@ -73,6 +76,7 @@ public:
         }
     }
 
+    // 両端を含む区間の正規化ハッシュを返す。計算量 O(1)。
     template <class A, class B> UInt query(ClosedSlice<A, B> range) const {
         Int l = range.a, r = Int(range.b) + 1;
         assert(0 <= l && l < Int(accum_.size()) && 0 <= r && r < Int(accum_.size()));
@@ -81,10 +85,12 @@ public:
     }
 };
 
+// N要素の列からハッシュを構築する。O(N) に初回の乱数基数選択時間を加える。
 template <class T> auto initRollingHash(const std::vector<T> &s) {
     return RollingHash<std::vector<T>>(s);
 }
 
+// 長さNの文字列からハッシュを構築する。O(N) に初回の乱数基数選択時間を加える。
 inline auto initRollingHash(const std::string &s) {
     return RollingHash<std::string>(s);
 }

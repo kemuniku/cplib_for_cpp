@@ -130,6 +130,7 @@ public:
         return data.size();
     }
 
+    // 現在の文字列の長さを返す。計算量 O(1)。
     Int size() const {
         return len();
     }
@@ -190,6 +191,7 @@ public:
     }
 };
 
+// 空の回文木を初期化する。文字種数σとして O(σ(capacity+1))。
 inline auto initDoubleEndedPalindromicTree(Int amax = 26, char c = 'a', Int capacity = 0) {
     return DoubleEndedPalindromicTree(amax, c, capacity);
 }

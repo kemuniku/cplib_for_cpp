@@ -418,6 +418,7 @@ template <class K, class T, class S, bool Indexed> class RetroactiveAVL {
     }
 
 public:
+    // 構築はO(1)。以降Mは現在の操作数とし、比較・集約演算はO(1)を想定する。
     // 空の操作列を生成します。Ascendingはpop min、Descendingはpop maxです。
     // KとTには一貫した<が必要です。
     explicit RetroactiveAVL(SortOrder ord = Ascending)
@@ -426,6 +427,7 @@ public:
         pull(1);
     }
 
+    // 構築はO(1)。以降Mは現在の操作数とし、比較・集約・写像はO(1)を想定する。
     // モノイド集約付きの空の操作列を生成します。
     // operationは結合的、eは単位元、operation・mappingは副作用なしとしてください。
     // 残存pushを時刻順（添字版は現在の操作順）で集約します。
@@ -437,6 +439,7 @@ public:
         pull(1);
     }
 
+    // 操作数Mに対して償却O(log(M+2))。
     // 時刻版では時刻tにpushを挿入・上書きし、最終状態の差分を返します。
     // 添字版では既存のt番目の操作をpushで上書きします。
     QueueDelta<K, T> setPush(K t, T v) {
@@ -449,6 +452,7 @@ public:
         }
     }
 
+    // 操作数Mに対して償却O(log(M+2))。
     // 時刻版では時刻tにpopを挿入・上書きし、最終状態の差分を返します。
     // 添字版では既存のt番目の操作をpopで上書きします。
     QueueDelta<K, T> setPop(K t) {
@@ -461,6 +465,7 @@ public:
         }
     }
 
+    // 操作数Mに対して償却O(log(M+2))。
     // 時刻版では時刻tの操作を削除します。未登録なら何もしません。
     // 添字版では既存のt番目の操作を削除し、後続の位置は1つ前にずれます。
     QueueDelta<K, T> erase(K t) {
@@ -522,12 +527,14 @@ public:
         return operationIndex(k, false);
     }
 
+    // k番目のpopの直前にpushを挿入し、操作IDを返す。償却O(log(M+2))。
     Int insertPushBeforePop(Int k, T v)
         requires Indexed
     {
         return insertPush(popIndex(k), v);
     }
 
+    // k番目のpushの直前にpopを挿入し、操作IDを返す。償却O(log(M+2))。
     Int insertPopBeforePush(Int k)
         requires Indexed
     {
@@ -555,10 +562,12 @@ public:
         return count_;
     }
 
+    // 全操作実行後に残る実要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // 全操作実行後に残る値の総和を返す。O(1)。
     T sum() const
         requires(std::is_void_v<S> && std::is_arithmetic_v<T>)
     {
@@ -574,6 +583,7 @@ public:
         return queue_sub(pushTotal, total);
     }
 
+    // 値のコピーがO(1)ならO(1)。
     // 残存pushを時刻順（添字版は現在の操作順）で集約したモノイド積を返します。空なら単位元です。
     Aggregate fold() const
         requires(!std::is_void_v<S>)
@@ -581,6 +591,7 @@ public:
         return nodes[root].aggregate;
     }
 
+    // 残存pushを操作順に集約したモノイド積を返す。値のコピーがO(1)ならO(1)。
     Aggregate get_all() const
         requires(!std::is_void_v<S>)
     {
@@ -593,6 +604,7 @@ public:
         return i <= 1 ? std::optional<T>{} : nodes[i].value;
     }
 
+    // 操作数Mに対してO(log(M+2))。
     // 時刻tのpushが最後に残るかを返します。時刻版では未登録・popならfalseです。
     // 添字版ではtに既存の操作位置を指定してください。
     bool isRemaining(K t) const {
@@ -642,6 +654,7 @@ public:
         return out;
     }
 
+    // 全操作と実際のpop結果を文字列で返す。出力長LとしてO(M log(M+2)+L)。
     std::string debugDump() const {
         return formatQueueDebug(debugTimeline());
     }

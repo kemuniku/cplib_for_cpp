@@ -54,6 +54,8 @@ public:
         outputs.push_back(idx);
     }
 
+    // 有効期間ごとに操作を適用・巻き戻しし、登録した出力を処理する。
+    // 出力数Q、有効期間数Kとして O(Q + K log(Q+1)) 時間と同数のコールバック呼出し。
     template <class Apply, class Rollback, class Answer>
     void run(Apply apply, Rollback rollback, Answer answer) const {
         Int q = outputs.size();
@@ -98,11 +100,13 @@ public:
         visit(visit, 1, 0, size);
     }
 
+    // 自動巻き戻しを使って登録済みの出力を処理する。runと同じ操作回数に加え保存・復元の費用が必要。
     template <class Apply, class Answer> void runAutoRollback(Apply apply, Answer answer) const {
         detail::run_auto_rollback(*this, apply, answer);
     }
 };
 
+// 空のオフライン動的クエリ処理器を初期化する。計算量 O(1)。
 template <class T = void> auto initOfflineDynamicQueries() {
     return OfflineDynamicQueries<T>();
 }

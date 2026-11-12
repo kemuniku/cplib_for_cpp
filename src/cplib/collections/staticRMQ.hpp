@@ -9,6 +9,7 @@ template <class T> class StaticRMQ {
     static constexpr bool simd = std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::int64_t>;
 
 public:
+    // 空の静的区間最小値構造を作る。O(1)。
     StaticRMQ() = default;
 
     // 64要素ブロックの累積最小値とスパーステーブルを構築する。O(n+n/64 log n)。
@@ -107,24 +108,29 @@ public:
     }
 };
 
+// 配列から静的区間最小値構造を構築する。要素数をnとしてO(n+n/64 log(n+1))。
 template <class T> StaticRMQ<T> initRMQ(std::span<const T> values) {
     return StaticRMQ<T>(values);
 }
 
+// 配列から静的区間最小値構造を構築する。要素数をnとしてO(n+n/64 log(n+1))。
 template <class T> StaticRMQ<T> initRMQ(const std::vector<T> &values) {
     return StaticRMQ<T>(values);
 }
 
+// 空でない半開区間[l,r)の最小値を返す。O(1)。
 template <class T> T query(const StaticRMQ<T> &rmq, Int l, Int r) {
     return rmq.query(l, r);
 }
 }
 
 namespace cplib {
+// [l,r)の全要素がx以上となる最小のlを返す。O(log(n+2))。
 template <class T> Int minLeft(const StaticRMQ<T> &s, Int r, T x) {
     return s.minLeft(r, x);
 }
 
+// [l,r)の全要素がx以上となる最大のrを返す。O(log(n+2))。
 template <class T> Int maxRight(const StaticRMQ<T> &s, Int l, T x) {
     return s.maxRight(l, x);
 }

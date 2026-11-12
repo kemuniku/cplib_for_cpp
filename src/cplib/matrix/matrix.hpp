@@ -4,24 +4,30 @@
 
 namespace cplib {
 // 動的版は元と同じ行ごとの配列。0行の場合も列数を保持する。
+// 行数H、列数W、要素演算をO(1)として、要素ごとの算術・ビット演算と比較は O(HW+H)。
+// 行列積 H×W と W×C は O(HWC+HC+H)。行・要素へのアクセスと行列の寸法取得は O(1)。
 template <class T> class Matrix {
     std::vector<std::vector<T>> arr_;
     Int empty_width_ = 0;
 
 public:
     using value_type = T;
+    // 空行列を作る。計算量 O(1)。
     Matrix() = default;
 
+    // 指定した値でH行W列を初期化する。計算量 O(HW+H)。
     Matrix(Int height, Int width, T value = T(0))
         : arr_(height, std::vector<T>(width, value)), empty_width_(width) {
         assert(height >= 0 && width >= 0);
     }
 
+    // 行列をコピーして構築する。計算量 O(HW+H)。
     explicit Matrix(const std::vector<std::vector<T>> &rows) : arr_(rows) {
         for (const auto &row : rows)
             assert(row.size() == (rows.empty() ? 0 : rows[0].size()));
     }
 
+    // N要素から行または列ベクトルを作る。計算量 O(N)。
     explicit Matrix(const std::vector<T> &values, bool vertical = false) {
         if (vertical) {
             empty_width_ = 1;
@@ -521,6 +527,7 @@ public:
         return matrix;
     }
 
+    // n次の単位行列を作る。計算量 O(n²+n)。
     static Matrix identity(Int n, T one = T(1), T zero = T(0)) {
         Matrix out(n, n, zero);
         for (Int i = 0; i < n; ++i)
@@ -528,6 +535,7 @@ public:
         return out;
     }
 
+    // 正方行列を非負の指数kで累乗する。次元nとして O(n³ log(k+1)+n²+n)。
     Matrix pow(Int exponent) const {
         Matrix result = identity(h()), base = *this;
         while (exponent > 0) {
@@ -539,6 +547,7 @@ public:
         return result;
     }
 
+    // 全要素の和を返す。計算量 O(HW+H)。
     T sum() const {
         T result = T(0);
         for (const auto &row : arr_)
@@ -547,6 +556,7 @@ public:
         return result;
     }
 
+    // 行列を文字列に変換する。要素の出力時間の合計と O(HW+H) が必要。
     std::string str() const {
         std::ostringstream out;
         for (Int i = 0; i < h(); ++i) {
@@ -564,6 +574,7 @@ public:
         return out.str();
     }
 
+    // 行列のハッシュを返す。要素のハッシュを O(1) として O(HW+H)。
     std::size_t hash() const {
         std::size_t seed = arr_.size();
         for (const auto &row : arr_) {
@@ -591,7 +602,7 @@ public:
         return fieldHafnian(matrixRows(*this, h(), w()));
     }
 
-    // Ax=bの特殊解と核の基底を返す。解なしはstd::nullopt。消去と後退代入を行う。
+    // Ax=bの特殊解と核の基底を返す。解なしはstd::nullopt。計算量 O((H+1)(W+1)²)。
     template <class B> auto solveLinearSystem(const B &b) const {
         return fieldSolve(matrixRows(*this, h(), w()), w(), b);
     }
@@ -612,70 +623,87 @@ public:
     }
 };
 
+// 行列のコピーから構築する。計算量 O(HW+H)。
 template <class T> auto initMatrix(const std::vector<std::vector<T>> &rows) {
     return Matrix<T>(rows);
 }
 
+// 行列のコピーから構築する。計算量 O(HW+H)。
 template <class T> auto toMatrix(const std::vector<std::vector<T>> &rows) {
     return Matrix<T>(rows);
 }
 
+// N要素の行または列ベクトルを構築する。計算量 O(N)。
 template <class T> auto initMatrix(const std::vector<T> &values, bool vertical = false) {
     return Matrix<T>(values, vertical);
 }
 
+// 指定値でH行W列を構築する。計算量 O(HW+H)。
 template <class T> auto initMatrix(Int h, Int w, T value) {
     return Matrix<T>(h, w, value);
 }
 
+// n次単位行列を返す。計算量 O(n²+n)。
 template <class T> auto identity_matrix(Int n, T one = T(1), T zero = T(0)) {
     return Matrix<T>::identity(n, one, zero);
 }
 
+// 行数を返す。計算量 O(1)。
 template <class T> Int h(const Matrix<T> &m) {
     return m.h();
 }
 
+// 列数を返す。計算量 O(1)。
 template <class T> Int w(const Matrix<T> &m) {
     return m.w();
 }
 
+// 行列を文字列に変換する。要素の出力時間の合計と O(HW+H) が必要。
 template <class T> auto to_string(const Matrix<T> &m) {
     return m.str();
 }
 
+// 要素のハッシュを O(1) として行列のハッシュを O(HW+H) で求める。
 template <class T> auto hash(const Matrix<T> &m) {
     return m.hash();
 }
 
+// n次正方行列を非負のk乗にする。計算量 O(n³ log(k+1)+n²+n)。
 template <class T> auto pow(const Matrix<T> &m, Int n) {
     return m.pow(n);
 }
 
+// 全要素の和を返す。計算量 O(HW+H)。
 template <class T> T sum(const Matrix<T> &m) {
     return m.sum();
 }
 
+// 行列の階数を返す。計算量 O(HW min(H,W)+H+W)。
 template <class T> Int rank(const Matrix<T> &m) {
     return m.rank();
 }
 
+// n次正方行列の行列式を返す。計算量 O(n³+n)。
 template <class T> T determinant(const Matrix<T> &m) {
     return m.determinant();
 }
 
+// n次の対称な偶数次行列のhafnianを返す。計算量 O(n² 2^(n/2)+1)。
 template <class T> T hafnian(const Matrix<T> &m) {
     return m.hafnian();
 }
 
+// Ax=bの特殊解と核の基底を返す。計算量 O((H+1)(W+1)²)。
 template <class T, class B> auto solveLinearSystem(const Matrix<T> &m, const B &b) {
     return m.solveLinearSystem(b);
 }
 
+// n次正方行列の逆行列を返す。存在しない場合は空。計算量 O(n³+n)。
 template <class T> auto inverse(const Matrix<T> &m) {
     return m.inverse();
 }
 
+// n次正方行列の余因子行列を返す。計算量 O(n³+n)。
 template <class T> auto adjugate(const Matrix<T> &m) {
     return m.adjugate();
 }
@@ -683,6 +711,7 @@ template <class T> auto adjugate(const Matrix<T> &m) {
 
 namespace std {
 template <class T> struct hash<cplib::Matrix<T>> {
+    // 要素のハッシュを O(1) として行列のハッシュを O(HW+H) で求める。
     size_t operator()(const cplib::Matrix<T> &m) const {
         return m.hash();
     }

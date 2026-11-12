@@ -143,6 +143,8 @@ class Factoradic {
     }
 
 public:
+    // 以下 N は階乗進数の桁数、C(N) = (N+1)² log⁴(N+2) は多倍長整数との変換の保守的上界。
+    // 零を構築する。計算量 O(1)。
     Factoradic() = default;
 
     // 絶対値の下位桁から並べたi!の係数digitsと符号で構築する。
@@ -154,6 +156,7 @@ public:
         normalize();
     }
 
+    // 固定幅整数を階乗進数に変換する。計算量 O(1)。
     template <std::integral T> Factoradic(T value) {
         UInt m;
         if constexpr (std::is_signed_v<T>) {
@@ -170,7 +173,8 @@ public:
         }
     }
 
-    // 積の木を倍々に拡張して桁数を求め、分割統治で変換する。O(M(B) log(N+1))。
+    // 多倍長整数を積の木と分割統治で階乗進数に変換する。
+    // Nを結果の階乗進数の桁数、Bを多倍長整数の桁数、M(B)をその桁数の乗除算の計算量として O(M(B) log(N+1))。
     explicit Factoradic(const BigInt &input) {
         if (BigInt(std::numeric_limits<Int>::min()) <= input &&
             input <= BigInt(std::numeric_limits<Int>::max())) {
@@ -192,12 +196,14 @@ public:
         normalize();
     }
 
+    // 絶対値を返す。計算量 O(N+1)。
     Factoradic abs() const {
         auto out = *this;
         out.negative_ = false;
         return out;
     }
 
+    // 符号反転した値を返す。計算量 O(N+1)。
     Factoradic operator-() const {
         auto out = *this;
         if (!out.data_.empty())
@@ -205,10 +211,12 @@ public:
         return out;
     }
 
+    // 値を複製する。計算量 O(N+1)。
     Factoradic operator+() const {
         return *this;
     }
 
+    // 符号を -1, 0, 1 で返す。計算量 O(1)。
     int sgn() const {
         return data_.empty() ? 0 : negative_ ? -1 : 1;
     }
@@ -285,11 +293,13 @@ public:
         return negative_ ? -Int(rem) : Int(rem);
     }
 
+    // 整数による床除算の余りを返す。計算量 O(N+1)。
     Int operator%(Int divisor) const {
         Int rem = mod(divisor);
         return rem && negative_ != (divisor < 0) ? rem + divisor : rem;
     }
 
+    // 多倍長整数に変換する。計算量 O(C(N))。
     BigInt toBigInt() const {
         BigInt out;
         if (Int(data_.size()) <= BlockSize + 1) {
@@ -300,10 +310,12 @@ public:
         return negative_ ? -out : out;
     }
 
+    // 十進文字列を返す。計算量 O(C(N))。
     std::string str() const {
         return toBigInt().str();
     }
 
+    // 大小を比較して -1, 0, 1 を返す。最大桁数 N に対し O(N+1)。
     friend int cmp(const Factoradic &a, const Factoradic &b) {
         if (a.negative_ != b.negative_)
             return a.negative_ ? -1 : 1;
@@ -311,14 +323,17 @@ public:
         return a.negative_ ? -out : out;
     }
 
+    // 値が等しいか判定する。最大桁数 N に対し O(N+1)。
     friend bool operator==(const Factoradic &a, const Factoradic &b) {
         return a.negative_ == b.negative_ && a.data_ == b.data_;
     }
 
+    // 大小を比較する。最大桁数 N に対し O(N+1)。
     friend std::strong_ordering operator<=>(const Factoradic &a, const Factoradic &b) {
         return cmp(a, b) <=> 0;
     }
 
+    // ハッシュ値を返す。計算量 O(N+1)。
     std::size_t hash() const {
         std::size_t out = negative_;
         for (auto d : data_)
@@ -326,6 +341,7 @@ public:
         return out;
     }
 
+    // 和を返す。最大桁数 N に対し O(N+1)。
     friend Factoradic operator+(const Factoradic &a, const Factoradic &b) {
         Factoradic out;
         if (a.negative_ == b.negative_) {
@@ -341,10 +357,12 @@ public:
         return out;
     }
 
+    // 差を返す。最大桁数 N に対し O(N+1)。
     friend Factoradic operator-(const Factoradic &a, const Factoradic &b) {
         return a + (-b);
     }
 
+    // 固定幅整数との積を返す。計算量 O(N+1)。
     friend Factoradic operator*(const Factoradic &a, Int b) {
         if (!b || a.data_.empty())
             return {};
@@ -365,10 +383,12 @@ public:
         return out;
     }
 
+    // 固定幅整数との積を返す。計算量 O(N+1)。
     friend Factoradic operator*(Int a, const Factoradic &b) {
         return b * a;
     }
 
+    // 二つの階乗進数の積を返す。最大桁数 N に対し O(C(N))。
     friend Factoradic operator*(const Factoradic &a, const Factoradic &b) {
         if (a.data_.empty() || b.data_.empty())
             return {};
@@ -379,53 +399,71 @@ public:
         return Factoradic(a.toBigInt() * b.toBigInt());
     }
 
+    // 整数による0方向の商と余りを返す。計算量 O(N+1)。
+    // 整数による床除算の商と余りを返す。計算量 O(N+1)。
     static FactoradicSmallDivision divmodTrunc(const Factoradic &, Int);
     static FactoradicSmallDivision divmod(const Factoradic &, Int);
+    // 階乗進数による床除算の商と余りを返す。最大桁数 N に対し O(C(N))。
     static FactoradicDivision divmod(const Factoradic &, const Factoradic &);
+    // 階乗進数による0方向の商を返す。最大桁数 N に対し O(C(N))。
     friend Factoradic operator/(const Factoradic &, const Factoradic &);
+    // 整数による0方向の商を返す。計算量 O(N+1)。
     friend Factoradic operator/(const Factoradic &, Int);
 
+    // 整数を階乗進数で割り0方向の商を返す。計算量 O(C(N))。
     friend Factoradic operator/(Int a, const Factoradic &b) {
         return Factoradic(a) / b;
     }
 
+    // 階乗進数による床除算の余りを返す。最大桁数 N に対し O(C(N))。
     friend Factoradic operator%(const Factoradic &, const Factoradic &);
 
+    // 整数を階乗進数で割った床除算の余りを返す。計算量 O(C(N))。
     friend Factoradic operator%(Int a, const Factoradic &b) {
         return Factoradic(a) % b;
     }
 
+    // 階乗進数による0方向の余りを返す。最大桁数 N に対し O(C(N))。
     static Factoradic mod(const Factoradic &, const Factoradic &);
+    // 階乗進数による床除算の商を返す。最大桁数 N に対し O(C(N))。
     static Factoradic floorDiv(const Factoradic &, const Factoradic &);
 
+    // 加算の結果を代入する。計算量は対応する二項演算と同じ。
     Factoradic &operator+=(const Factoradic &b) {
         return *this = *this + b;
     }
 
+    // 減算の結果を代入する。計算量は対応する二項演算と同じ。
     Factoradic &operator-=(const Factoradic &b) {
         return *this = *this - b;
     }
 
+    // 乗算の結果を代入する。計算量は対応する二項演算と同じ。
     Factoradic &operator*=(const Factoradic &b) {
         return *this = *this * b;
     }
 
+    // 乗算の結果を代入する。計算量は対応する二項演算と同じ。
     Factoradic &operator*=(Int b) {
         return *this = *this * b;
     }
 
+    // 除算の結果を代入する。計算量は対応する二項演算と同じ。
     Factoradic &operator/=(const Factoradic &b) {
         return *this = *this / b;
     }
 
+    // 除算の結果を代入する。計算量は対応する二項演算と同じ。
     Factoradic &operator/=(Int b) {
         return *this = *this / b;
     }
 
+    // 余り計算の結果を代入する。計算量は対応する二項演算と同じ。
     Factoradic &operator%=(const Factoradic &b) {
         return *this = *this % b;
     }
 
+    // 余り計算の結果を代入する。計算量は対応する二項演算と同じ。
     Factoradic &operator%=(Int b) {
         return *this = Factoradic(*this % b);
     }
@@ -585,122 +623,152 @@ inline Factoradic operator%(const Factoradic &a, const Factoradic &b) {
     return Factoradic(a.toBigInt() % b.toBigInt());
 }
 
+// 床除算の商と余りを返す。計算量は Factoradic::divmod(a, b) と同じ。
 inline FactoradicDivision divmod(const Factoradic &a, const Factoradic &b) {
     return Factoradic::divmod(a, b);
 }
 
+// 整数による床除算の商と余りを返す。計算量 O(N+1)。
 inline FactoradicSmallDivision divmod(const Factoradic &a, Int b) {
     return Factoradic::divmod(a, b);
 }
 
+// 整数を階乗進数で割った床除算の商と余りを返す。計算量は Factoradic::divmod と同じ。
 inline FactoradicDivision divmod(Int a, const Factoradic &b) {
     return Factoradic::divmod(Factoradic(a), b);
 }
 
+// 整数による0方向の商と余りを返す。計算量 O(N+1)。
 inline FactoradicSmallDivision divmodTrunc(const Factoradic &a, Int b) {
     return Factoradic::divmodTrunc(a, b);
 }
 
+// 0方向に丸めた商を返す。計算量は a / b と同じ。
 inline Factoradic div(const Factoradic &a, const Factoradic &b) {
     return a / b;
 }
 
+// 整数による0方向に丸めた商を返す。計算量 O(N+1)。
 inline Factoradic div(const Factoradic &a, Int b) {
     return a / b;
 }
 
+// 整数を階乗進数で割った0方向の商を返す。計算量は Factoradic(a) / b と同じ。
 inline Factoradic div(Int a, const Factoradic &b) {
     return Factoradic(a) / b;
 }
 
+// 0方向に丸めた余りを返す。計算量は Factoradic::mod(a, b) と同じ。
 inline Factoradic mod(const Factoradic &a, const Factoradic &b) {
     return Factoradic::mod(a, b);
 }
 
+// 整数による0方向に丸めた余りを返す。計算量 O(N+1)。
 inline Int mod(const Factoradic &a, Int b) {
     return a.mod(b);
 }
 
+// 整数を階乗進数で割った0方向の余りを返す。計算量は Factoradic::mod と同じ。
 inline Factoradic mod(Int a, const Factoradic &b) {
     return Factoradic::mod(Factoradic(a), b);
 }
 
+// 床除算の商を返す。計算量は Factoradic::floorDiv(a, b) と同じ。
 inline Factoradic floor_div(const Factoradic &a, const Factoradic &b) {
     return Factoradic::floorDiv(a, b);
 }
 
+// 整数による床除算の商を返す。計算量 O(N+1)。
 inline Factoradic floor_div(const Factoradic &a, Int b) {
     return Factoradic::divmod(a, b).quotient;
 }
 
+// 整数を階乗進数で割った床除算の商を返す。計算量は Factoradic::floorDiv と同じ。
 inline Factoradic floor_div(Int a, const Factoradic &b) {
     return Factoradic::floorDiv(Factoradic(a), b);
 }
 
+// 0方向に丸めた商を a に代入する。計算量は a / b と同じ。
 inline Factoradic &div_assign(Factoradic &a, const Factoradic &b) {
     return a = a / b;
 }
 
+// 整数による0方向に丸めた商を a に代入する。計算量 O(N+1)。
 inline Factoradic &div_assign(Factoradic &a, Int b) {
     return a = a / b;
 }
 
+// 0方向に丸めた余りを a に代入する。計算量は Factoradic::mod(a, b) と同じ。
 inline Factoradic &mod_assign(Factoradic &a, const Factoradic &b) {
     return a = mod(a, b);
 }
 
+// 整数による0方向に丸めた余りを a に代入する。計算量 O(N+1)。
 inline Factoradic &mod_assign(Factoradic &a, Int b) {
     return a = Factoradic(mod(a, b));
 }
 
+// 値または階乗進数の桁列から構築する。計算量は対応する Factoradic のコンストラクタと同じ。
 template <class T> Factoradic initFactoradic(const T &x) {
     return Factoradic(x);
 }
 
+// 値または階乗進数の桁列から構築する。計算量は対応する Factoradic のコンストラクタと同じ。
 inline Factoradic initFactoradic(std::span<const Int> digits, bool negative) {
     return Factoradic(digits, negative);
 }
 
+// n! を階乗進数で返す。時間・領域 O(n+1)。
 inline Factoradic factorialFactoradic(Int n) {
     return Factoradic::factorial(n);
 }
 
+// k! による非負の余りを返す。計算量は a.modFactorial(k) と同じ。
 inline Factoradic modFactorial(const Factoradic &a, Int k) {
     return a.modFactorial(k);
 }
 
+// 絶対値を返す。計算量は a.abs() と同じ。
 inline Factoradic abs(const Factoradic &a) {
     return a.abs();
 }
 
+// 符号を返す。計算量 O(1)。
 inline int sgn(const Factoradic &a) {
     return a.sgn();
 }
 
+// 下位から階乗進数の桁列を返す。計算量は a.digits() と同じ。
 inline auto digits(const Factoradic &a) {
     return a.digits();
 }
 
+// 固定幅整数に変換する。計算量は a.toInt() と同じ。
 template <std::integral T = Int> T toInt(const Factoradic &a) {
     return a.toInt<T>();
 }
 
+// 多倍長整数に変換する。計算量は a.toBigInt() と同じ。
 inline BigInt toBigInt(const Factoradic &a) {
     return a.toBigInt();
 }
 
+// ハッシュ値を返す。計算量は a.hash() と同じ。
 inline std::size_t hash(const Factoradic &a) {
     return a.hash();
 }
 
+// 順列の辞書順順位を返す。順列長 n に対し O(n log(n+1))。
 inline Factoradic permutationRank(std::span<const Int> p) {
     return Factoradic::permutationRank(p);
 }
 
+// 順位に対応する長さ n の順列を返す。計算量 O(n log(n+1))。
 inline auto toPermutation(const Factoradic &a, Int n) {
     return a.toPermutation(n);
 }
 
+// 十進文字列として出力する。計算量は a.str() と同じ。
 inline std::ostream &operator<<(std::ostream &os, const Factoradic &a) {
     return os << a.str();
 }
@@ -708,6 +776,7 @@ inline std::ostream &operator<<(std::ostream &os, const Factoradic &a) {
 
 namespace std {
 template <> struct hash<cplib::Factoradic> {
+    // ハッシュ値を返す。計算量は x.hash() と同じ。
     size_t operator()(const cplib::Factoradic &x) const {
         return x.hash();
     }

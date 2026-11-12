@@ -39,11 +39,13 @@ T tspPathCostFrom(const std::vector<std::vector<T>> &dist, Int start_v, T zero, 
     return out;
 }
 
+// 指定した始点から全頂点を訪問する最小費用を返す。O(N²2^N + N³)。
 template <class T>
 T tspPathCostFrom(const std::vector<std::vector<T>> &dist, Int start_v, bool floydwarshall = true) {
     return tspPathCostFrom(dist, start_v, T(0), detail::distance_inf<T>(), floydwarshall);
 }
 
+// 計算量O(N²2^N + N³)。
 // 元実装どおり、最後の訪問点からgoalへ移動する費用も加える（goalの再訪可）。
 // start_vからすべての頂点を訪問して、終点をgoal_vに指定したときのコストの最小値。
 template <class T>
@@ -58,12 +60,14 @@ T tspPathCostFromTo(const std::vector<std::vector<T>> &dist, Int start_v, Int go
     return out;
 }
 
+// 指定した始点から全頂点を訪問して終点に至る最小費用を返す。O(N²2^N + N³)。
 template <class T>
 T tspPathCostFromTo(const std::vector<std::vector<T>> &dist, Int start_v, Int goal_v,
                     bool floydwarshall = true) {
     return tspPathCostFromTo(dist, start_v, goal_v, T(0), detail::distance_inf<T>(), floydwarshall);
 }
 
+// 計算量O(N²2^N + N³)。
 // グラフのどこかからスタートし、すべての頂点を通るまでのコストの最小値。
 template <class T>
 T tspPathAnyStart(const std::vector<std::vector<T>> &dist, T zero, T inf,
@@ -76,11 +80,13 @@ T tspPathAnyStart(const std::vector<std::vector<T>> &dist, T zero, T inf,
     return out;
 }
 
+// 任意の始点から全頂点を訪問する最小費用を返す。O(N²2^N + N³)。
 template <class T>
 T tspPathAnyStart(const std::vector<std::vector<T>> &dist, bool floydwarshall = true) {
     return tspPathAnyStart(dist, T(0), detail::distance_inf<T>(), floydwarshall);
 }
 
+// 指定頂点数KとしてO(K(V+E)log(V+E)+K²)。辺重みは非負とする。
 // 指定頂点間の最短距離を辺重みにする。重みなし版は循環バケットBFSを使用。
 template <WeightedGraph G, class T = typename G::cost_type>
 auto toContractionGraph(const G &g, std::span<const Int> vertices, T zero = T(0),
@@ -94,6 +100,7 @@ auto toContractionGraph(const G &g, std::span<const Int> vertices, T zero = T(0)
     return out;
 }
 
+// 指定頂点間の最短距離を重みにする。指定頂点数KとしてO(K(V+E)+K²)。
 template <UnWeightedGraph G> auto toContractionGraph(const G &g, std::span<const Int> vertices) {
     auto out = initWeightedDirectedGraph<Int>(vertices.size());
     for (Int i = 0; i < Int(vertices.size()); ++i) {
@@ -104,6 +111,7 @@ template <UnWeightedGraph G> auto toContractionGraph(const G &g, std::span<const
     return out;
 }
 
+// グラフの隣接行列を返す。O(V²+E)。
 // 自己辺がなければ対角もnoneのまま。多重辺は最小費用を採用。
 template <DirectedGraph G, class T = typename G::cost_type>
     requires WeightedGraph<G>

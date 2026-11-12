@@ -22,6 +22,7 @@ template <DirectedGraph G> std::vector<Int> topologicalsort(const G &g) {
     return result;
 }
 
+// 有向グラフがDAGか判定する。O(V+E)。
 template <DirectedGraph G> bool isDAG(const G &g) {
     return Int(topologicalsort(g).size()) == g.len;
 }

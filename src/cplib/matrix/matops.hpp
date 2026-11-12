@@ -2,7 +2,7 @@
 #include <cplib/common.hpp>
 
 namespace cplib {
-// 二次元配列の90度単位の回転・転置。O(HW)。
+// H行W列の二次元配列を90度単位で回転したコピーを返す。O(HW+H+W)。
 template <class T> auto rotated(const std::vector<std::vector<T>> &a, Int turns = 1) {
     if (a.empty())
         return a;
@@ -25,6 +25,7 @@ template <class T> auto rotated(const std::vector<std::vector<T>> &a, Int turns 
     return out;
 }
 
+// H行W列の二次元配列の転置を返す。O(HW+H+W)。
 template <class T> auto transposed(const std::vector<std::vector<T>> &a) {
     if (a.empty())
         return a;
@@ -36,6 +37,7 @@ template <class T> auto transposed(const std::vector<std::vector<T>> &a) {
     return out;
 }
 
+// H行W列の配列から周囲のzeroだけの行・列を取り除く。O(HW+H+W)。
 template <class T> auto trimmed(std::vector<std::vector<T>> a, const T &zero) {
     for (int turn = 0; turn < 4; ++turn) {
         a = rotated(a);
@@ -62,38 +64,47 @@ inline auto matops_strings(const std::vector<std::vector<char>> &a) {
 }
 }
 
+// H行W列の文字配列を90度単位で回転したコピーを返す。O(HW+H+W)。
 inline auto rotated(const std::vector<std::string> &a, Int turns = 1) {
     return detail::matops_strings(rotated(detail::matops_chars(a), turns));
 }
 
+// H行W列の文字配列の転置を返す。O(HW+H+W)。
 inline auto transposed(const std::vector<std::string> &a) {
     return detail::matops_strings(transposed(detail::matops_chars(a)));
 }
 
+// H行W列の文字配列から周囲のzeroだけの行・列を取り除く。O(HW+H+W)。
 inline auto trimmed(const std::vector<std::string> &a, char zero = '0') {
     return detail::matops_strings(trimmed(detail::matops_chars(a), zero));
 }
 
+// H行W列の配列を90度単位で回転する。O(HW+H+W)。
 template <class T> void rotate(std::vector<std::vector<T>> &a, Int turns = 1) {
     a = rotated(a, turns);
 }
 
+// H行W列の文字配列を90度単位で回転する。O(HW+H+W)。
 inline void rotate(std::vector<std::string> &a, Int turns = 1) {
     a = rotated(a, turns);
 }
 
+// H行W列の配列を転置する。O(HW+H+W)。
 template <class T> void transpose(std::vector<std::vector<T>> &a) {
     a = transposed(a);
 }
 
+// H行W列の文字配列を転置する。O(HW+H+W)。
 inline void transpose(std::vector<std::string> &a) {
     a = transposed(a);
 }
 
+// H行W列の配列から周囲のzeroだけの行・列を取り除く。O(HW+H+W)。
 template <class T> void trim(std::vector<std::vector<T>> &a, const T &zero) {
     a = trimmed(a, zero);
 }
 
+// H行W列の文字配列から周囲のzeroだけの行・列を取り除く。O(HW+H+W)。
 inline void trim(std::vector<std::string> &a, char zero = '0') {
     a = trimmed(a, zero);
 }

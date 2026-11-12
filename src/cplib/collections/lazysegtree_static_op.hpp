@@ -15,17 +15,20 @@ using detail::lazysegtree_base::update;
 template <class S, class F, class Op, class Map, class Comp>
 using LazySegmentTree = detail::lazysegtree_base::LazySegmentTree<S, F, Op, Map, Comp, true>;
 
+// 初期列と静的な演算・作用を指定して構築する。要素数をnとしてO(n+1)回の演算。
 template <class S, class F, class V, class Op, class Map, class Comp>
 auto initLazySegmentTree(const V &v, Op op, S e, Map map, Comp comp, F id) {
     static_assert(std::is_empty_v<Op> && std::is_empty_v<Map> && std::is_empty_v<Comp>);
     return LazySegmentTree<S, F, Op, Map, Comp>(v, op, e, map, comp, id);
 }
 
+// 初期列と静的な演算・作用を指定して構築する。要素数をnとしてO(n+1)回の演算。
 template <class V, class Op, class S, class Map, class Comp, class F>
 auto newLazySegWith(const V &v, Op op, S e, Map map, Comp comp, F id) {
     return cplib::initLazySegmentTree(v, op, e, map, comp, id);
 }
 
+// 関数として指定した演算・作用と初期列から構築する。要素数をnとしてO(n+1)回の演算。
 template <auto Op, auto Map, auto Comp, class V, class S, class F>
 auto initLazySegmentTree(const V &v, S e, F id) {
     return cplib::initLazySegmentTree(

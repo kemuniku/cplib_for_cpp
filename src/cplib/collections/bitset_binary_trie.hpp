@@ -5,7 +5,7 @@
 
 namespace cplib {
 // 固定した長さのビット列の多重集合。添字0からfalse < trueの辞書順。
-// キーは葉だけに保持し、削除したノードを再利用する。各操作O(1+N)、lenはO(1)。
+// キーは葉だけに保持し、削除したノードを再利用する。検索はO(1+N)、更新は償却O(1+N)、lenはO(1)。
 template <class T> class BitSetBinaryTrie {
     struct Node {
         std::array<Int, 2> children{-1, -1};
@@ -69,8 +69,10 @@ template <class T> class BitSetBinaryTrie {
     }
 
 public:
+    // 未初期化のTrieを作る。使用するには初期化済みのTrieを代入する。O(1)。
     BitSetBinaryTrie() = default;
 
+    // 長さhのキーを扱う空の多重集合を構築する。O(1)。
     explicit BitSetBinaryTrie(Int h) : height_(h) {
         if (h < 0)
             throw std::invalid_argument("BitSet length must be non-negative");
@@ -81,14 +83,17 @@ public:
     explicit BitSetBinaryTrie(const T &sample) : BitSetBinaryTrie(sample.len()) {
     }
 
+    // 重複を含む要素数を返す。O(1)。
     Int len() const {
         return nodes_.empty() ? 0 : nodes_[0].count;
     }
 
+    // 重複を含む要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // xの多重度を返す。キー長をNとしてO(1+N)。
     Int count(const T &x) const {
         check(x);
         Int node = 0;
@@ -100,10 +105,12 @@ public:
         return nodes_[node].count;
     }
 
+    // xが含まれるか返す。キー長をNとしてO(1+N)。
     bool contains(const T &x) const {
         return count(x) > 0;
     }
 
+    // xをmultiplicity個追加する。キー長Nとして償却O(1+N)とキーのコピーに要する時間。
     void incl(const T &x, Int multiplicity = 1) {
         check(x);
         if (multiplicity < 0)
@@ -127,7 +134,7 @@ public:
             nodes_[node].key = std::make_shared<T>(x);
     }
 
-    // xをmultiplicity個削除します。不足・負のmultiplicityは変更せずstd::invalid_argumentにします。O(1 + N)。
+    // xをmultiplicity個削除します。不足・負のmultiplicityは変更せずstd::invalid_argumentにします。償却O(1 + N)。
     void excl(const T &x, Int multiplicity = 1) {
         check(x);
         if (multiplicity < 0)
@@ -168,10 +175,12 @@ public:
         return kth(k, &mask);
     }
 
+    // 辞書順でk番目のキーを返す。キー長NとしてO(1+N)とキーのコピーに要する時間。
     T operator[](Int k) const {
         return get_kth(k);
     }
 
+    // 辞書順の末尾からk番目のキーを返す。キー長NとしてO(1+N)とキーのコピーに要する時間。
     T operator[](BackwardsIndex k) const {
         return get_kth(len() - k.value);
     }
@@ -199,54 +208,67 @@ public:
     }
 };
 
+// 長さhのキーを扱う空のTrieを生成する。O(1)。
 template <class T> auto initBitSetBinaryTrie(Int h) {
     return BitSetBinaryTrie<T>(h);
 }
 
+// sampleと同じ長さのキーを扱う空のTrieを生成する。O(1)。
 template <class T> auto initBitSetBinaryTrie(const T &sample) {
     return BitSetBinaryTrie<T>(sample);
 }
 
+// 重複を含む要素数を返す。O(1)。
 template <class T> Int len(const BitSetBinaryTrie<T> &trie) {
     return trie.len();
 }
 
+// xの多重度を返す。キー長NとしてO(1+N)。
 template <class T> Int count(const BitSetBinaryTrie<T> &trie, const T &x) {
     return trie.count(x);
 }
 
+// xが含まれるか返す。キー長NとしてO(1+N)。
 template <class T> bool contains(const BitSetBinaryTrie<T> &trie, const T &x) {
     return trie.contains(x);
 }
 
+// xをcount個追加する。キー長Nとして償却O(1+N)とキーのコピーに要する時間。
 template <class T> void incl(BitSetBinaryTrie<T> &trie, const T &x, Int count = 1) {
     trie.incl(x, count);
 }
 
+// xをcount個削除する。キー長Nとして償却O(1+N)。
 template <class T> void excl(BitSetBinaryTrie<T> &trie, const T &x, Int count = 1) {
     trie.excl(x, count);
 }
 
+// 辞書順でk番目のキーを返す。キー長NとしてO(1+N)とキーのコピーに要する時間。
 template <class T> T get_kth(const BitSetBinaryTrie<T> &trie, Int k) {
     return trie.get_kth(k);
 }
 
+// maskとのXOR後の辞書順でk番目の元のキーを返す。キー長NとしてO(1+N)とキーのコピーに要する時間。
 template <class T> T get_kth(const BitSetBinaryTrie<T> &trie, Int k, const T &mask) {
     return trie.get_kth(k, mask);
 }
 
+// 辞書順でx未満の要素数を返す。キー長NとしてO(1+N)。
 template <class T> Int lowerBound(const BitSetBinaryTrie<T> &trie, const T &x) {
     return trie.lowerBound(x);
 }
 
+// 辞書順でx以下の要素数を返す。キー長NとしてO(1+N)。
 template <class T> Int upperBound(const BitSetBinaryTrie<T> &trie, const T &x) {
     return trie.upperBound(x);
 }
 
+// maskとのXOR後にx未満となる要素数を返す。キー長NとしてO(1+N)。
 template <class T> Int lowerBound(const BitSetBinaryTrie<T> &trie, const T &x, const T &mask) {
     return trie.lowerBound(x, mask);
 }
 
+// maskとのXOR後にx以下となる要素数を返す。キー長NとしてO(1+N)。
 template <class T> Int upperBound(const BitSetBinaryTrie<T> &trie, const T &x, const T &mask) {
     return trie.upperBound(x, mask);
 }

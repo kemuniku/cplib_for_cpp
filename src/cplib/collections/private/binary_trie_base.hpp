@@ -51,14 +51,17 @@ protected:
     }
 
 public:
+    // 重複を含む要素数を返す。O(1)。
     Int len() const {
         return root->value;
     }
 
+    // 重複を含む要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // xの多重度を返す。ビット幅Hに対しO(H+1)。
     Int count(Int x) const {
         assert(x >= 0);
         auto now = root;
@@ -70,11 +73,12 @@ public:
         return now->value;
     }
 
+    // xが存在するか返す。ビット幅Hに対しO(H+1)。
     bool contains(Int x) const {
         return count(x) != 0;
     }
 
-    // XOR後の値で順序を付け、返す値は元の値。存在しなければ-1。O(H)。
+    // XOR後の値で順序を付け、返す値は元の値。存在しなければ-1。O(H+1)。
     Int get_kth(Int k, Int xor_value = 0) const {
         assert(k >= 0);
         auto now = root;
@@ -112,10 +116,12 @@ public:
         return std::bit_cast<Int>(out);
     }
 
+    // 重複込みの昇順でk番目の値を返す。存在しなければ-1。O(H+1)。
     Int operator[](Int k) const {
         return get_kth(k);
     }
 
+    // 値と多重度の組を昇順に列挙する。確保済みノード数をMとしてO(M)。
     std::vector<std::pair<Int, Int>> RLE() const {
         std::vector<std::pair<Int, Int>> out;
         auto dfs = [&](auto &&self, const std::shared_ptr<BinaryTrieNode> &node,
@@ -131,6 +137,7 @@ public:
         return out;
     }
 
+    // 値と多重度の組を文字列化する。確保済みノード数をM、出力長をLとしてO(M+L)。
     std::string to_string() const {
         std::ostringstream out;
         out << "@[";

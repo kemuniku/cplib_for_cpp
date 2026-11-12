@@ -41,6 +41,7 @@ std::vector<M> combinationPrefixSum(std::span<const std::pair<Int, Int>> queries
 }
 
 // 各(n, l, r)について、半開区間[l, r)の二項係数nCiの和をオフラインで求める。
+// N=max n、Q=クエリ数として O(N sqrt(Q+1)+Q log(Q+1))。
 template <class M>
 std::vector<M> combinationRangeSum(std::span<const std::tuple<Int, Int, Int>> queries) {
     std::vector<M> result(queries.size());

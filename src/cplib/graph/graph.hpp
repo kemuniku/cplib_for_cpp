@@ -91,6 +91,7 @@ public:
         return id;
     }
 
+    // 辺を追加し、その辺番号を返す。静的版は再buildが必要。償却O(1)。
     Int add_edge(Int u, Int v, cost_type cost = 1) {
         return add_edge_impl(u, v, cost, Directed);
     }
@@ -127,12 +128,14 @@ public:
         }
     }
 
+    // 静的グラフがbuild済みであることを検査する。O(1)。
     void static_graph_initialized_check() const
         requires Static
     {
         assert(!start.empty());
     }
 
+    // 辺と隣接要素の容量を予約する。既存要素数をE、指定次数の総数をDとしてO(V+E+D)。
     // 辺と隣接要素の容量を予約する。既存要素を維持する。
     void reserve(Int capacity, std::span<const Int> degrees = {})
         requires(!Static)
@@ -195,6 +198,7 @@ public:
         });
     }
 
+    // 隣接頂点（重み付きでは頂点と重み）の遅延ビューを返す。取得O(1)、走査O(deg(v))。
     auto operator[](Int v) const {
         if constexpr (std::is_void_v<T>)
             return detail::transform_range(adjacency(v), [](auto e) { return Int(e.dst); });
@@ -231,82 +235,101 @@ concept DynamicGraphTypes = GraphTypes<G> && !G::is_static;
 template <class G>
 concept StaticGraphTypes = GraphTypes<G> && G::is_static;
 
+// 頂点数nの動的グラフを生成する。計算量O(n)。
 template <class T = Int> auto initWeightedDirectedGraph(Int n, Int capacity = 0) {
     return WeightedDirectedGraph<T>(n, capacity);
 }
 
+// 頂点数nの動的グラフを生成する。計算量O(n)。
 template <class T = Int> auto initWeightedUnDirectedGraph(Int n, Int capacity = 0) {
     return WeightedUnDirectedGraph<T>(n, capacity);
 }
 
+// 頂点数nの動的グラフを生成する。計算量O(n)。
 inline auto initUnWeightedDirectedGraph(Int n, Int capacity = 0) {
     return UnWeightedDirectedGraph(n, capacity);
 }
 
+// 頂点数nの動的グラフを生成する。計算量O(n)。
 inline auto initUnWeightedUnDirectedGraph(Int n, Int capacity = 0) {
     return UnWeightedUnDirectedGraph(n, capacity);
 }
 
+// 頂点数nの静的グラフを生成する。計算量O(1)。利用前にbuildする。
 template <class T = Int> auto initWeightedDirectedStaticGraph(Int n, Int capacity = 0) {
     return WeightedDirectedStaticGraph<T>(n, capacity);
 }
 
+// 頂点数nの静的グラフを生成する。計算量O(1)。利用前にbuildする。
 template <class T = Int> auto initWeightedUnDirectedStaticGraph(Int n, Int capacity = 0) {
     return WeightedUnDirectedStaticGraph<T>(n, capacity);
 }
 
+// 頂点数nの静的グラフを生成する。計算量O(1)。利用前にbuildする。
 inline auto initUnWeightedDirectedStaticGraph(Int n, Int capacity = 0) {
     return UnWeightedDirectedStaticGraph(n, capacity);
 }
 
+// 頂点数nの静的グラフを生成する。計算量O(1)。利用前にbuildする。
 inline auto initUnWeightedUnDirectedStaticGraph(Int n, Int capacity = 0) {
     return UnWeightedUnDirectedStaticGraph(n, capacity);
 }
 
+// 頂点数を返す。O(1)。
 template <GraphTypes G> Int len(const G &g) {
     return g.len;
 }
 
+// 辺数を返す。O(1)。
 template <GraphTypes G> Int edge_count(const G &g) {
     return g.edge_count();
 }
 
+// 辺番号に対応する辺を返す。O(1)。
 template <GraphTypes G> auto get_edge(const G &g, Int id) {
     return g.get_edge(id);
 }
 
+// 静的グラフの隣接配列を構築する。O(V+E)。
 template <StaticGraphTypes G> void build(G &g) {
     g.build();
 }
 
+// 静的グラフの隣接配列を構築する。O(V+E)。
 template <StaticGraphTypes G> void build_impl(G &g) {
     g.build();
 }
 
+// 静的グラフが構築済みであることを検査する。O(1)。
 template <StaticGraphTypes G> void static_graph_initialized_check(const G &g) {
     g.static_graph_initialized_check();
 }
 
+// 辺と隣接配列の容量を予約する。既存辺数E、指定次数の総数DとしてO(V+E+D)。
 template <DynamicGraphTypes G> void reserve(G &g, Int capacity, std::span<const Int> degrees = {}) {
     g.reserve(capacity, degrees);
 }
 
+// 辺の向きを指定して動的グラフに辺を追加し、辺番号を返す。償却O(1)。
 template <DynamicGraphTypes G>
 Int add_edge_dynamic_impl(G &g, Int u, Int v, typename G::cost_type cost, bool directed) {
     return g.add_edge_impl(u, v, cost, directed);
 }
 
+// 辺の向きを指定して動的グラフに辺を追加し、辺番号を返す。償却O(1)。
 template <DynamicGraphTypes G>
     requires UnWeightedGraph<G>
 Int add_edge_dynamic_impl(G &g, Int u, Int v, bool directed) {
     return g.add_edge_impl(u, v, 1, directed);
 }
 
+// 辺の向きを指定して静的グラフに辺を追加し、辺番号を返す。償却O(1)。
 template <StaticGraphTypes G>
 Int add_edge_static_impl(G &g, Int u, Int v, typename G::cost_type cost, bool directed) {
     return g.add_edge_impl(u, v, cost, directed);
 }
 
+// 辺の向きを指定して静的グラフに辺を追加し、辺番号を返す。償却O(1)。
 template <StaticGraphTypes G>
     requires UnWeightedGraph<G>
 Int add_edge_static_impl(G &g, Int u, Int v, bool directed) {
@@ -318,6 +341,7 @@ template <class Label, class Weight = void, bool Directed = true> struct TableGr
     std::vector<Label> v;
     BasicGraph<Weight, false, Directed> graph;
 
+    // 頂点ラベルを登録する。頂点数Vに対して期待O(V)、ハッシュ衝突時の最悪O(V^2)。
     explicit TableGraph(std::span<const Label> vertices)
         : v(vertices.begin(), vertices.end()), graph(vertices.size()) {
         for (Int i = 0; i < Int(v.size()); ++i)
@@ -329,6 +353,7 @@ template <class Label, class Weight = void, bool Directed = true> struct TableGr
         return graph.add_edge(toi.at(u), toi.at(w), cost);
     }
 
+    // ラベルxの隣接頂点（重み付きではラベルと重み）の遅延ビューを返す。取得は期待O(1)、走査O(deg(x))。
     auto operator[](const Label &x) const {
         if constexpr (std::is_void_v<Weight>)
             return detail::transform_range(graph[toi.at(x)], [this](Int i) { return v[i]; });
@@ -355,34 +380,42 @@ template <class T> using UnWeightedDirectedTableGraph = TableGraph<T, void, true
 template <class T, class S = Int> using WeightedUnDirectedTableGraph = TableGraph<T, S, false>;
 template <class T, class S = Int> using WeightedDirectedTableGraph = TableGraph<T, S, true>;
 
+// ラベル付きグラフを生成する。頂点数Vに対して期待O(V)、最悪O(V^2)。
 template <class Range> auto initUnWeightedUnDirectedTableGraph(const Range &v) {
     return UnWeightedUnDirectedTableGraph<typename Range::value_type>(v);
 }
 
+// ラベル付きグラフを生成する。頂点数Vに対して期待O(V)、最悪O(V^2)。
 template <class Range> auto initUnWeightedDirectedTableGraph(const Range &v) {
     return UnWeightedDirectedTableGraph<typename Range::value_type>(v);
 }
 
+// ラベル付きグラフを生成する。頂点数Vに対して期待O(V)、最悪O(V^2)。
 template <class S = Int, class Range> auto initWeightedUnDirectedTableGraph(const Range &v) {
     return WeightedUnDirectedTableGraph<typename Range::value_type, S>(v);
 }
 
+// ラベル付きグラフを生成する。頂点数Vに対して期待O(V)、最悪O(V^2)。
 template <class S = Int, class Range> auto initWeightedDirectedTableGraph(const Range &v) {
     return WeightedDirectedTableGraph<typename Range::value_type, S>(v);
 }
 
+// グラフに辺を追加し、辺番号を返す。BasicGraphは償却O(1)、TableGraphは期待償却O(1)。
 template <class G, class... Args> auto add_edge(G &g, Args &&...args) {
     return g.add_edge(std::forward<Args>(args)...);
 }
 
+// 隣接頂点と辺番号のビューを返す。取得は期待O(1)、走査O(deg(v))。
 template <class G, class V> auto to_and_id(const G &g, const V &v) {
     return g.to_and_id(v);
 }
 
+// 隣接頂点と重みのビューを返す。取得O(1)、走査O(deg(v))。
 template <class G, class V> auto to_and_cost(const G &g, const V &v) {
     return g.to_and_cost(v);
 }
 
+// 隣接頂点、重み、辺番号のビューを返す。取得は期待O(1)、走査O(deg(v))。
 template <class G, class V> auto to_and_cost_and_id(const G &g, const V &v) {
     return g.to_and_cost_and_id(v);
 }

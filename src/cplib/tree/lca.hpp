@@ -107,9 +107,10 @@ class LowestCommonAncestor {
     }
 
 public:
+    // 空の未構築オブジェクトを作る。O(1)。
     LowestCommonAncestor() = default;
 
-    // 親配列から構築。parent[root]は不使用。no_laでLAの前計算を省略する。
+    // 親配列からO(N)時間・領域で構築する。parent[root]は不使用。no_laでLAの前計算を省略する。
     explicit LowestCommonAncestor(std::span<const Int> parent, Int root_, bool no_la = false)
         : n(parent.size()), root(root_), laEnabled(!no_la), parents(n) {
         assert(n <= std::numeric_limits<std::int32_t>::max() && 0 <= root && root < n);
@@ -367,34 +368,42 @@ inline auto initLCAFromForest(const std::vector<std::vector<Int>> &adj, bool no_
     return detail::lca_from_adj(detail::lca_undirected_adj(adj), adj.size(), true, no_la);
 }
 
+// 頂点数を返す。O(1)。
 inline Int numVertices(const LowestCommonAncestor &t) {
     return t.numVertices();
 }
 
+// 頂点vの親を返す。根では-1。O(1)。
 inline Int parentOf(const LowestCommonAncestor &t, Int v) {
     return t.parentOf(v);
 }
 
+// 根からvまでの辺数を返す。O(1)。
 inline Int depth(const LowestCommonAncestor &t, Int v) {
     return t.depth(v);
 }
 
+// 祖先または二点間のパス上の頂点を返す。範囲外なら-1。O(1)。
 inline Int la(const LowestCommonAncestor &t, Int v, Int k) {
     return t.la(v, k);
 }
 
+// 祖先または二点間のパス上の頂点を返す。範囲外なら-1。O(1)。
 inline Int la(const LowestCommonAncestor &t, Int s, Int g, Int d) {
     return t.la(s, g, d);
 }
 
+// uとvの最小共通祖先を返す。O(1)。
 inline Int lca(const LowestCommonAncestor &t, Int u, Int v) {
     return t.lca(u, v);
 }
 
+// uとvの間の辺数を返す。O(1)。
 inline Int dist(const LowestCommonAncestor &t, Int u, Int v) {
     return t.dist(u, v);
 }
 
+// xを根とするときのyとzの最小共通祖先を返す。O(1)。
 inline Int median(const LowestCommonAncestor &t, Int x, Int y, Int z) {
     return t.median(x, y, z);
 }

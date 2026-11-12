@@ -5,6 +5,7 @@
 #include <iterator>
 
 namespace cplib {
+// 非空ブロックを連結して管理する整数集合。更新は最悪O(1)。
 // Bit blocks linked through the nonempty blocks: worst-case O(1) updates.
 class IntSet {
     struct Block {
@@ -23,12 +24,14 @@ class IntSet {
     }
 
 public:
+    // [0,n)を格納可能な空集合を構築する。O(1+n/64)時間・領域。
     explicit IntSet(Int n = 0) : size_(n) {
         if (n < 0)
             throw std::invalid_argument("negative IntSet size");
         blocks.resize((UInt(n) + 63) / 64);
     }
 
+    // 両端を含む範囲を格納可能な空集合を構築する。範囲長nとしてO(1+n/64)時間・領域。
     template <class L, class R> explicit IntSet(ClosedSlice<L, R> b) {
         lower = b.a;
         if (b.a <= b.b) {
@@ -40,10 +43,12 @@ public:
         }
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return count_;
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
@@ -76,6 +81,7 @@ public:
         return false;
     }
 
+    // 範囲内のxを追加する。O(1)。
     void incl(Int x) {
         containsOrIncl(x);
     }
@@ -102,6 +108,7 @@ public:
         return false;
     }
 
+    // xを削除する。範囲外なら何もしない。O(1)。
     void excl(Int x) {
         missingOrExcl(x);
     }
@@ -130,10 +137,12 @@ public:
         Int node;
         UInt bits;
 
+        // 現在の要素を返す。O(1)。
         Int operator*() const {
             return set->lower + (node - 1) * 64 + std::countr_zero(bits);
         }
 
+        // 次の要素へ進む。O(1)。
         Iterator &operator++() {
             bits &= bits - 1;
             if (!bits) {
@@ -144,6 +153,7 @@ public:
             return *this;
         }
 
+        // 列挙の終端か返す。O(1)。
         bool operator==(std::default_sentinel_t) const {
             return node == 0;
         }
@@ -154,6 +164,7 @@ public:
         return {this, head, head ? blocks[head - 1].bits : 0};
     }
 
+    // 列挙の終端を返す。O(1)。
     std::default_sentinel_t end() const {
         return {};
     }
@@ -168,6 +179,7 @@ public:
         return true;
     }
 
+    // 要素を任意順に文字列化する。要素数k、出力長LとしてO(k+L)。
     std::string str() const {
         std::string s = "{";
         for (Int x : *this) {
@@ -179,14 +191,17 @@ public:
     }
 };
 
+// [0,n)を格納可能な空集合を生成する。O(1+n/64)。
 inline IntSet initIntSet(Int n) {
     return IntSet(n);
 }
 
+// 両端を含む範囲を格納可能な空集合を生成する。範囲長nとしてO(1+n/64)。
 template <class L, class R> IntSet initIntSet(ClosedSlice<L, R> b) {
     return IntSet(b);
 }
 
+// 指定範囲の空集合を作りvの要素を追加する。範囲長n、入力長kとしてO(1+n/64+k)。
 template <class R, class B> IntSet toIntSet(const R &v, B bounds) {
     IntSet s(bounds);
     for (Int x : v)

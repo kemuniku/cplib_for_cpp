@@ -2,7 +2,8 @@
 #include <cplib/math/primefactor.hpp>
 
 namespace cplib {
-// 約数を列挙する。小さい入力はO(sqrt(x))、大きい入力は素因数分解後O(約数個数)。
+// 約数を列挙する。約数の個数を D とし、小さい入力は O(sqrt(x))、大きい入力は素因数分解後 O(D)。
+// sorted=true の場合はさらに O(D log(D+1))。素因数分解の計算量は primefactor を参照。
 inline std::vector<Int> divisor(Int x, bool sorted = true) {
     std::vector<Int> result;
     if (x <= 1000000) {

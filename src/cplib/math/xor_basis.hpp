@@ -18,6 +18,7 @@ class XorBasis {
 
 public:
     std::vector<Int> basis;
+    // 空の基底を作る。計算量 O(1)。
     XorBasis() = default;
 
     // 簡約基底を構築する。O(n log V)。
@@ -33,11 +34,12 @@ public:
         std::sort(basis.begin(), basis.end());
     }
 
+    // 基底の個数を返す。計算量 O(1)。
     Int len_basis() const {
         return basis.size();
     }
 
-    // 基底のXOR和でxが作成可能か？
+    // 基底のXOR和でxが作成可能か判定する。基底数を B として O(B)。
     bool can_make(Int x) const {
         for (Int b : basis)
             if ((x ^ b) < x)
@@ -59,7 +61,7 @@ public:
     }
 
     // 作成可能な値の中でx未満の内最大のもの
-    // 存在しない場合は-1
+    // 存在しない場合は-1。基底数を B として O(B)。
     Int lt(Int x) const {
         if (x == 0)
             return -1;
@@ -70,7 +72,7 @@ public:
         return r;
     }
 
-    // 作成可能な値の中でx以下の内最大のもの
+    // 作成可能な値の中でx以下の内最大のもの。基底数を B として O(B)。
     Int le(Int x) const {
         Int r = 0;
         for (auto it = basis.rbegin(); it != basis.rend(); ++it)
@@ -79,7 +81,7 @@ public:
         return r;
     }
 
-    // 作成可能な値の中でxが小さい方から何番目かを返す。結果の各ビットは使用する基底を表す。
+    // 作成可能な値の中でxが小さい方から何番目かを返す。結果の各ビットは使用する基底を表す。基底数 B に対し O(B)。
     Int index(Int x) const {
         UInt r = 0;
         for (std::size_t i = 0; i < basis.size(); ++i)
@@ -100,7 +102,7 @@ public:
     }
 
     // 作成可能な値の中でxとxorを取ったときにk番目に小さくなるもの
-    // 存在しないならば-1を返す。
+    // 存在しないならば-1を返す。基底数 B に対し O(B)。
     Int xor_kth(Int x, Int k) const {
         Int kth = kth_smallest(k);
         if (kth == -1)
@@ -113,46 +115,57 @@ public:
     }
 };
 
+// 数列から基底を構築する。計算量は XorBasis(a) と同じ。
 inline XorBasis initXorBasis(std::span<const Int> a) {
     return XorBasis(a);
 }
 
+// 空の基底を構築する。計算量 O(1)。
 inline XorBasis initXorBasis() {
     return {};
 }
 
+// 基底に値を追加する。計算量は s.incl(x) と同じ。
 inline void incl(XorBasis &s, Int x) {
     s.incl(x);
 }
 
+// 基底数を返す。計算量 O(1)。
 inline Int len_basis(const XorBasis &s) {
     return s.len_basis();
 }
 
+// x が作成可能か判定する。計算量は s.can_make(x) と同じ。
 inline bool can_make(const XorBasis &s, Int x) {
     return s.can_make(x);
 }
 
+// 作成可能な値の k 番目を返す。計算量は s.kth_smallest(k) と同じ。
 inline Int kth_smallest(const XorBasis &s, Int k) {
     return s.kth_smallest(k);
 }
 
+// x 未満で作成可能な最大値を返す。計算量は s.lt(x) と同じ。
 inline Int lt(const XorBasis &s, Int x) {
     return s.lt(x);
 }
 
+// x 以下で作成可能な最大値を返す。計算量は s.le(x) と同じ。
 inline Int le(const XorBasis &s, Int x) {
     return s.le(x);
 }
 
+// 作成可能な値の順位を返す。計算量は s.index(x) と同じ。
 inline Int index(const XorBasis &s, Int x) {
     return s.index(x);
 }
 
+// x との XOR が最小となる作成可能値を返す。計算量は s.xor_min(x) と同じ。
 inline Int xor_min(const XorBasis &s, Int x) {
     return s.xor_min(x);
 }
 
+// x との XOR が k 番目に小さい作成可能値を返す。計算量は s.xor_kth(x, k) と同じ。
 inline Int xor_kth(const XorBasis &s, Int x, Int k) {
     return s.xor_kth(x, k);
 }

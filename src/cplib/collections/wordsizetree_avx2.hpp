@@ -22,18 +22,22 @@ class WordsizeTreeAvx2 {
     }
 
 public:
+    // 固定容量2^24の空集合を作る。固定サイズの領域を初期化するためO(1)。
     // 256 分岐・3段。元の AVX2 比較・movemask カーネルを使用。
     WordsizeTreeAvx2() = default;
 
+    // 文字'1'の位置を集合に登録する。入力長NとしてO(N+1)。
     explicit WordsizeTreeAvx2(std::string_view v) {
         initialize(v.data(), v.size(), '1');
     }
 
+    // 真の位置を集合に登録する。入力長NとしてO(N+1)。
     explicit WordsizeTreeAvx2(std::span<const bool> v) {
         static_assert(sizeof(bool) == 1);
         initialize(v.data(), v.size(), 1);
     }
 
+    // 真の位置を集合に登録する。入力長NとしてO(N+1)。
     explicit WordsizeTreeAvx2(const std::vector<bool> &v) {
         std::vector<unsigned char> bytes(v.size());
         for (std::size_t i = 0; i < v.size(); ++i)
@@ -46,6 +50,7 @@ public:
         return count_;
     }
 
+    // xを集合に追加する。O(1)。
     void incl(Int x) {
         assert(0 <= x && x < WordsizeTreeAvx2Capacity);
         if (!(*this)[x])
@@ -53,6 +58,7 @@ public:
         detail::wordsize_avx2::wst_incl(leaf_.data(), middle_.data(), top_.data(), x);
     }
 
+    // xを集合から削除する。O(1)。
     void excl(Int x) {
         assert(0 <= x && x < WordsizeTreeAvx2Capacity);
         if ((*this)[x])
@@ -60,11 +66,13 @@ public:
         detail::wordsize_avx2::wst_excl(leaf_.data(), middle_.data(), top_.data(), x);
     }
 
+    // xが集合に含まれるか返す。O(1)。
     bool operator[](Int x) const {
         assert(0 <= x && x < WordsizeTreeAvx2Capacity);
         return (leaf_[x >> 6] >> (x & 63)) & 1;
     }
 
+    // 計算量O(1)。
     // x以上の最小の要素を返し、存在しなければ-1を返します。
     Int ge(Int x) const {
         if (x >= WordsizeTreeAvx2Capacity)
@@ -73,6 +81,7 @@ public:
                                              std::max(x, Int(0)));
     }
 
+    // 計算量O(1)。
     // x以下の最大の要素を返し、存在しなければ-1を返します。
     Int le(Int x) const {
         if (x < 0)
@@ -82,18 +91,22 @@ public:
     }
 };
 
+// 固定容量2^24の空集合を作る。固定サイズの領域を初期化するためO(1)。
 inline WordsizeTreeAvx2 initWordsizeTree() {
     return {};
 }
 
+// 文字'1'の位置を集合に登録する。入力長NとしてO(N+1)。
 inline WordsizeTreeAvx2 initWordsizeTree(std::string_view v) {
     return WordsizeTreeAvx2(v);
 }
 
+// 真の位置を集合に登録する。入力長NとしてO(N+1)。
 inline WordsizeTreeAvx2 initWordsizeTree(std::span<const bool> v) {
     return WordsizeTreeAvx2(v);
 }
 
+// 真の位置を集合に登録する。入力長NとしてO(N+1)。
 inline WordsizeTreeAvx2 initWordsizeTree(const std::vector<bool> &v) {
     return WordsizeTreeAvx2(v);
 }

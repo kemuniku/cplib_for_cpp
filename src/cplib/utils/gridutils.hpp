@@ -24,6 +24,7 @@ template <class Grid, class T> std::pair<Int, Int> gridfind(const Grid &grid, co
     return {-1, -1};
 }
 
+// 一致する全マスの座標を返す。計算量 O(全マス数)。
 template <class Grid, class T> auto gridfinds(const Grid &grid, const T &value) {
     std::vector<std::pair<Int, Int>> r;
     for (Int i = 0; i < Int(grid.size()); ++i)
@@ -33,18 +34,22 @@ template <class Grid, class T> auto gridfinds(const Grid &grid, const T &value) 
     return r;
 }
 
+// 行数を返す。計算量 O(1)。
 template <class Grid> Int height(const Grid &grid) {
     return grid.size();
 }
 
+// 先頭行の列数を返す。空なら0。計算量 O(1)。
 template <class Grid> Int width(const Grid &grid) {
     return grid.empty() ? 0 : grid[0].size();
 }
 
+// マスを行優先の一次元添字に変換する。計算量 O(1)。
 template <class Grid> Int getid(const Grid &grid, Int i, Int j) {
     return i * width(grid) + j;
 }
 
+// 行優先の一次元添字をマスの座標に変換する。計算量 O(1)。
 template <class Grid> std::pair<Int, Int> to_pos(const Grid &grid, Int id) {
     return {id / width(grid), id % width(grid)};
 }

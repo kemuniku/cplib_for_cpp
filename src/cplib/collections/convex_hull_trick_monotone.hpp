@@ -8,6 +8,7 @@ class ConvexHullTrickMonotone {
     Int lastX_ = 0;
 
 public:
+    // 傾きと問い合わせ座標の単調方向を指定し、空の最小値CHTを構築する。O(1)。
     explicit ConvexHullTrickMonotone(bool slopeIncreasing = false, bool xIncreasing = true)
         : hull_(slopeIncreasing), xIncreasing_(xIncreasing) {
     }
@@ -39,6 +40,7 @@ public:
     }
 };
 
+// 傾きと問い合わせ座標の単調方向を指定し、空の最小値CHTを生成する。O(1)。
 inline ConvexHullTrickMonotone initConvexHullTrickMonotone(bool slopeIncreasing = false,
                                                            bool xIncreasing = true) {
     return ConvexHullTrickMonotone(slopeIncreasing, xIncreasing);

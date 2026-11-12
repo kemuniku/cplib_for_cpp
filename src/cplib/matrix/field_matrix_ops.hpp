@@ -102,7 +102,7 @@ template <class T> T fieldDeterminant(std::vector<std::vector<T>> rows) {
     return e.pivots.size() == rows.size() ? e.determinant : T(0);
 }
 
-// 特殊解と核の基底。O(hw min(h,w)+w² min(h,w))。
+// 特殊解と核の基底。O(hw(min(h,w)+1)+w²(min(h,w)+1))。
 // Ax=bの特殊解と核の基底を返す。解なしはstd::nullopt。
 template <class T, class B>
 std::optional<LinearSystemSolution<T>> fieldSolve(std::vector<std::vector<T>> rows, Int width,
@@ -192,7 +192,7 @@ std::optional<std::vector<std::vector<T>>> fieldAdjugateInverse(std::vector<std:
     return answer;
 }
 
-// 多項式を用いる包除原理。O(n² 2^(n/2))時間、O(n⁴)領域。
+// 多項式を用いる包除原理。O(n² 2^(n/2)) 時間、O(n⁴) 領域。
 // 対称な偶数次行列のhafnianを返す。
 template <class T> T fieldHafnian(const std::vector<std::vector<T>> &rows) {
     Int n = rows.size();

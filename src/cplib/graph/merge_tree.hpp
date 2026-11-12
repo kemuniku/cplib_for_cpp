@@ -51,6 +51,7 @@ struct MergeTree {
             ret[et[i]] = i;
     }
 
+    // 計算量は償却O(α(N))。
     // 頂点u,vをマージする
     // 先読みで与えた順番にuniteしてください
     void unite(Int u, Int w) {
@@ -61,17 +62,20 @@ struct MergeTree {
         now[uf.root(u)] = N + alr_query++;
     }
 
+    // 計算量は償却O(α(N))。
     // xが現在の状態でどこの頂点で表される集合に属しているかを返す
     Int get_id(Int x) {
         return now[uf.root(x)];
     }
 
+    // 計算量は償却O(α(N))。
     // ある集合について、それに属している頂点を区間で返す
     auto get_range(Int x) {
         Int id = get_id(x);
         return closed_slice(ein[id], eout[id] - 1);
     }
 
+    // 計算量O(N)。
     // オイラーツアー順に配列を並び替える
     template <class T> std::vector<T> make_seq(const std::vector<T> &values) const {
         assert(Int(values.size()) == N);
@@ -81,6 +85,7 @@ struct MergeTree {
         return out;
     }
 
+    // 計算量O(N)。
     // オイラーツアー順になっている配列をもとに戻す
     template <class T> std::vector<T> restore_seq(const std::vector<T> &values) const {
         assert(Int(values.size()) == N);
@@ -90,32 +95,39 @@ struct MergeTree {
         return out;
     }
 
+    // 計算量O(1)。
     // オイラーツアー順でxは何番目かを返す
     Int index(Int x) const {
         return ret[x];
     }
 };
 
+// N頂点とQ個の併合列から併合木を構築する。O((N+Q)α(N))。
 inline auto initMergeTree(Int n, std::span<const std::pair<Int, Int>> v) {
     return MergeTree(n, v);
 }
 
+// xの集合を表す併合木の頂点を返す。償却O(α(N))。
 inline Int get_id(MergeTree &t, Int x) {
     return t.get_id(x);
 }
 
+// xの集合に対応するEuler順の区間を返す。償却O(α(N))。
 inline auto get_range(MergeTree &t, Int x) {
     return t.get_range(x);
 }
 
+// xのEuler順の位置を返す。O(1)。
 inline Int index(const MergeTree &t, Int x) {
     return t.index(x);
 }
 
+// 配列をEuler順に並び替える。O(N)。
 template <class T> auto make_seq(const MergeTree &t, const std::vector<T> &v) {
     return t.make_seq(v);
 }
 
+// Euler順の配列を頂点順に戻す。O(N)。
 template <class T> auto restore_seq(const MergeTree &t, const std::vector<T> &v) {
     return t.restore_seq(v);
 }

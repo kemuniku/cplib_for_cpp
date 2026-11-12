@@ -35,6 +35,7 @@ template <class Forward, class Backward> class RerootingStaticTopTreeDP {
 public:
     StaticTopTree tree;
 
+    // 双方向の葉の値と演算からDPを構築する。演算がO(1)ならO(N)。
     RerootingStaticTopTreeDP(StaticTopTree t, std::span<const Forward> forward,
                              std::span<const Backward> backward, Op compress, Op rake,
                              Reverse reverse, Rake atRoot, Rake atEnd)
@@ -51,6 +52,7 @@ public:
             recalculate(node);
     }
 
+    // 頂点vに対応する双方向の値を更新する。演算がO(1)ならO(log N)。
     void set(Int v, Forward forward, Backward backward) {
         assert(v >= 0 && v < tree->numVertices);
         state_->forward[v] = std::move(forward);
@@ -108,6 +110,7 @@ public:
     }
 };
 
+// 全方位DPを構築する。各演算がO(1)ならO(N)。
 template <class F, class B, class C, class R, class CR, class RR, class RE>
 auto initRerootingStaticTopTreeDP(StaticTopTree tree, const std::vector<F> &forward,
                                   const std::vector<B> &backward, C compress, R rake, CR reverse,
@@ -117,14 +120,17 @@ auto initRerootingStaticTopTreeDP(StaticTopTree tree, const std::vector<F> &forw
                                           std::move(atEnd));
 }
 
+// 構築時の根に対する集約値を返す。値のコピーがO(1)ならO(1)。
 template <class F, class B> auto getAll(const RerootingStaticTopTreeDP<F, B> &dp) {
     return dp.getAll();
 }
 
+// 頂点vを根とする集約値を返す。各演算がO(1)ならO(log N)。
 template <class F, class B> auto prod(const RerootingStaticTopTreeDP<F, B> &dp, Int v) {
     return dp.prod(v);
 }
 
+// 頂点vに対応する双方向の値を更新する。各演算がO(1)ならO(log N)。
 template <class F, class B>
 void set(RerootingStaticTopTreeDP<F, B> &dp, Int v, F forward, B backward) {
     dp.set(v, std::move(forward), std::move(backward));

@@ -54,6 +54,7 @@ template <class K, class S, class F> class CompressedLazySegmentTree {
     }
 
 public:
+    // 入力座標数Nに対しO(N log(N+1))。
     // 登録座標は構築後に追加できません。Kには一貫した<と==が必要です。
     // 点モードでは各点をinitial(x)（省略時はe）で初期化します。
     // 区間モードでは各葉[x[i],x[i+1])をinitial(x[i],x[i+1])で初期化します。
@@ -130,48 +131,59 @@ public:
         CompressedLazySegmentTree *tree;
         K key;
 
+        // 現在値を読み取る。O(log(N+1))。
         operator S() const {
             return tree->point(key);
         }
 
+        // 値を代入する。O(log(N+1))。
         Reference &operator=(const S &v) {
             tree->update(key, v);
             return *this;
         }
 
+        // 別の参照の値を読み取り、この位置へ代入する。O(log(N+1))。
         Reference &operator=(const Reference &v) {
             return *this = S(v);
         }
     };
 
+    // 座標xへの読み書き用参照を返す。取得O(1)、読み書きO(log(N+1))。
     Reference operator[](const K &x) {
         return {this, x};
     }
 
+    // 閉区間の積を返す。O(log(N+1))。
     S operator[](ClosedSlice<K, K> s) {
         return get(s);
     }
 
+    // 全体の積を返す。O(1)。
     S get_all() const {
         return tree.get_all();
     }
 
+    // 保持する点または隣接座標間区間の数を返す。O(1)。
     Int len() const {
         return intervals ? std::max<Int>(0, Int(coords.size()) - 1) : Int(coords.size());
     }
 
+    // 保持する点または隣接座標間区間の数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // 圧縮順の全値を文字列で返す。出力長LとしてO(N log(N+1)+L)。
     std::string str() {
         return tree.str();
     }
 
+    // 単位元と恒等作用を返す。値のコピーがO(1)ならO(1)。
     std::pair<S, F> compressedLazyDefaults() const {
         return {identity, actionIdentity};
     }
 
+    // 区間取得・作用・点更新・点取得の実装を差し替える。関数オブジェクトのコピー費用を除きO(1)。
     template <class Get, class Apply, class Update, class Point>
     void setCompressedLazyOperations(Get get, Apply apply, Update update, Point point) {
         getImpl = get;
@@ -181,6 +193,7 @@ public:
     }
 };
 
+// 圧縮遅延セグメント木を構築する。入力座標数Nに対しO(N log(N+1))。
 template <class K, class S, class F, class Op, class Map, class Comp,
           class Initial = std::nullptr_t>
 auto initCompressedLazySegmentTree(std::span<const K> coords, Op op, S e, Map map, Comp comp, F id,
@@ -188,6 +201,7 @@ auto initCompressedLazySegmentTree(std::span<const K> coords, Op op, S e, Map ma
     return CompressedLazySegmentTree<K, S, F>(coords, op, e, map, comp, id, initial);
 }
 
+// 圧縮遅延セグメント木を構築する。入力座標数Nに対しO(N log(N+1))。
 template <class K, class S, class F, class Op, class Map, class Comp,
           class Initial = std::nullptr_t>
 auto initCompressedLazySegmentTree(const std::vector<K> &coords, Op op, S e, Map map, Comp comp,
@@ -195,6 +209,7 @@ auto initCompressedLazySegmentTree(const std::vector<K> &coords, Op op, S e, Map
     return CompressedLazySegmentTree<K, S, F>(coords, op, e, map, comp, id, initial);
 }
 
+// 座標数Nに対して構築O(N log(N+1))。演算・比較・初期化はO(1)を想定する。
 // 直接演算版。元のマクロと同じ境界の共有祖先省略・関数特殊化を保持する。
 template <class Coords, class Op, class S, class Map, class Comp, class F,
           class Initial = std::nullptr_t>
@@ -281,39 +296,47 @@ auto newCompressedLazySegWith(const Coords &coords, Op op, S e, Map map, Comp co
     return result;
 }
 
+// 保持する点または区間の数を返す。O(1)。
 template <class K, class S, class F> Int len(const CompressedLazySegmentTree<K, S, F> &t) {
     return t.len();
 }
 
+// 指定区間の積を返す。O(log(N+1))。
 template <class K, class S, class F>
 S get(CompressedLazySegmentTree<K, S, F> &t, const K &l, const K &r) {
     return t.get(l, r);
 }
 
+// 指定区間の積を返す。O(log(N+1))。
 template <class K, class S, class F>
 S get(CompressedLazySegmentTree<K, S, F> &t, ClosedSlice<K, K> r) {
     return t.get(r);
 }
 
+// 全体の積を返す。O(1)。
 template <class K, class S, class F> S get_all(const CompressedLazySegmentTree<K, S, F> &t) {
     return t.get_all();
 }
 
+// 指定区間に作用を適用する。O(log(N+1))。
 template <class K, class S, class F>
 void apply(CompressedLazySegmentTree<K, S, F> &t, const K &l, const K &r, F f) {
     t.apply(l, r, f);
 }
 
+// 指定区間に作用を適用する。O(log(N+1))。
 template <class K, class S, class F>
 void apply(CompressedLazySegmentTree<K, S, F> &t, ClosedSlice<K, K> r, F f) {
     t.apply(r, f);
 }
 
+// 指定座標の値を更新する。O(log(N+1))。
 template <class K, class S, class F>
 void update(CompressedLazySegmentTree<K, S, F> &t, const K &x, S value) {
     t.update(x, value);
 }
 
+// 圧縮順の全値を文字列で返す。出力長LとしてO(N log(N+1)+L)。
 template <class K, class S, class F> auto to_string(CompressedLazySegmentTree<K, S, F> &t) {
     return t.str();
 }

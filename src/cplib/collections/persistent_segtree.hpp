@@ -18,7 +18,7 @@ template <class T = Int> class PSegmentTree {
     }
 
 public:
-    // vから永続セグメント木をO(N)で構築する。opは結合演算、eは単位元。
+    // 初期配列または要素数vから永続セグメント木をO(N+1)で構築する。opは結合演算、eは単位元。
     template <class V, class Op>
     PSegmentTree(const V &v, Op op, T e)
         : tree(
@@ -32,6 +32,7 @@ public:
         return tree.len();
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
@@ -48,6 +49,7 @@ public:
         return PSegmentTree(tree.copy_range(src.tree, l, r));
     }
 
+    // 木の操作は時間・追加領域O(log N)。独立に構築した木の領域所有権の統合費用は半開区間版と同じ。
     // 閉区間sをsrcの同じ区間で置き換えた新しい版を返す。
     template <class L, class R>
     PSegmentTree copy_range(const PSegmentTree &src, ClosedSlice<L, R> s) const {
@@ -69,7 +71,7 @@ public:
         return tree.get_all();
     }
 
-    // iの要素をO(log N)で返す。
+    // 添字iの要素、または閉区間iの積を返す。O(log(N+1))。
     template <class I> T operator[](I i) const {
         return tree[i];
     }
@@ -102,26 +104,32 @@ public:
 template <class V, class Op, class T> PSegmentTree(const V &, Op, T) -> PSegmentTree<T>;
 template <class T> using PersistentSegmentTree = PSegmentTree<T>;
 
+// 初期配列または要素数vとモノイドを指定して永続セグメント木を構築する。O(N+1)回の演算。
 template <class V, class Op, class T> auto initPersistentSegmentTree(const V &v, Op op, T e) {
     return PSegmentTree<T>(v, op, e);
 }
 
+// 初期配列または要素数vとモノイドを指定して永続セグメント木を構築する。O(N+1)回の演算。
 template <class V, class Op, class T> auto initSegmentTree(const V &v, Op op, T e) {
     return initPersistentSegmentTree(v, op, e);
 }
 
+// 位置iをvに置き換えた新版を返す。時間・追加領域O(log N)。
 template <class T> auto update(const PSegmentTree<T> &s, Int i, T v) {
     return s.update(i, v);
 }
 
+// 半開区間[l,r)の積を返す。O(log N)回の演算。
 template <class T> T query(const PSegmentTree<T> &s, Int l, Int r) {
     return s.query(l, r);
 }
 
+// 初期配列または要素数とモノイドを指定して永続セグメント木を構築する。O(N+1)回の演算。
 template <class... A> auto newPersistentSegWith(A &&...args) {
     return initPersistentSegmentTree(std::forward<A>(args)...);
 }
 
+// 初期配列または要素数とモノイドを指定して永続セグメント木を構築する。O(N+1)回の演算。
 template <class... A> auto newSegWith(A &&...args) {
     return initPersistentSegmentTree(std::forward<A>(args)...);
 }

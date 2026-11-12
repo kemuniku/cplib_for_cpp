@@ -51,6 +51,7 @@ std::vector<T> shiftOfSamplingPoints(const std::vector<T> &ys, std::type_identit
     return out;
 }
 
+// f(t) から f(t+n-1) までを求める。n = ys.size() として O(M(n))。
 template <Modint T>
 auto shiftOfSamplingPoints(const std::vector<T> &ys, std::type_identity_t<T> t) {
     return shiftOfSamplingPoints(ys, t, ys.size());

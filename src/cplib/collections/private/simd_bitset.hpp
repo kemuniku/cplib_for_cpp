@@ -386,8 +386,10 @@ template <int Width, Int Size = -1> class SimdBitSet {
     }
 
 public:
+    // 全ビット0で構築する。固定長nではO(1+n/64)、動的長では空でO(1)。
     SimdBitSet() = default;
 
+    // 動的長nの全ビット0の列を構築する。O(1+n/64)。
     explicit SimdBitSet(Int n)
         requires(Size < 0)
         : size_(n) {
@@ -396,6 +398,7 @@ public:
         bits_.resize((n >> 6) + bool(n & 63));
     }
 
+    // 真偽値配列から構築する。結果の長さnとしてO(1+n/64+v.size())。
     explicit SimdBitSet(const std::vector<bool> &v) {
         if constexpr (Size < 0) {
             size_ = v.size();
@@ -404,12 +407,14 @@ public:
         initialize_bools(v);
     }
 
+    // 真偽値配列から長さnの列を構築する。O(1+n/64+v.size())。
     SimdBitSet(const std::vector<bool> &v, Int n)
         requires(Size < 0)
         : SimdBitSet(n) {
         initialize_bools(v);
     }
 
+    // 真偽値配列から固定長nの列を構築する。O(1+n/64+v.size())。
     explicit SimdBitSet(std::span<const bool> v)
         requires(Size >= 0)
     {
@@ -440,23 +445,28 @@ public:
                                        bits_.size());
     }
 
+    // ビット数を返す。O(1)。
     Int len() const {
         return size_;
     }
 
+    // ビット数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // 格納された64ビット整数列への読み取り専用ビューを返す。O(1)。
     std::span<const UInt> words() const {
         return bits_;
     }
 
+    // i番目のビットを返す。O(1)。
     bool operator[](Int i) const {
         check(i);
         return (bits_[i >> 6] >> (i & 63)) & 1;
     }
 
+    // i番目のビットを設定する。O(1)。
     void set(Int i, bool v) {
         check(i);
         if (v)
@@ -465,6 +475,7 @@ public:
             bits_[i >> 6] &= ~(UInt(1) << (i & 63));
     }
 
+    // i番目のビットを反転する。O(1)。
     void flip(Int i) {
         check(i);
         bits_[i >> 6] ^= UInt(1) << (i & 63);
@@ -474,15 +485,18 @@ public:
         SimdBitSet *owner;
         Int i;
 
+        // 対象のビットを返す。O(1)。
         operator bool() const {
             return std::as_const(*owner)[i];
         }
 
+        // 対象のビットを設定する。O(1)。
         Reference &operator=(bool v) {
             owner->set(i, v);
             return *this;
         }
 
+        // O(1)。
         // 0ならビットを落とし、1なら立てる。それ以外は何もしない。
         Reference &operator=(Int v) {
             if (v == 0 || v == 1)
@@ -490,15 +504,18 @@ public:
             return *this;
         }
 
+        // 値が0または1なら対象のビットを設定する。O(1)。
         Reference &operator=(int v) {
             return *this = Int(v);
         }
 
+        // 別のビットを読み取って代入する。O(1)。
         Reference &operator=(const Reference &v) {
             return *this = bool(v);
         }
     };
 
+    // i番目を読み書きする参照を返す。O(1)。
     Reference operator[](Int i) {
         return {this, i};
     }
@@ -514,6 +531,7 @@ public:
             Kernel::avxAnd(bits_.data(), x.bits_.data(), y.bits_.data(), bits_.size());
     }
 
+    // yとのANDを返す。長さnとしてO(1+n/64)。
     SimdBitSet operator&(const SimdBitSet &y) const {
         same(y);
         auto out = empty();
@@ -521,6 +539,7 @@ public:
         return out;
     }
 
+    // yとのANDで更新する。長さnとしてO(1+n/64)。
     SimdBitSet &operator&=(const SimdBitSet &y) {
         andInto(*this, y);
         return *this;
@@ -535,6 +554,7 @@ public:
             Kernel::avxOr(bits_.data(), x.bits_.data(), y.bits_.data(), bits_.size());
     }
 
+    // yとのORを返す。長さnとしてO(1+n/64)。
     SimdBitSet operator|(const SimdBitSet &y) const {
         same(y);
         auto out = empty();
@@ -542,6 +562,7 @@ public:
         return out;
     }
 
+    // yとのORで更新する。長さnとしてO(1+n/64)。
     SimdBitSet &operator|=(const SimdBitSet &y) {
         orInto(*this, y);
         return *this;
@@ -556,6 +577,7 @@ public:
             Kernel::avxXor(bits_.data(), x.bits_.data(), y.bits_.data(), bits_.size());
     }
 
+    // yとのXORを返す。長さnとしてO(1+n/64)。
     SimdBitSet operator^(const SimdBitSet &y) const {
         same(y);
         auto out = empty();
@@ -563,6 +585,7 @@ public:
         return out;
     }
 
+    // yとのXORで更新する。長さnとしてO(1+n/64)。
     SimdBitSet &operator^=(const SimdBitSet &y) {
         xorInto(*this, y);
         return *this;
@@ -653,6 +676,7 @@ public:
         xnorInto(*this, y);
     }
 
+    // 全ビットを反転した列を返す。長さnとしてO(1+n/64)。
     SimdBitSet operator~() const {
         auto out = empty();
         if (size_) {
@@ -662,6 +686,7 @@ public:
         return out;
     }
 
+    // 添字の大きい方向にshiftビットずらした列を返す。長さnとしてO(1+n/64)。
     SimdBitSet operator<<(Int shift) const {
         if (shift < 0)
             throw std::invalid_argument("negative shift");
@@ -673,6 +698,7 @@ public:
         return out;
     }
 
+    // 添字の小さい方向にshiftビットずらした列を返す。長さnとしてO(1+n/64)。
     SimdBitSet operator>>(Int shift) const {
         if (shift < 0)
             throw std::invalid_argument("negative shift");
@@ -682,6 +708,7 @@ public:
         return out;
     }
 
+    // 長さnとしてO(1+n/64)。
     // 立っているビットの個数を返します。
     Int popcount() const {
         return size_ ? Int(Kernel::avxPopcount(bits_.data(), bits_.data(), bits_.size())) : 0;
@@ -694,6 +721,7 @@ public:
         return l < r ? Int(Kernel::avxPopcountRange(bits_.data(), bits_.data(), l, r)) : 0;
     }
 
+    // 長さnとしてO(1+n/64)。
     // 共通部分の要素数を、一時的な集合を作らずに返します。
     Int andpopcount(const SimdBitSet &y) const {
         same(y);
@@ -708,6 +736,7 @@ public:
         return l < r ? Int(Kernel::avxAndpopcountRange(bits_.data(), y.bits_.data(), l, r)) : 0;
     }
 
+    // 長さnとしてO(1+n/64)。
     // 和集合の要素数を、一時的な集合を作らずに返します。
     Int orpopcount(const SimdBitSet &y) const {
         same(y);
@@ -722,6 +751,7 @@ public:
         return l < r ? Int(Kernel::avxOrpopcountRange(bits_.data(), y.bits_.data(), l, r)) : 0;
     }
 
+    // 長さnとしてO(1+n/64)。
     // 対称差の要素数を、一時的な集合を作らずに返します。
     Int xorpopcount(const SimdBitSet &y) const {
         same(y);
@@ -741,11 +771,13 @@ public:
         return size_ - xorpopcount(y);
     }
 
+    // yとの共通部分に1があるか返す。長さnとしてO(1+n/64)。
     bool intersects(const SimdBitSet &y) const {
         same(y);
         return size_ && Kernel::avxIntersects(bits_.data(), y.bits_.data(), bits_.size());
     }
 
+    // 自身の1の位置が全てyでも1か返す。長さnとしてO(1+n/64)。
     bool isSubsetOf(const SimdBitSet &y) const {
         same(y);
         return !size_ || Kernel::avxSubset(bits_.data(), y.bits_.data(), bits_.size());
@@ -807,14 +839,17 @@ public:
             Kernel::avxFlipRange(bits_.data(), l, r);
     }
 
+    // 全ビットを0にする。長さnとしてO(1+n/64)。
     void clear() {
         clearRange(0, size_);
     }
 
+    // 全ビットを1にする。長さnとしてO(1+n/64)。
     void fill() {
         setRange(0, size_);
     }
 
+    // 全ビットを反転する。長さnとしてO(1+n/64)。
     void flipAll() {
         flipRange(0, size_);
     }
@@ -826,14 +861,17 @@ public:
         return size_ ? Kernel::avxCmp(bits_.data(), y.bits_.data(), bits_.size()) : 0;
     }
 
+    // 添字0から辞書順でyより小さいか返す。長さnとしてO(1+n/64)。
     bool lexLess(const SimdBitSet &y) const {
         return cmp(y) < 0;
     }
 
+    // 添字0から辞書順で比較する。長さnとしてO(1+n/64)。
     auto operator<=>(const SimdBitSet &y) const {
         return cmp(y) <=> 0;
     }
 
+    // 長さと全ビットが一致するか返す。長さnとしてO(1+n/64)。
     bool operator==(const SimdBitSet &y) const {
         return size_ == y.size_ && bits_ == y.bits_;
     }
@@ -850,6 +888,7 @@ public:
         return size_ && Kernel::avxAny(bits_.data(), size_);
     }
 
+    // 長さnとしてO(n)。
     // 添字の大きい順にビットを並べた文字列を返す。
     std::string to_string() const {
         std::string out(size_, '0');
@@ -864,6 +903,7 @@ public:
         std::size_t word;
         UInt remaining;
 
+        // 次に1のあるワードまで進む。長さnとして最悪O(1+n/64)。
         void skip() {
             if (!remaining && word < owner->bits_.size()) {
                 word = Kernel::searchNext(owner->bits_.data(), word + 1, owner->bits_.size());
@@ -872,27 +912,32 @@ public:
             }
         }
 
+        // 現在の1のビットの添字を返す。O(1)。
         Int operator*() const {
             return word * 64 + std::countr_zero(remaining);
         }
 
+        // 次の1へ進む。長さnとして最悪O(1+n/64)、全列挙でO(1+n/64+1の個数)。
         Iterator &operator++() {
             remaining &= remaining - 1;
             skip();
             return *this;
         }
 
+        // 同じ位置を指すか比較する。O(1)。
         bool operator==(const Iterator &other) const {
             return owner == other.owner && word == other.word && remaining == other.remaining;
         }
     };
 
+    // 最初の1を指すイテレータを返す。長さnとして最悪O(1+n/64)。
     Iterator begin() const {
         Iterator it{this, 0, bits_.empty() ? 0 : bits_[0]};
         it.skip();
         return it;
     }
 
+    // 列挙終了を示すイテレータを返す。O(1)。
     Iterator end() const {
         return {this, bits_.size(), 0};
     }
@@ -996,6 +1041,7 @@ public:
                      : 0;
     }
 
+    // ビット列を符号なし整数として加算し、長さを超える桁を捨てた結果を返す。長さnとしてO(1+n/64)。
     SimdBitSet operator+(const SimdBitSet &y) const
         requires(Width == 512)
     {
@@ -1008,6 +1054,7 @@ public:
         return out;
     }
 
+    // ビット列を符号なし整数として加算し、長さを超える桁を捨てる。長さnとしてO(1+n/64)。
     SimdBitSet &operator+=(const SimdBitSet &y)
         requires(Width == 512)
     {
@@ -1019,6 +1066,7 @@ public:
         return *this;
     }
 
+    // 添字の大きい方向へkビットずらす。長さnとしてO(1+n/64)。
     SimdBitSet &operator<<=(Int k)
         requires(Width == 512)
     {
@@ -1033,6 +1081,7 @@ public:
         return *this;
     }
 
+    // 添字の小さい方向へkビットずらす。長さnとしてO(1+n/64)。
     SimdBitSet &operator>>=(Int k)
         requires(Width == 512)
     {
@@ -1075,230 +1124,282 @@ public:
     }
 };
 
+// ビット数を返す。ビット数nとしてO(1)。
 template <int W, Int N> auto len(const SimdBitSet<W, N> &x) {
     return x.len();
 }
 
+// 1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto popcount(const SimdBitSet<W, N> &x) {
     return x.popcount();
 }
 
+// 最小の1の添字を返す。なければ-1。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto lowestBit(const SimdBitSet<W, N> &x) {
     return x.lowestBit();
 }
 
+// 全ビットが1か返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto all(const SimdBitSet<W, N> &x) {
     return x.all();
 }
 
+// 1のビットがあるか返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto any(const SimdBitSet<W, N> &x) {
     return x.any();
 }
 
+// 最上位ビットを返す。空ならfalse。ビット数nとしてO(1)。
 template <int W, Int N> auto lastBit(const SimdBitSet<W, N> &x) {
     return x.lastBit();
 }
 
+// 添字の大きい順に0と1を並べた文字列を返す。ビット数nとしてO(n)。
 template <int W, Int N> auto to_string(const SimdBitSet<W, N> &x) {
     return x.to_string();
 }
 
+// 添字0から辞書順で比較し-1・0・1を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto cmp(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.cmp(y);
 }
 
+// 添字0から辞書順で小さいか返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto lexLess(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.lexLess(y);
 }
 
+// ANDの1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto andpopcount(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.andpopcount(y);
 }
 
+// ORの1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto orpopcount(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.orpopcount(y);
 }
 
+// XORの1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto xorpopcount(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.xorpopcount(y);
 }
 
+// ビットが一致する位置の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto xnorpopcount(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.xnorpopcount(y);
 }
 
+// 共通する1のビットがあるか返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto intersects(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.intersects(y);
 }
 
+// xの1の位置が全てyでも1か返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto isSubsetOf(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.isSubsetOf(y);
 }
 
+// xとyのビット一致を表す列を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto xnor(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.xnor(y);
 }
 
+// dstにx & yを書き込む。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 void andInto(SimdBitSet<W, N> &dst, const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     dst.andInto(x, y);
 }
 
+// dstにx | yを書き込む。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 void orInto(SimdBitSet<W, N> &dst, const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     dst.orInto(x, y);
 }
 
+// dstにx ^ yを書き込む。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 void xorInto(SimdBitSet<W, N> &dst, const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     dst.xorInto(x, y);
 }
 
+// dstにx & ~yを書き込む。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 void andNotInto(SimdBitSet<W, N> &dst, const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     dst.andNotInto(x, y);
 }
 
+// dstに~(x ^ y)を書き込む。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 void xnorInto(SimdBitSet<W, N> &dst, const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     dst.xnorInto(x, y);
 }
 
+// zが1の位置だけxをyの値に置き換える。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 auto selectAssign(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y, const SimdBitSet<W, N> &z) {
     return x.selectAssign(y, z);
 }
 
+// xをx | (y & z)に更新する。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 auto orAndAssign(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y, const SimdBitSet<W, N> &z) {
     return x.orAndAssign(y, z);
 }
 
+// xをx & (y | z)に更新する。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 auto andOrAssign(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y, const SimdBitSet<W, N> &z) {
     return x.andOrAssign(y, z);
 }
 
+// xをx ^ (y & z)に更新する。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 auto xorAndAssign(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y, const SimdBitSet<W, N> &z) {
     return x.xorAndAssign(y, z);
 }
 
+// zが1の位置だけxをyの値に置き換え、更新後の1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 auto selectAssignPopcount(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y,
                           const SimdBitSet<W, N> &z) {
     return x.selectAssignPopcount(y, z);
 }
 
+// xをx | (y & z)に更新し、更新後の1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 auto orAndAssignPopcount(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y,
                          const SimdBitSet<W, N> &z) {
     return x.orAndAssignPopcount(y, z);
 }
 
+// xをx & (y | z)に更新し、更新後の1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 auto andOrAssignPopcount(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y,
                          const SimdBitSet<W, N> &z) {
     return x.andOrAssignPopcount(y, z);
 }
 
+// xをx ^ (y & z)に更新し、更新後の1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 auto xorAndAssignPopcount(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y,
                           const SimdBitSet<W, N> &z) {
     return x.xorAndAssignPopcount(y, z);
 }
 
+// xをx & ~yに更新する。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto andNotAssign(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.andNotAssign(y);
 }
 
+// xを~(x ^ y)に更新する。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto xnorAssign(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.xnorAssign(y);
 }
 
+// xをx & yに更新し、更新後の1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto andAssignPopcount(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.andAssignPopcount(y);
 }
 
+// xをx | yに更新し、更新後の1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto orAssignPopcount(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.orAssignPopcount(y);
 }
 
+// xをx ^ yに更新し、更新後の1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto xorAssignPopcount(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.xorAssignPopcount(y);
 }
 
+// xをx & ~yに更新し、更新後の1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto andNotAssignPopcount(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.andNotAssignPopcount(y);
 }
 
+// xを~(x ^ y)に更新し、更新後の1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto xnorAssignPopcount(SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y) {
     return x.xnorAssignPopcount(y);
 }
 
+// xをx | (x << k)に更新する。ビット数nとしてO(1+n/64)。
 template <int W, Int N> void orShiftLeftAssign(SimdBitSet<W, N> &x, Int k) {
     x.orShiftLeftAssign(k);
 }
 
+// xをx | (x >> k)に更新する。ビット数nとしてO(1+n/64)。
 template <int W, Int N> void orShiftRightAssign(SimdBitSet<W, N> &x, Int k) {
     x.orShiftRightAssign(k);
 }
 
+// k番目のビットを反転する。ビット数nとしてO(1)。
 template <int W, Int N> void flip(SimdBitSet<W, N> &x, Int k) {
     x.flip(k);
 }
 
+// k以上で最初の1の添字を返す。なければ-1。ビット数nとしてO(1+n/64)。
 template <int W, Int N> Int nextSetBit(const SimdBitSet<W, N> &x, Int k) {
     return x.nextSetBit(k);
 }
 
+// k以下で最後の1の添字を返す。なければ-1。ビット数nとしてO(1+n/64)。
 template <int W, Int N> Int prevSetBit(const SimdBitSet<W, N> &x, Int k) {
     return x.prevSetBit(k);
 }
 
+// 全ビットを0にする。ビット数nとしてO(1+n/64)。
 template <int W, Int N> void clear(SimdBitSet<W, N> &x) {
     x.clear();
 }
 
+// 全ビットを1にする。ビット数nとしてO(1+n/64)。
 template <int W, Int N> void fill(SimdBitSet<W, N> &x) {
     x.fill();
 }
 
+// 全ビットを反転する。ビット数nとしてO(1+n/64)。
 template <int W, Int N> void flipAll(SimdBitSet<W, N> &x) {
     x.flipAll();
 }
 
+// 半開区間[l,r)を1にする。ビット数nとしてO(1+(r-l)/64)。
 template <int W, Int N> void setRange(SimdBitSet<W, N> &x, Int l, Int r) {
     x.setRange(l, r);
 }
 
+// 半開区間[l,r)を0にする。ビット数nとしてO(1+(r-l)/64)。
 template <int W, Int N> void clearRange(SimdBitSet<W, N> &x, Int l, Int r) {
     x.clearRange(l, r);
 }
 
+// 半開区間[l,r)を反転する。ビット数nとしてO(1+(r-l)/64)。
 template <int W, Int N> void flipRange(SimdBitSet<W, N> &x, Int l, Int r) {
     x.flipRange(l, r);
 }
 
+// [l,r)の1の個数を返す。ビット数nとしてO(1+(r-l)/64)。
 template <int W, Int N> Int popcountrange(const SimdBitSet<W, N> &x, Int l, Int r) {
     return x.popcountrange(l, r);
 }
 
+// [l,r)におけるANDの1の個数を返す。ビット数nとしてO(1+(r-l)/64)。
 template <int W, Int N>
 Int andpopcountrange(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y, Int l, Int r) {
     return x.andpopcountrange(y, l, r);
 }
 
+// [l,r)におけるORの1の個数を返す。ビット数nとしてO(1+(r-l)/64)。
 template <int W, Int N>
 Int orpopcountrange(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y, Int l, Int r) {
     return x.orpopcountrange(y, l, r);
 }
 
+// [l,r)におけるXORの1の個数を返す。ビット数nとしてO(1+(r-l)/64)。
 template <int W, Int N>
 Int xorpopcountrange(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y, Int l, Int r) {
     return x.xorpopcountrange(y, l, r);
 }
 
+// 3列のうち2列以上が1の位置を表す列を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N>
 auto majority(const SimdBitSet<W, N> &x, const SimdBitSet<W, N> &y, const SimdBitSet<W, N> &z) {
     return x.majority(y, z);

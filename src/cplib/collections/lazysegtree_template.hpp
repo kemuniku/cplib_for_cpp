@@ -5,17 +5,20 @@ namespace cplib {
 template <class T> struct RangeExtremum {
     T value{};
     Int index = -1, left = -1;
+    // 全メンバが等しいか比較する。要素型の比較がO(1)ならO(1)。
     bool operator==(const RangeExtremum &) const = default;
 };
 
 template <class T> struct RangeSum {
     T sum{};
     Int len = 0;
+    // 全メンバが等しいか比較する。要素型の比較がO(1)ならO(1)。
     bool operator==(const RangeSum &) const = default;
 };
 
 template <class T> struct RangeAffine {
     T a{}, b{};
+    // 全メンバが等しいか比較する。要素型の比較がO(1)ならO(1)。
     bool operator==(const RangeAffine &) const = default;
 };
 
@@ -126,13 +129,21 @@ template <int Mode, class T> auto initRangeSumTree(std::span<const T> v) {
     template <class T> auto NAME(const std::vector<T> &v) {                                        \
         return NAME(std::span<const T>(v));                                                        \
     }
+// 配列から区間加算・区間最小値と最左位置を管理する木を生成する。要素数nとしてO(n)。
 CPLIB_RANGE_EXT_FACTORY(initRangeAddRangeMinIndex, true, false, Index)
+// 配列から区間加算・区間最大値と最左位置を管理する木を生成する。要素数nとしてO(n)。
 CPLIB_RANGE_EXT_FACTORY(initRangeAddRangeMaxIndex, false, false, Index)
+// 配列から区間代入・区間最小値と最左位置を管理する木を生成する。要素数nとしてO(n)。
 CPLIB_RANGE_EXT_FACTORY(initRangeAssignRangeMinIndex, true, true, Index)
+// 配列から区間代入・区間最大値と最左位置を管理する木を生成する。要素数nとしてO(n)。
 CPLIB_RANGE_EXT_FACTORY(initRangeAssignRangeMaxIndex, false, true, Index)
+// 配列から区間加算・区間最小値を管理する木を生成する。要素数nとしてO(n)。
 CPLIB_RANGE_EXT_FACTORY(initRangeAddRangeMin, true, false, )
+// 配列から区間加算・区間最大値を管理する木を生成する。要素数nとしてO(n)。
 CPLIB_RANGE_EXT_FACTORY(initRangeAddRangeMax, false, false, )
+// 配列から区間代入・区間最小値を管理する木を生成する。要素数nとしてO(n)。
 CPLIB_RANGE_EXT_FACTORY(initRangeAssignRangeMin, true, true, )
+// 配列から区間代入・区間最大値を管理する木を生成する。要素数nとしてO(n)。
 CPLIB_RANGE_EXT_FACTORY(initRangeAssignRangeMax, false, true, )
 #undef CPLIB_RANGE_EXT_FACTORY
 #define CPLIB_RANGE_SUM_FACTORY(NAME, MODE)                                                        \
@@ -142,8 +153,11 @@ CPLIB_RANGE_EXT_FACTORY(initRangeAssignRangeMax, false, true, )
     template <class T> auto NAME(const std::vector<T> &v) {                                        \
         return NAME(std::span<const T>(v));                                                        \
     }
+// 配列から区間加算・区間和を管理する木を生成する。要素数nとしてO(n)。
 CPLIB_RANGE_SUM_FACTORY(initRangeAddRangeSum, 0)
+// 配列から区間代入・区間和を管理する木を生成する。要素数nとしてO(n)。
 CPLIB_RANGE_SUM_FACTORY(initRangeAssignRangeSum, 1)
+// 配列から区間一次変換・区間和を管理する木を生成する。要素数nとしてO(n)。
 CPLIB_RANGE_SUM_FACTORY(initRangeAffineRangeSum, 2)
 #undef CPLIB_RANGE_SUM_FACTORY
 }

@@ -288,6 +288,7 @@ static inline uint32_t hafnian(const uint32_t *src, int n, uint32_t modulus, boo
 #pragma GCC pop_options
 #endif
 namespace cplib {
+// 入力行列と右辺または単位行列を掃き出し用の領域に変換する。計算量 O(h(w+extra+1))。
 inline void fieldPrepareKernel(const std::uint32_t *src, const std::uint32_t *rhs,
                                std::uint32_t *dst, Int h, Int w, Int extra, std::uint32_t p,
                                bool montgomery, bool identity, Int sourceStride = -1) {
@@ -295,20 +296,25 @@ inline void fieldPrepareKernel(const std::uint32_t *src, const std::uint32_t *rh
         src, rhs, dst, h, w, extra, p, montgomery, identity, sourceStride < 0 ? w : sourceStride);
 }
 
+// 作業行列を前進消去し、reduced の場合は後退消去も行う。
+// r=min(h,columns)、法 p として O(h stride r+h columns+r log(p+1))。
 inline Int fieldEliminateKernel(std::uint32_t *a, Int h, Int stride, Int columns, int *pivots,
                                 std::uint32_t &det, std::uint32_t p, bool reduced) {
     return detail::matrix_avx2_native::cplib::detail::mat_field_kernel::eliminate(
         a, h, stride, columns, pivots, &det, p, reduced);
 }
 
+// count 要素を作業用表現から指定の剰余表現に戻す。計算量 O(count)。
 inline void fieldRestoreKernel(std::uint32_t *a, Int count, std::uint32_t p, bool montgomery) {
     detail::matrix_avx2_native::cplib::detail::mat_field_kernel::restore(a, count, p, montgomery);
 }
 
+// 作業用の Montgomery 表現から正規化された剰余に変換する。計算量 O(1)。
 inline std::uint32_t fieldCanonicalKernel(std::uint32_t value, std::uint32_t p) {
     return detail::matrix_avx2_native::cplib::detail::mat_field_kernel::canonical(value, p);
 }
 
+// 掃き出し済みの拡大行列から逆行列または余因子行列を復元する。計算量 O(n²)。
 inline void fieldInverseAdjugateKernel(const std::uint32_t *a, std::uint32_t *output, Int n,
                                        Int rank, const int *pivots, std::uint32_t det,
                                        std::uint32_t p, bool montgomery, bool adjugate,
@@ -318,6 +324,7 @@ inline void fieldInverseAdjugateKernel(const std::uint32_t *a, std::uint32_t *ou
         outputStride < 0 ? n : outputStride);
 }
 
+// n次の対称行列の hafnian を求める。O(n² 2^(n/2))。
 inline std::uint32_t fieldHafnianKernel(const std::uint32_t *a, Int n, std::uint32_t p,
                                         bool montgomery, Int sourceStride = -1) {
     return detail::matrix_avx2_native::cplib::detail::mat_field_kernel::hafnian(

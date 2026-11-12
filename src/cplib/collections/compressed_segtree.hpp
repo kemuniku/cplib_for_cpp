@@ -18,6 +18,7 @@ template <class K, class T> class CompressedSegmentTree {
     }
 
 public:
+    // 入力座標数Nに対しO(N log(N+1))。演算・比較・initialはO(1)を想定する。
     // 座標をソート・重複除去し、登録点をinitial(x)（省略時はe）で初期化します。
     // 構築後の座標追加はできません。Kには一貫した<と==が必要です。
     template <class Op, class Initial = std::nullptr_t>
@@ -109,6 +110,7 @@ public:
         return i >= 0 ? tree[i] : identity;
     }
 
+    // 座標xの値を返す。未登録なら単位元。O(log(N+1))。
     T operator[](const K &x) const {
         return point(x);
     }
@@ -117,20 +119,24 @@ public:
         Self *tree;
         K key;
 
+        // 現在値を読み取る。O(log(N+1))。
         operator T() const {
             return tree->point(key);
         }
 
+        // 値を代入する。O(log(N+1))。
         Reference &operator=(const T &x) {
             tree->update(key, x);
             return *this;
         }
 
+        // 別の参照の値を読み取り、この位置へ代入する。O(log(N+1))。
         Reference &operator=(const Reference &r) {
             return *this = T(r);
         }
     };
 
+    // 座標xへの読み書き用参照を返す。取得O(1)、読み書きO(log(N+1))。
     Reference operator[](const K &x) {
         return {this, x};
     }
@@ -149,42 +155,52 @@ public:
                          : rangeProductBody<true>(s.a, s.b, merge);
     }
 
+    // 閉区間内の登録点の積を返す。O(log(N+1))。
     T operator[](ClosedSlice<K, K> s) const {
         return get(s);
     }
 
+    // 登録点の全体の積を返す。O(1)。
     T get_all() const {
         return tree.get_all();
     }
 
+    // 重複除去後の座標数を返す。O(1)。
     Int len() const {
         return coords.size();
     }
 
+    // 重複除去後の座標数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // 圧縮順の全値を文字列で返す。出力長LとしてO(N+L)。
     std::string str() const {
         return tree.str();
     }
 
+    // 内部のセグメント木配列への参照を返す。O(1)。
     std::vector<T> &compressedData() {
         return tree.arr;
     }
 
+    // 内部のセグメント木配列への読み取り専用参照を返す。O(1)。
     const std::vector<T> &compressedData() const {
         return tree.arr;
     }
 
+    // 重複除去済み座標列への参照を返す。O(1)。
     const std::vector<K> &compressedCoordinates() const {
         return coords;
     }
 
+    // 単位元を返す。値のコピーがO(1)ならO(1)。
     T compressedIdentity() const {
         return identity;
     }
 
+    // 更新と区間取得の実装を差し替える。関数オブジェクトのコピー費用を除きO(1)。
     template <class Update, class Range>
     void setCompressedOperations(Update updateOp, Range rangeOp) {
         updateImpl = updateOp;
@@ -192,11 +208,13 @@ public:
     }
 };
 
+// 座標数Nから圧縮セグメント木を構築する。比較・演算・初期化がO(1)ならO(N log(N+1))。
 template <class K, class T, class Op, class Initial = std::nullptr_t>
 auto initCompressedSegmentTree(std::span<const K> coords, Op op, T e, Initial initial = nullptr) {
     return CompressedSegmentTree<K, T>(coords, op, e, initial);
 }
 
+// 座標数Nから圧縮セグメント木を構築する。比較・演算・初期化がO(1)ならO(N log(N+1))。
 template <class K, class T, class Op, class Initial = std::nullptr_t>
 auto initCompressedSegmentTree(const std::vector<K> &coords, Op op, T e,
                                Initial initial = nullptr) {
@@ -204,6 +222,7 @@ auto initCompressedSegmentTree(const std::vector<K> &coords, Op op, T e,
 }
 
 // 式で指定する版は、区間内の演算を直接呼ぶ専用処理を登録する。
+// 座標を圧縮し、直接演算するセグメント木を構築する。O(N log(N+1))。
 template <class Coords, class Op, class T, class Initial = std::nullptr_t>
 auto newCompressedSegWith(const Coords &coords, Op op, T e, Initial initial = nullptr) {
     auto result = initCompressedSegmentTree(coords, op, e, initial);
@@ -224,26 +243,32 @@ auto newCompressedSegWith(const Coords &coords, Op op, T e, Initial initial = nu
     return result;
 }
 
+// 登録座標数を返す。O(1)。
 template <class K, class T> Int len(const CompressedSegmentTree<K, T> &s) {
     return s.len();
 }
 
+// 指定区間の積を返す。O(log(N+1))。
 template <class K, class T> auto get(const CompressedSegmentTree<K, T> &s, const K &l, const K &r) {
     return s.get(l, r);
 }
 
+// 指定区間の積を返す。O(log(N+1))。
 template <class K, class T> auto get(const CompressedSegmentTree<K, T> &s, ClosedSlice<K, K> r) {
     return s.get(r);
 }
 
+// 全体の積を返す。O(1)。
 template <class K, class T> auto get_all(const CompressedSegmentTree<K, T> &s) {
     return s.get_all();
 }
 
+// 登録座標の値を上書きする。O(log(N+1))。
 template <class K, class T> void update(CompressedSegmentTree<K, T> &s, const K &p, const T &x) {
     s.update(p, x);
 }
 
+// 圧縮順の全値を文字列で返す。出力長LとしてO(N+L)。
 template <class K, class T> auto to_string(const CompressedSegmentTree<K, T> &s) {
     return s.str();
 }

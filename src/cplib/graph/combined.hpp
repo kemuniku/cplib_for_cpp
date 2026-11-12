@@ -13,6 +13,7 @@ public:
     std::vector<Int> cycle_number, cycle_idx, roots;
     std::vector<std::vector<Int>> cycle;
 
+    // 遷移先から関数グラフを構築する。O(N)。
     explicit FunctionalGraph(std::span<const Int> next) {
         Int n = next.size();
         std::vector<Int> removed, stack, indegree(n);
@@ -71,18 +72,22 @@ public:
             }
     }
 
+    // xが閉路上か返す。O(1)。
     bool incycle(Int x) const {
         return cycle_number[x] != -1;
     }
 
+    // xが閉路に入るまでの移動回数を返す。O(1)。
     Int depth(Int x) const {
         return tree.depth(x) - 1;
     }
 
+    // xから初めて到達する閉路上の頂点を返す。O(1)。
     Int root(Int x) const {
         return roots[x];
     }
 
+    // xから到達する閉路の長さを返す。O(1)。
     Int cyclesize(Int x) const {
         return cycle[cycle_number[roots[x]]].size();
     }
@@ -97,10 +102,12 @@ public:
         return cycle[cid][(cycle_idx[r] + (count - d) % size) % size];
     }
 
+    // xから到達できる頂点数を返す。O(1)。
     Int canmove_size(Int x) const {
         return depth(x) + cyclesize(x);
     }
 
+    // xに到達できる頂点数を返す。O(1)。
     Int reachable_to_size(Int x) const {
         if (incycle(x))
             return component_size_[cycle_number[x]];
@@ -108,6 +115,7 @@ public:
         return r - l;
     }
 
+    // uからvへの最小移動回数を返す。到達不能なら-1。O(log N)。
     Int dist(Int u, Int v) const {
         if (cycle_number[roots[u]] != cycle_number[roots[v]])
             return -1;
@@ -121,6 +129,7 @@ public:
         return -1;
     }
 
+    // xから到達する閉路を返す。閉路長LとしてO(L)。
     std::vector<Int> get_cycle(Int x) const {
         return cycle[cycle_number[roots[x]]];
     }
@@ -146,10 +155,12 @@ public:
 
 using Functional_Graph = FunctionalGraph;
 
+// 遷移先から関数グラフを構築する。辺数E、頂点数NとしてO(N+E)。
 inline auto initFunctionalGraph(std::span<const Int> next) {
     return FunctionalGraph(next);
 }
 
+// 遷移先から関数グラフを構築する。辺数E、頂点数NとしてO(N+E)。
 inline auto initFunctionalGraph(const UnWeightedDirectedGraph &graph) {
     std::vector<Int> next(graph.len);
     for (Int v = 0; v < graph.len; ++v)
@@ -158,42 +169,52 @@ inline auto initFunctionalGraph(const UnWeightedDirectedGraph &graph) {
     return FunctionalGraph(next);
 }
 
+// xが閉路上か返す。O(1)。
 inline bool incycle(const FunctionalGraph &f, Int x) {
     return f.incycle(x);
 }
 
+// xからk回移動した頂点を返す。O(log N)。
 inline Int movekth(const FunctionalGraph &f, Int x, Int k) {
     return f.movekth(x, k);
 }
 
+// xから到達する閉路の長さを返す。O(1)。
 inline Int cyclesize(const FunctionalGraph &f, Int x) {
     return f.cyclesize(x);
 }
 
+// xから到達できる頂点数を返す。O(1)。
 inline Int canmove_size(const FunctionalGraph &f, Int x) {
     return f.canmove_size(x);
 }
 
+// xに到達できる頂点数を返す。O(1)。
 inline Int reachable_to_size(const FunctionalGraph &f, Int x) {
     return f.reachable_to_size(x);
 }
 
+// xが閉路に入るまでの移動回数を返す。O(1)。
 inline Int depth(const FunctionalGraph &f, Int x) {
     return f.depth(x);
 }
 
+// uからvへの最小移動回数を返す。到達不能なら-1。O(log N)。
 inline Int dist(const FunctionalGraph &f, Int u, Int v) {
     return f.dist(u, v);
 }
 
+// xから到達する閉路を返す。閉路長LとしてO(L)。
 inline auto get_cycle(const FunctionalGraph &f, Int x) {
     return f.get_cycle(x);
 }
 
+// xから初めて到達する閉路上の頂点を返す。O(1)。
 inline Int root(const FunctionalGraph &f, Int x) {
     return f.root(x);
 }
 
+// k回の遷移でxに到達する始点数を返す。O(log N)。
 inline Int count_kth(const FunctionalGraph &f, Int x, Int k) {
     return f.count_kth(x, k);
 }
@@ -218,6 +239,7 @@ class FunctionalGraph_with_op : public FunctionalGraph {
     }
 
 public:
+    // グラフと頂点値・演算から構築する。演算がO(1)ならO(N)。
     template <class Op>
     FunctionalGraph_with_op(FunctionalGraph graph, const std::vector<Int> &values, Op op, Int e)
         : FunctionalGraph(std::move(graph)), op_(op), e_(e), st_hld_(0, op, e),
@@ -235,12 +257,14 @@ public:
         st_cycle_ = SegmentTree<Int>(cyc, op, e);
     }
 
+    // 頂点xの値を更新する。演算がO(1)ならO(log N)。
     void set(Int x, const Int &value) {
         st_hld_.update(index(x), value);
         if (incycle(x))
             st_cycle_.update(offsets_[cycle_number[x]] + cycle_idx[x], value);
     }
 
+    // 頂点xの値を返す。O(1)。
     Int get(Int x) const {
         return value(x);
     }
@@ -249,24 +273,29 @@ public:
         FunctionalGraph_with_op *owner;
         Int index;
 
+        // 参照先の値を返す。O(1)。
         operator Int() const {
             return owner->get(index);
         }
 
+        // 参照先の値を更新する。O(log(N+1))。
         Reference &operator=(const Int &v) {
             owner->set(index, v);
             return *this;
         }
 
+        // 別の参照先の値を読み取り代入する。O(log(N+1))。
         Reference &operator=(const Reference &v) {
             return *this = Int(v);
         }
     };
 
+    // 読み書き用参照を返す。取得O(1)、読み取りO(1)、更新O(log N)。
     Reference operator[](Int x) {
         return {this, x};
     }
 
+    // 頂点xの値を返す。O(1)。
     Int operator[](Int x) const {
         return value(x);
     }
@@ -391,6 +420,8 @@ public:
     }
 };
 
+// 値の集約に対応する関数グラフを構築する。演算がO(1)ならO(N+E)。
+// Eはsourceがグラフの場合の辺数、それ以外は0。
 template <class Source, class Op>
 auto initFunctionalGraph_with_op(const Source &source, const std::vector<Int> &values, Op op,
                                  Int e) {
@@ -400,18 +431,22 @@ auto initFunctionalGraph_with_op(const Source &source, const std::vector<Int> &v
         return FunctionalGraph_with_op(initFunctionalGraph(source), values, op, e);
 }
 
+// 頂点xの値を更新する。演算がO(1)ならO(log N)。
 inline void set(FunctionalGraph_with_op &f, Int x, Int value) {
     f.set(x, value);
 }
 
+// 全始点から到達可能な値の積を返す。演算がO(1)ならO(N)。
 inline auto prod_reachable_idempotent_all(const FunctionalGraph_with_op &f) {
     return f.prod_reachable_idempotent_all();
 }
 
+// xからk回移動するまでの積を返す。演算がO(1)ならO(log² N+log(k+1))。
 inline Int prod(const FunctionalGraph_with_op &f, Int x, Int k) {
     return f.prod(x, k);
 }
 
+// 単調な判定が初めて偽になるまでの移動距離を返す。演算がO(1)ならO(log² N+log(limit+1))。
 template <class F> Int move_while(const FunctionalGraph_with_op &f, F predicate, Int x, Int limit) {
     return f.move_while(predicate, x, limit);
 }

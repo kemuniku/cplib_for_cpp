@@ -42,31 +42,38 @@ template <Int H, Int W, impl::Element T> class StaticMatrix {
 
 public:
     using value_type = T;
+    // 零行列を作る。計算量 O(HW)。
     StaticMatrix() = default;
 
+    // 全要素を指定値で埋める。計算量 O(HW)。
     explicit StaticMatrix(T value) : modulus_(impl::modulus<T>()) {
         values_.fill(value);
     }
 
+    // 二次元配列から行列を作る。計算量 O(HW)。
     explicit StaticMatrix(const std::array<std::array<T, W>, H> &rows)
         : modulus_(impl::modulus<T>()) {
         for (Int i = 0; i < H; ++i)
             std::copy(rows[i].begin(), rows[i].end(), values_.begin() + i * W);
     }
 
+    // 行数を返す。計算量 O(1)。
     static constexpr Int h() {
         return H;
     }
 
+    // 列数を返す。計算量 O(1)。
     static constexpr Int w() {
         return W;
     }
 
+    // 指定要素への参照を返す。計算量 O(1)。
     const T &operator()(Int i, Int j) const {
         assert(i >= 0 && i < H && j >= 0 && j < W);
         return values_[i * W + j];
     }
 
+    // 指定要素への書き込み可能な参照を返す。計算量 O(1)。
     T &operator()(Int i, Int j) {
         assert(i >= 0 && i < H && j >= 0 && j < W);
         return values_[i * W + j];
@@ -84,34 +91,41 @@ public:
         StaticMatrix *a;
         Int i;
 
+        // 行を配列にコピーする。計算量 O(W)。
         operator std::array<T, W>() const {
             return std::as_const(*a)[i];
         }
 
+        // 行の指定要素への参照を返す。計算量 O(1)。
         T &operator[](Int j) const {
             return (*a)(i, j);
         }
 
+        // 配列から行を代入する。計算量 O(W)。
         Row &operator=(const std::array<T, W> &row) {
             a->setRow(i, row);
             return *this;
         }
 
+        // 別の行を代入する。計算量 O(W)。
         Row &operator=(const Row &b) {
             return *this = std::array<T, W>(b);
         }
     };
 
+    // 書き込み可能な行ビューを返す。計算量 O(1)。
     Row operator[](Int i) {
         assert(i >= 0 && i < H);
         return {this, i};
     }
 
+    // 配列から行を設定する。計算量 O(W)。
     void setRow(Int i, const std::array<T, W> &row) {
         assert(i >= 0 && i < H);
         std::copy(row.begin(), row.end(), values_.begin() + i * W);
     }
 
+    // 行列が等しいか判定する。計算量 O(HW)。
     bool operator==(const StaticMatrix &b) const {
         check();
         b.check();
@@ -121,6 +135,7 @@ public:
         return true;
     }
 
+    // 行列を文字列で返す。計算量は行数と出力文字数に比例。
     std::string str() const {
         check();
         std::string out;
@@ -134,6 +149,7 @@ public:
         return out;
     }
 
+    // 行列積を返す。保守的な計算量 O((H+1)(W+1)(K+1))。
     template <Int K> StaticMatrix<H, K, T> operator*(const StaticMatrix<W, K, T> &b) const {
         check();
         b.check();
@@ -155,10 +171,12 @@ public:
         return out;
     }
 
+    // 右から行列を掛ける。計算量は行列積と同じ。
     StaticMatrix &operator*=(const StaticMatrix<W, W, T> &b) {
         return *this = *this * b;
     }
 
+    // 要素ごとに加算する。計算量 O(HW)。
     StaticMatrix &operator+=(const StaticMatrix &b) {
         check();
         b.check();
@@ -167,10 +185,12 @@ public:
         return *this;
     }
 
+    // 行列の和を返す。計算量 O(HW)。
     friend StaticMatrix operator+(StaticMatrix a, const StaticMatrix &b) {
         return a += b;
     }
 
+    // 要素ごとに加算する。計算量 O(HW)。
     StaticMatrix &operator+=(T value) {
         check();
         for (auto &x : values_)
@@ -178,10 +198,12 @@ public:
         return *this;
     }
 
+    // スカラーと行列の和を返す。計算量 O(HW)。
     friend StaticMatrix operator+(StaticMatrix a, T value) {
         return a += value;
     }
 
+    // 要素ごとに減算する。計算量 O(HW)。
     StaticMatrix &operator-=(const StaticMatrix &b) {
         check();
         b.check();
@@ -190,10 +212,12 @@ public:
         return *this;
     }
 
+    // 行列の差を返す。計算量 O(HW)。
     friend StaticMatrix operator-(StaticMatrix a, const StaticMatrix &b) {
         return a -= b;
     }
 
+    // 要素ごとに減算する。計算量 O(HW)。
     StaticMatrix &operator-=(T value) {
         check();
         for (auto &x : values_)
@@ -201,10 +225,12 @@ public:
         return *this;
     }
 
+    // 行列からスカラーを引いた値を返す。計算量 O(HW)。
     friend StaticMatrix operator-(StaticMatrix a, T value) {
         return a -= value;
     }
 
+    // 要素ごとにスカラー倍する。計算量 O(HW)。
     StaticMatrix &operator*=(T value) {
         check();
         for (auto &x : values_)
@@ -212,18 +238,22 @@ public:
         return *this;
     }
 
+    // スカラー倍を返す。計算量 O(HW)。
     friend StaticMatrix operator*(StaticMatrix a, T value) {
         return a *= value;
     }
 
+    // スカラー倍を返す。計算量 O(HW)。
     friend StaticMatrix operator*(T value, StaticMatrix a) {
         return a *= value;
     }
 
+    // 各要素の符号を反転する。計算量 O(HW)。
     StaticMatrix operator-() const {
         return *this * T(-1);
     }
 
+    // 単位行列を返す。計算量 O(HW)。
     static StaticMatrix identity(Int n = H) {
         static_assert(H == W);
         assert(n == H);
@@ -233,6 +263,7 @@ public:
         return out;
     }
 
+    // 正方行列の非負整数乗を返す。行列積を O(log(exponent+1)) 回行う。
     StaticMatrix pow(Int exponent) const {
         static_assert(H == W);
         assert(exponent >= 0);
@@ -248,6 +279,7 @@ public:
         return out;
     }
 
+    // 全要素の和を返す。計算量 O(HW)。
     T sum() const {
         check();
         T out = 0;
@@ -279,6 +311,7 @@ public:
     }
 
     // 左上height×widthでAx=rhsの特殊解と核の基底を求める。解がなければstd::nullopt。
+    // h=height、w=widthとして O(HW+hw min(h,w)+w²)。
     std::optional<LinearSystemSolution<T>> solveLinearSystem(std::span<const T> rhs, Int height = H,
                                                              Int width = W) const {
         assert(Int(rhs.size()) == height);
@@ -309,65 +342,79 @@ public:
     }
 };
 
+// 指定値で固定長行列を作る。計算量 O(HW)。
 template <Int H, Int W, class T> auto initMatrix(T value = T(0)) {
     return StaticMatrix<H, W, T>(value);
 }
 
+// 二次元配列から固定長行列を作る。計算量 O(HW)。
 template <std::size_t H, std::size_t W, class T>
 auto toMatrix(const std::array<std::array<T, W>, H> &rows) {
     return StaticMatrix<H, W, T>(rows);
 }
 
+// 単位行列を返す。計算量 O(HW)。
 template <Int H, Int W, class T> auto identity_matrix(Int n = H) {
     return StaticMatrix<H, W, T>::identity(n);
 }
 
+// 行列積を返す。計算量は a * b と同じ。
 template <Int H, Int W, Int K, class T>
 auto matrixProduct(const StaticMatrix<H, W, T> &a, const StaticMatrix<W, K, T> &b) {
     return a * b;
 }
 
+// 行列の行数を返す。計算量は a.h と同じ。
 template <Int H, Int W, class T, class... A> auto h(const StaticMatrix<H, W, T> &a, A &&...args) {
     return a.h(std::forward<A>(args)...);
 }
 
+// 行列の列数を返す。計算量は a.w と同じ。
 template <Int H, Int W, class T, class... A> auto w(const StaticMatrix<H, W, T> &a, A &&...args) {
     return a.w(std::forward<A>(args)...);
 }
 
+// 行列の階数を返す。計算量は a.rank と同じ。
 template <Int H, Int W, class T, class... A>
 auto rank(const StaticMatrix<H, W, T> &a, A &&...args) {
     return a.rank(std::forward<A>(args)...);
 }
 
+// 行列の行列式を返す。計算量は a.determinant と同じ。
 template <Int H, Int W, class T, class... A>
 auto determinant(const StaticMatrix<H, W, T> &a, A &&...args) {
     return a.determinant(std::forward<A>(args)...);
 }
 
+// 行列のhafnianを返す。計算量は a.hafnian と同じ。
 template <Int H, Int W, class T, class... A>
 auto hafnian(const StaticMatrix<H, W, T> &a, A &&...args) {
     return a.hafnian(std::forward<A>(args)...);
 }
 
+// 行列の逆行列を返す。計算量は a.inverse と同じ。
 template <Int H, Int W, class T, class... A>
 auto inverse(const StaticMatrix<H, W, T> &a, A &&...args) {
     return a.inverse(std::forward<A>(args)...);
 }
 
+// 行列の余因子行列を返す。計算量は a.adjugate と同じ。
 template <Int H, Int W, class T, class... A>
 auto adjugate(const StaticMatrix<H, W, T> &a, A &&...args) {
     return a.adjugate(std::forward<A>(args)...);
 }
 
+// 行列の全要素の和を返す。計算量は a.sum と同じ。
 template <Int H, Int W, class T, class... A> auto sum(const StaticMatrix<H, W, T> &a, A &&...args) {
     return a.sum(std::forward<A>(args)...);
 }
 
+// 行列の非負整数乗を返す。計算量は a.pow と同じ。
 template <Int H, Int W, class T, class... A> auto pow(const StaticMatrix<H, W, T> &a, A &&...args) {
     return a.pow(std::forward<A>(args)...);
 }
 
+// 行列の連立一次方程式の解を返す。計算量は a.solveLinearSystem と同じ。
 template <Int H, Int W, class T, class... A>
 auto solveLinearSystem(const StaticMatrix<H, W, T> &a, A &&...args) {
     return a.solveLinearSystem(std::forward<A>(args)...);

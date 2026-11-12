@@ -3,6 +3,7 @@
 #include <functional>
 
 namespace cplib {
+// Montgomery還元用の逆数を求める。計算量 O(1)。
 constexpr std::uint32_t get_r(std::uint32_t m) {
     std::uint32_t r = m;
     for (int i = 0; i < 4; ++i)
@@ -10,6 +11,7 @@ constexpr std::uint32_t get_r(std::uint32_t m) {
     return r;
 }
 
+// Montgomery変換用の 2^64 の剰余を求める。計算量 O(1)。
 constexpr std::uint32_t get_n2(std::uint32_t m) {
     return std::uint32_t((~UInt(m - 1u)) % m);
 }
@@ -41,6 +43,7 @@ public:
         return *this *= inverse;
     }
 
+    // 還元用パラメータを返す。計算量 O(1)。
     static constexpr MontgomeryParam get_param() {
         if constexpr (Dynamic)
             return dynamicParam;
@@ -50,14 +53,17 @@ public:
         }
     }
 
+    // 符号なしの法を返す。計算量 O(1)。
     static constexpr std::uint32_t umod() {
         return get_param().M;
     }
 
+    // 符号付きの法を返す。計算量 O(1)。
     static constexpr std::int32_t mod() {
         return std::int32_t(umod());
     }
 
+    // 動的法を設定する。計算量 O(1)。
     template <std::integral I>
     static void setMod(I m)
         requires Dynamic
@@ -68,14 +74,17 @@ public:
         assert(dynamicParam.r * value == 1u);
     }
 
+    // 零を構築する。計算量 O(1)。
     constexpr BasicMontgomeryModint() = default;
 
+    // 整数の剰余を構築する。計算量 O(1)。
     template <std::integral I> constexpr BasicMontgomeryModint(I value) {
         auto p = get_param();
         a = reduce(detail::normalizeModint(value, p.M) * p.n2);
     }
 
     // [0,2M)の冗長表現で加減乗算する。値取得時のみ[0,M)へ正規化。
+    // 剰余を加算する。計算量 O(1)。
     constexpr BasicMontgomeryModint &operator+=(BasicMontgomeryModint b) {
         a += b.a - umod() * 2u;
         if (std::bit_cast<std::int32_t>(a) < 0)
@@ -83,6 +92,7 @@ public:
         return *this;
     }
 
+    // 剰余を減算する。計算量 O(1)。
     constexpr BasicMontgomeryModint &operator-=(BasicMontgomeryModint b) {
         a -= b.a;
         if (std::bit_cast<std::int32_t>(a) < 0)
@@ -90,17 +100,20 @@ public:
         return *this;
     }
 
+    // 剰余を乗算する。計算量 O(1)。
     constexpr BasicMontgomeryModint &operator*=(BasicMontgomeryModint b) {
         a = reduce(UInt(a) * b.a);
         return *this;
     }
 
+    // 加法逆元を返す。計算量 O(1)。
     constexpr BasicMontgomeryModint operator-() const {
         BasicMontgomeryModint result = 0;
         result -= *this;
         return result;
     }
 
+    // 正規化された剰余を返す。計算量 O(1)。
     constexpr Int val() const {
         Int result = reduce(a);
         if (UInt(result) >= umod())
@@ -109,6 +122,7 @@ public:
     }
 
     // 冗長な内部表現を正規化して剰余の等値を判定する。O(1)。
+    // 剰余が等しいか判定する。計算量 O(1)。
     constexpr bool operator==(const BasicMontgomeryModint &b) const {
         auto m = umod();
         return (a >= m ? a - m : a) == (b.a >= m ? b.a - m : b.a);
@@ -124,6 +138,7 @@ concept MontgomeryModint = requires { typename T::montgomery_tag; };
 namespace std {
 // 同じ剰余が同じハッシュ値になるように計算する。O(1)。
 template <uint32_t M, bool D> struct hash<cplib::BasicMontgomeryModint<M, D>> {
+    // 剰余のハッシュ値を返す。計算量 O(1)。
     size_t operator()(cplib::BasicMontgomeryModint<M, D> x) const {
         return hash<cplib::Int>{}(x.val());
     }

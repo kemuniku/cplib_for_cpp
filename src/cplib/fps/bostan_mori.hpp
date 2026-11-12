@@ -14,7 +14,8 @@ template <class T> std::vector<T> parityTerms(const std::vector<T> &f, Int parit
 }
 }
 
-// 有理型母関数の第k係数。O(M(D)log(k+1))。
+// 有理型母関数 numerator/denominator の第k係数を返す。
+// D=max(numerator.size(), denominator.size())、M(D)を畳み込みの計算量として O(M(D) log(k+2))。
 template <Modint T>
 T bostanMori(const std::vector<T> &numerator, const std::vector<T> &denominator, Int k) {
     assert(k >= 0 && !denominator.empty() && denominator[0].val() != 0);
@@ -31,6 +32,7 @@ T bostanMori(const std::vector<T> &numerator, const std::vector<T> &denominator,
 }
 
 // a[n] = sum(coefficients[i] * a[n-i-1], i=0..<d) の第k項を求める。
+// d を漸化式の次数、M(d) を畳み込みの計算量として O(M(d) log(k+1))。
 template <Modint T>
 T linearRecurrenceKth(const std::vector<T> &initial, const std::vector<T> &coefficients, Int k) {
     assert(initial.size() == coefficients.size() && !initial.empty() && k >= 0);

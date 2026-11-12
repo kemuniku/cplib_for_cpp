@@ -2,7 +2,8 @@
 #include <cplib/convolution/convolution.hpp>
 
 namespace cplib {
-// 次数の和で分割位置を均衡させる多項式列積。Barrett/998244353は専用AVX2カーネル。
+// 多項式列の積を次数の和で分割位置を均衡させて求める。
+// 入力多項式数を K、次数の総和を N とし、NTT使用時 O(K + N log²(N+1))。
 template <Modint T>
 std::vector<T> productOfPolynomialSequence(const std::vector<std::vector<T>> &polynomials) {
     if (polynomials.empty())

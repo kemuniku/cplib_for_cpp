@@ -41,14 +41,17 @@ using vvvs = vector<vector<vector<string>>>;
 // ★★★ 多次元vector初期化用の関数、ちょっと癖があるけど短く書ける
 // テンプレなし：vector dp(n+1, vector(m+1, vector<ll>(k+1, 0)));
 // テンプレあり：auto dp = vvv<ll>(n+1, m+1, k+1, 0);
+// 指定値でh×wの二次元vectorを作る。初期化する一時配列を含め O((h+1)(w+1))。
 template <typename T> vector<vector<T>> vv(int h, int w, T val = T()) {
     return vector(h, vector<T>(w, val));
 }
 
+// 指定値でh1×h2×h3の三次元vectorを作る。一時配列を含め O((h1+1)(h2+1)(h3+1))。
 template <typename T> vector<vector<vector<T>>> vvv(int h1, int h2, int h3, T val = T()) {
     return vector(h1, vector(h2, vector<T>(h3, val)));
 }
 
+// 指定値で四次元vectorを作る。一時配列を含め O((h1+1)(h2+1)(h3+1)(h4+1))。
 template <typename T>
 vector<vector<vector<vector<T>>>> vvvv(int h1, int h2, int h3, int h4, T val = T()) {
     return vector(h1, vector(h2, vector(h3, vector<T>(h4, val))));
@@ -65,6 +68,7 @@ inline double EPSL = 1e-10;
 
 // ★★★★ 入出力高速化、おまじない
 struct Nyan {
+    // 標準入出力の設定を変更する。O(1) とストリーム設定の費用。
     Nyan() {
         cin.tie(nullptr);
         ios::sync_with_stdio(false);
@@ -115,59 +119,71 @@ inline Nyan nyan;
     }
 
 // ★★ Yes, No なくても困らない
+// 真ならYes、偽ならNoを出力し0を返す。O(1) と出力費用。
 inline int Yes(bool b = true) {
     cout << (b ? "Yes\n" : "No\n");
     return 0;
 };
 
+// 真ならYES、偽ならNOを出力し0を返す。O(1) と出力費用。
 inline int YES(bool b = true) {
     cout << (b ? "YES\n" : "NO\n");
     return 0;
 };
 
+// 真ならNo、偽ならYesを出力し0を返す。O(1) と出力費用。
 inline int No(bool b = true) {
     return Yes(!b);
 };
 
+// 真ならNO、偽ならYESを出力し0を返す。O(1) と出力費用。
 inline int NO(bool b = true) {
     return YES(!b);
 };
 
 // ★★★★ max, min, sum のvector向けオーバーロード、デフォルトがちょっと使いにくいので
+// 空でない配列の最大値を返す。O(N)。
 template <typename T, size_t N> T max(array<T, N> &a) {
     return *max_element(all(a));
 };
 
+// 空でない配列の最小値を返す。O(N)。
 template <typename T, size_t N> T min(array<T, N> &a) {
     return *min_element(all(a));
 };
 
+// 空でないvectorの最大値を返す。要素数Nとして O(N)。
 template <typename T> T max(vector<T> &a) {
     return *max_element(all(a));
 };
 
+// 空でないvectorの最小値を返す。要素数Nとして O(N)。
 template <typename T> T min(vector<T> &a) {
     return *min_element(all(a));
 };
 
+// 半開区間[l,r)をコピーする。O(r-l+1)。
 template <typename T> vector<T> vec_slice(const vector<T> &a, int l, int r) {
     vector<T> rev;
     rep(i, l, r) rev.push_back(a[i]);
     return rev;
 };
 
+// 半開区間[l,r)をコピーする。O(r-l+1)。
 template <typename T> vector<T> vec_slice(const vector<T> &&a, int l, int r) {
     vector<T> rev;
     rep(i, l, r) rev.push_back(a[i]);
     return rev;
 };
 
+// 要素の和にzeroを加えて返す。要素数Nとして O(N)。
 template <typename T> T sum(vector<T> &a, T zero = T(0)) {
     T rev = zero;
     rep(i, sz(a)) rev += a[i];
     return rev;
 };
 
+// 要素の和にzeroを加えて返す。要素数Nとして O(N)。
 template <typename T> T sum(vector<T> &&a, T zero = T(0)) {
     T rev = zero;
     rep(i, sz(a)) rev += a[i];
@@ -176,17 +192,20 @@ template <typename T> T sum(vector<T> &&a, T zero = T(0)) {
 
 // ★★★ vector の各要素を1増やす／減らす、グラフ系の入力受けでちょっと嬉しい
 // vector<ll> a = {1, 2, 4}; ++a; // a = {2, 3, 5}
+// 全要素を1減らす。要素数Nとして O(N)。
 template <class T> inline vector<T> &operator--(vector<T> &v) {
     repe(x, v)-- x;
     return v;
 }
 
+// 全要素を1増やす。要素数Nとして O(N)。
 template <class T> inline vector<T> &operator++(vector<T> &v) {
     repe(x, v)++ x;
     return v;
 }
 
 // ★★★★ 整数pow/sqrt
+// 整数aの非負整数n乗を返す。O(log(n+1))。
 inline ll powll(ll a, ll n) {
     ll res = 1;
     while (n > 0) {
@@ -199,6 +218,7 @@ inline ll powll(ll a, ll n) {
     return res;
 }
 
+// aの非負整数n乗を法modで求める。O(log(n+1))。
 inline ll powm32(ll a, ll n, int mod) {
     ll res = 1;
     while (n > 0) {
@@ -211,6 +231,7 @@ inline ll powm32(ll a, ll n, int mod) {
     return res % mod;
 }
 
+// aの非負整数n乗を法modで求める。O(log(n+1))。
 inline ll powm64(i128 a, i128 n, ll mod) {
     i128 res = 1;
     while (n > 0) {
@@ -223,6 +244,7 @@ inline ll powm64(i128 a, i128 n, ll mod) {
     return res % mod;
 }
 
+// 非負整数xの平方根を切り捨てる。平方根の近似後の補正回数をKとして O(K+1)。
 inline ll sqrtll(ll x) {
     assert(x >= 0);
     ll rev = sqrt(x);
@@ -249,22 +271,28 @@ template <typename T> ostream &operator<<(ostream &os, deque<T> q);
 template <class T, class Container, class Compare>
 ostream &operator<<(ostream &os, priority_queue<T, Container, Compare> pq);
 
+// 入出力演算子は要素を順に読み書きする。pairは2要素、それ以外はN要素の入出力費用と O(N)。
+// dequeはコピーして走査し、priority_queueはコピーと取り出しに O(N log(N+1)) を要する。
 // overload operators
+// pairの2要素を順に読み取る。計算量は各要素の入力費用の合計。
 template <class T, class U> inline istream &operator>>(istream &is, pair<T, U> &p) {
     is >> p.first >> p.second;
     return is;
 }
 
+// vectorの全要素を順に読み取る。要素数 N に対し O(N) と各要素の入力費用。
 template <class T> inline istream &operator>>(istream &is, vector<T> &v) {
     repe(x, v) is >> x;
     return is;
 }
 
+// pairの2要素を空白区切りで出力する。計算量は各要素の出力費用の合計。
 template <class T, class U> inline ostream &operator<<(ostream &os, const pair<T, U> &p) {
     os << p.first << " " << p.second;
     return os;
 }
 
+// vectorの全要素を空白区切りで出力する。要素数 N に対し O(N) と各要素の出力費用。
 template <class T> inline ostream &operator<<(ostream &os, const vector<T> &v) {
     rep(i, sz(v)) {
         os << v.at(i);
@@ -274,6 +302,7 @@ template <class T> inline ostream &operator<<(ostream &os, const vector<T> &v) {
     return os;
 }
 
+// mapのキーと値を順に出力する。要素数 N に対し O(N) と各要素の出力費用。
 template <typename T, typename S> ostream &operator<<(ostream &os, const map<T, S> &mp) {
     for (auto &[key, val] : mp) {
         os << key << ":" << val << " ";
@@ -281,6 +310,7 @@ template <typename T, typename S> ostream &operator<<(ostream &os, const map<T, 
     return os;
 }
 
+// setの要素を順に出力する。要素数 N に対し O(N) と各要素の出力費用。
 template <typename T> ostream &operator<<(ostream &os, const set<T> &st) {
     auto itr = st.begin();
     for (int i = 0; i < (int)st.size(); i++) {
@@ -290,6 +320,7 @@ template <typename T> ostream &operator<<(ostream &os, const set<T> &st) {
     return os;
 }
 
+// multisetの要素を順に出力する。要素数 N に対し O(N) と各要素の出力費用。
 template <typename T> ostream &operator<<(ostream &os, const multiset<T> &st) {
     auto itr = st.begin();
     for (int i = 0; i < (int)st.size(); i++) {
@@ -299,6 +330,7 @@ template <typename T> ostream &operator<<(ostream &os, const multiset<T> &st) {
     return os;
 }
 
+// unordered_setの要素を列挙して出力する。要素数 N に対し O(N) と各要素の出力費用。
 template <typename T> ostream &operator<<(ostream &os, const unordered_set<T> &st) {
     ll cnt = 0;
     for (auto &e : st) {
@@ -307,6 +339,7 @@ template <typename T> ostream &operator<<(ostream &os, const unordered_set<T> &s
     return os;
 }
 
+// dequeをコピーし先頭から出力する。要素数 N に対し O(N) とコピー・出力費用。
 template <typename T> ostream &operator<<(ostream &os, deque<T> q) {
     while (q.size()) {
         os << q.front();
@@ -317,6 +350,7 @@ template <typename T> ostream &operator<<(ostream &os, deque<T> q) {
     return os;
 }
 
+// priority_queueをコピーして優先順に出力する。要素数 N に対し O(N log(N+1)) とコピー・出力費用。
 template <class T, class Container, class Compare>
 ostream &operator<<(ostream &os, priority_queue<T, Container, Compare> pq) {
     while (pq.size()) {
@@ -450,22 +484,27 @@ ostream &operator<<(ostream &os, priority_queue<T, Container, Compare> pq) {
 #define debug(...) ;
 #endif // LOCAL_TEST
 
+// 非零整数の下位から連続する0ビット数を返す。O(1)。
 inline ll ctz(ll x) {
     return __builtin_ctzll(x);
 }
 
+// 非零整数の上位から連続する0ビット数を返す。O(1)。
 inline ll clz(ll x) {
     return __builtin_clzll(x);
 }
 
+// 立っているビット数を返す。O(1)。
 inline ll popcount(ll x) {
     return __builtin_popcountll(x);
 }
 
+// xが半開区間[a,b)に入るか判定する。O(1)。
 inline bool inrange(ll x, ll a, ll b) {
     return a <= x && x < b;
 }
 
+// vectorで最初に一致する添字を返す。なければ-1。要素数Nとして O(N)。
 template <typename T> inline ll findll(vector<T> &v, T x) {
     auto tmp = find(all(v), x);
     if (tmp == v.end()) {
@@ -475,6 +514,7 @@ template <typename T> inline ll findll(vector<T> &v, T x) {
     }
 }
 
+// 文字列で最初に一致する添字を返す。なければ-1。長さNとして O(N)。
 inline ll findll(string &s, char x) {
     auto tmp = find(all(s), x);
     if (tmp == s.end()) {
@@ -484,6 +524,7 @@ inline ll findll(string &s, char x) {
     }
 }
 
+// xが非負、yが正のときx/yの切り上げを返す。O(1)。
 inline ll ceildiv(ll x, ll y) {
     return (x + y - 1) / y;
 }
@@ -558,6 +599,7 @@ inline ll ceildiv(ll x, ll y) {
         });                                                                                        \
     }
 
+// 最小要素の最初の添字を返す。空なら0。要素数Nとして O(N+1)。
 inline ll minIndex(vector<ll> &a) {
     ll minIndex = 0;
     rep(i, 1, sz(a)) {
@@ -568,6 +610,7 @@ inline ll minIndex(vector<ll> &a) {
     return minIndex;
 }
 
+// 最大要素の最初の添字を返す。空なら0。要素数Nとして O(N+1)。
 inline ll maxIndex(vector<ll> &a) {
     ll maxIndex = 0;
     rep(i, 1, sz(a)) {
@@ -578,11 +621,13 @@ inline ll maxIndex(vector<ll> &a) {
     return maxIndex;
 }
 
+// N要素のコピーを昇順にソートする。O(N log(N+1))。
 template <typename T> vector<T> sorted(vector<T> X) {
     sort(all(X));
     return X;
 }
 
+// 文字cで文字列を分割する。長さNとして O(N+1)。
 inline vector<string> split(const string &s, char c) {
     vector<string> res;
     res.push_back("");

@@ -18,6 +18,7 @@ auto grid_to_graph_impl(const Grid &a, const T &ok) {
     return out;
 }
 
+// 通行可能な上下左右のマスを結んだグラフを返す。O(HW)。静的版は呼出側でbuildする。
 template <bool ReturnStatic = false, class Grid, class T = char>
 auto grid_to_graph(const Grid &a, const T &ok = T('.')) {
     return grid_to_graph_impl<ReturnStatic>(a, ok);

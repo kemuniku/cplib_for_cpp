@@ -138,10 +138,12 @@ public:
             build(v, 1, 0, length_);
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return length_;
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
@@ -159,28 +161,34 @@ public:
         return l == r ? std::numeric_limits<Int>::max() : prodImpl(1, 0, length_, l, r, 0, 0);
     }
 
+    // 両端を含む区間の各a[i]にb*i+cを加える。要素数nとしてO(log²(n+1))。
     template <class L, class R> void add(ClosedSlice<L, R> s, Int b, Int c) {
         add(resolve_index(len(), s.a), resolve_index(len(), s.b) + 1, b, c);
     }
 
+    // 両端を含む区間の最小値を返す。要素数nとしてO(log²(n+1))。
     template <class L, class R> Int prod(ClosedSlice<L, R> s) const {
         return prod(resolve_index(len(), s.a), resolve_index(len(), s.b) + 1);
     }
 
+    // 両端を含む区間の最小値を返す。要素数nとしてO(log²(n+1))。
     template <class L, class R> Int operator[](ClosedSlice<L, R> s) const {
         return prod(s);
     }
 
+    // i番目の値を返す。要素数nとしてO(log(n+1))。
     Int operator[](Int i) const {
         assert(0 <= i && i < len());
         return prod(i, i + 1);
     }
 
+    // 末尾からi番目の値を返す。要素数nとしてO(log(n+1))。
     Int operator[](BackwardsIndex i) const {
         return (*this)[len() - i.value];
     }
 };
 
+// 配列から一次式加算・区間最小値構造を構築する。要素数nとしてO(n)。
 inline auto initRangeLinearAddRangeMin(const std::vector<Int> &v) {
     return RangeLinearAddRangeMin(v);
 }

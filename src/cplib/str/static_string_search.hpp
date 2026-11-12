@@ -46,6 +46,7 @@ template <class T> class StaticStringSearch {
 public:
     std::shared_ptr<StaticStringBase<T>> base;
 
+    // 長さNの基底に対する検索索引を構築する。計算量 O(N log(N+2))。
     explicit StaticStringSearch(std::shared_ptr<StaticStringBase<T>> b) : base(std::move(b)) {
         std::vector<Int> positions(base->SA.begin(), base->SA.end());
         index = std::make_shared<Index>(positions);
@@ -75,7 +76,8 @@ public:
         return count(s, t) > 0;
     }
 
-    // Copy the small search handle into the coroutine so temporary handles are safe.
+    // 同じ基底のs内におけるtの出現位置を昇順に列挙する。準備と各要素の取得は O(log(N+2))。
+    // 一時検索オブジェクトも使えるよう、コルーチンにハンドルをコピーする。
     static Generator<Int> positions(StaticStringSearch search, StaticString<T> s,
                                     StaticString<T> t) {
         assert(s.base == search.base && t.base == search.base);
@@ -129,12 +131,14 @@ public:
 template <class T> struct StaticStringSearchCacheEntry : detail::StaticSearchEntry {
     StaticStringSearch<T> search;
 
+    // 長さNの基底から検索索引を構築する。計算量 O(N log(N+2))。
     explicit StaticStringSearchCacheEntry(std::shared_ptr<StaticStringBase<T>> b)
         : search(std::move(b)) {
     }
 };
 
 // 全ての型・基底の索引とキャッシュの領域を手放す。保持済みの検索オブジェクトは引き続き使える。
+// 解放するキャッシュと索引の領域の合計をBとして O(B+1)。
 inline void clearStaticStringSearchCache() {
     detail::staticSearchLastKey = nullptr;
     detail::staticSearchLast.reset();
@@ -142,6 +146,7 @@ inline void clearStaticStringSearchCache() {
 }
 
 // 指定した基底の索引をキャッシュから除く。保持済みの検索オブジェクトは引き続き使える。
+// 解放する索引の領域をBとして期待 O(B+1)。
 template <class T>
 void clearStaticStringSearchCache(const std::shared_ptr<StaticStringBase<T>> &b) {
     if (detail::staticSearchLastKey == b.get()) {

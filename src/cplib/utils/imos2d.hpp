@@ -36,14 +36,17 @@ public:
     }
 };
 
+// 高さH、幅Wの二次元差分配列を構築する。計算量 O(HW)。
 inline Imos2D initImos2D(Int h, Int w) {
     return {h, w};
 }
 
+// 半開矩形に加算する。計算量 O(1)。
 inline void rectangle_add(Imos2D &s, Int il, Int ir, Int jl, Int jr, Int x) {
     s.rectangle_add(il, ir, jl, jr, x);
 }
 
+// 高さH、幅Wの加算結果を復元する。計算量 O(HW)。
 inline auto build(const Imos2D &s) {
     return s.build();
 }

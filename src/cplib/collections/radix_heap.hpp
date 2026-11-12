@@ -3,7 +3,7 @@
 #include <type_traits>
 
 namespace cplib {
-// Monotone integer heap. O(B) amortized per removed item, B = key width.
+// 単調な整数キーの最小ヒープ。Bをキーのビット数として、要素あたり償却O(B)。
 template <class K, class V> class RadixHeap {
     static_assert(std::is_integral_v<K> && !std::is_same_v<K, bool>);
     using U = std::make_unsigned_t<K>;
@@ -45,14 +45,17 @@ public:
     explicit RadixHeap(K minKey = std::numeric_limits<K>::lowest()) : last(minKey) {
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return size_;
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // 空かどうかを返す。O(1)。
     bool isEmpty() const {
         return size_ == 0;
     }
@@ -67,6 +70,7 @@ public:
         ++size_;
     }
 
+    // キーと値の組を追加する。償却O(1)。
     void push(std::pair<K, V> v) {
         push(v.first, std::move(v.second));
     }
@@ -77,11 +81,13 @@ public:
         return buckets[0].back();
     }
 
+    // i=0のとき最小要素への参照を返す。pushと合わせて一要素あたり償却O(B)。
     const std::pair<K, V> &operator[](Int i) {
         assert(i == 0);
         return top();
     }
 
+    // 最小要素を取り除いて返す。pushと合わせて一要素あたり償却O(B)。
     std::pair<K, V> pop() {
         prepare();
         auto v = std::move(buckets[0].back());
@@ -99,6 +105,7 @@ public:
     }
 };
 
+// キーの下限を指定して空のヒープを生成する。キーのビット数をBとしてO(B)。
 template <class K, class V> auto initRadixHeap(K minKey = std::numeric_limits<K>::lowest()) {
     return RadixHeap<K, V>(minKey);
 }

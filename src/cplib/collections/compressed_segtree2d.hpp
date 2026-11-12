@@ -119,6 +119,7 @@ public:
         }
     }
 
+    // 登録点(x,y)をvalueで更新する。演算がO(1)ならO(log²(N+1))。
     template <class Op> void updateBody(const K &x, const K &y, T value, Op op) {
         Int xi = std::lower_bound(xs.begin(), xs.end(), x) - xs.begin();
         assert(xi < Int(xs.size()) && xs[xi] == x);
@@ -141,6 +142,7 @@ public:
         }
     }
 
+    // 指定した半開矩形内の積を返す。演算がO(1)ならO(log²(N+1))。
     template <class Op>
     T rangeBody(const K &xl, const K &xr, const K &yl, const K &yr, Op op) const {
         assert(!(xr < xl) && !(yr < yl));
@@ -192,6 +194,7 @@ public:
         return xi < Int(xs.size()) && xs[xi] == x ? valueAt(base + xi, y) : identity;
     }
 
+    // 点pの値を返す。未登録なら単位元。O(log(N+1))。
     T operator[](std::pair<K, K> p) const {
         return get(p.first, p.second);
     }
@@ -200,6 +203,7 @@ public:
         Self *tree;
         std::pair<K, K> p;
 
+        // 現在値を読み取る。O(log(N+1))。
         operator T() const {
             return tree->get(p.first, p.second);
         }
@@ -209,27 +213,33 @@ public:
             return *this;
         }
 
+        // 別の参照の値を読み取り、この位置へ代入する。O(log²(N+1))。
         Reference &operator=(const Reference &r) {
             return *this = T(r);
         }
     };
 
+    // 点pへの読み書き用参照を返す。取得O(1)、読み取りO(log(N+1))、更新O(log²(N+1))。
     Reference operator[](std::pair<K, K> p) {
         return {this, p};
     }
 
+    // 全登録点の積を返す。O(1)。
     T get_all() const {
         return count == 0 ? identity : data[2 * offsets[1] + 1];
     }
 
+    // 重複除去後の登録点数を返す。O(1)。
     Int len() const {
         return count;
     }
 
+    // 重複除去後の登録点数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // 点更新と矩形取得に直接演算版を設定する。関数オブジェクトのコピー費用を除きO(1)。
     template <class Op> void specialize(Op op) {
         updateImpl = [op](Self &t, K x, K y, T value) { t.updateBody(x, y, value, op); };
         rangeImpl = [op](const Self &t, K xl, K xr, K yl, K yr) {
@@ -238,17 +248,20 @@ public:
     }
 };
 
+// 座標列または値付き座標列から二次元セグメント木を構築する。入力点数Nに対しO(N log(N+1))。
 template <class P, class Op, class T>
 auto initCompressedSegmentTree2D(std::span<const P> points, Op op, T e) {
     using K = std::tuple_element_t<0, P>;
     return CompressedSegmentTree2D<K, T>(points, op, e);
 }
 
+// 座標列または値付き座標列から二次元セグメント木を構築する。入力点数Nに対しO(N log(N+1))。
 template <class P, class Op, class T>
 auto initCompressedSegmentTree2D(const std::vector<P> &points, Op op, T e) {
     return initCompressedSegmentTree2D(std::span<const P>(points), op, e);
 }
 
+// 直接演算版の二次元セグメント木を構築する。入力点数Nに対しO(N log(N+1))。
 template <class Points, class Op, class T>
 auto newCompressedSeg2DWith(const Points &points, Op op, T e) {
     auto result = initCompressedSegmentTree2D(points, op, e);
@@ -256,18 +269,22 @@ auto newCompressedSeg2DWith(const Points &points, Op op, T e) {
     return result;
 }
 
+// 登録点数を返す。O(1)。
 template <class K, class T> Int len(const CompressedSegmentTree2D<K, T> &s) {
     return s.len();
 }
 
+// 全登録点の積を返す。O(1)。
 template <class K, class T> T get_all(const CompressedSegmentTree2D<K, T> &s) {
     return s.get_all();
 }
 
+// 指定された半開矩形内の積を返す。O(log²(N+1))。
 template <class K, class T> T get(const CompressedSegmentTree2D<K, T> &s, K xl, K xr, K yl, K yr) {
     return s.get(xl, xr, yl, yr);
 }
 
+// 登録点の値を上書きする。O(log²(N+1))。
 template <class K, class T> void update(CompressedSegmentTree2D<K, T> &s, K x, K y, T v) {
     s.update(x, y, v);
 }

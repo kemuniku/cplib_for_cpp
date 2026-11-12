@@ -6,6 +6,7 @@ namespace cplib {
 template <class ModInt> struct Combination_Type {
     std::vector<ModInt> fact, inv, fact_inv;
 
+    // max_N までの階乗などを前計算する。時間・領域 O(max_N)。
     explicit Combination_Type(Int max_N) : fact(max_N + 1), inv(max_N + 1), fact_inv(max_N + 1) {
         assert(max_N >= 0);
         fact[0] = 1;
@@ -22,18 +23,21 @@ template <class ModInt> struct Combination_Type {
         }
     }
 
+    // 二項係数を返す。計算量 O(1)。
     ModInt ncr(Int n, Int r) const {
         if (n < 0 || r < 0 || n < r)
             return 0;
         return fact[n] * fact_inv[n - r] * fact_inv[r];
     }
 
+    // 順列数を返す。計算量 O(1)。
     ModInt npr(Int n, Int r) const {
         if (n < 0 || r < 0 || n < r)
             return 0;
         return fact[n] * fact_inv[n - r];
     }
 
+    // 重複組合せ数を返す。計算量 O(1)。
     ModInt nhr(Int n, Int r) const {
         if (n == 0 && r == 0)
             return 1;
@@ -41,18 +45,22 @@ template <class ModInt> struct Combination_Type {
     }
 };
 
+// 階乗などを前計算する。時間・領域 O(max_N)。
 template <class M> auto initCombination(Int max_N) {
     return Combination_Type<M>(max_N);
 }
 
+// 前計算を使い二項係数を返す。計算量 O(1)。
 template <class M> auto ncr(const Combination_Type<M> &c, Int n, Int r) {
     return c.ncr(n, r);
 }
 
+// 前計算を使い順列数を返す。計算量 O(1)。
 template <class M> auto npr(const Combination_Type<M> &c, Int n, Int r) {
     return c.npr(n, r);
 }
 
+// 前計算を使い重複組合せ数を返す。計算量 O(1)。
 template <class M> auto nhr(const Combination_Type<M> &c, Int n, Int r) {
     return c.nhr(n, r);
 }

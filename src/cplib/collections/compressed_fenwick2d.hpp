@@ -136,21 +136,25 @@ template <class K, class T = Int> class CompressedFenwick2D {
     }
 
 public:
+    // 入力点数Nに対し構築O(N log(N+1))。
     // 更新点を事前登録し、全点を零で初期化します。重複点は一つにまとめます。
     // Kには一貫した<と==、TにはT{}を零とする可換加法群の演算が必要です。
     explicit CompressedFenwick2D(std::span<const std::pair<K, K>> p) {
         build(p);
     }
 
+    // 入力点数Nに対し構築O(N log(N+1))。
     // (x,y,w)の列から一括構築します。同じ座標の重みは加算し、重みが零の点も登録します。
     explicit CompressedFenwick2D(std::span<const std::tuple<K, K, T>> p) {
         build(p);
     }
 
+    // 重複除去後の登録点数を返す。O(1)。
     Int len() const {
         return pointYs.size();
     }
 
+    // 重複除去後の登録点数を返す。O(1)。
     Int size() const {
         return len();
     }
@@ -221,6 +225,7 @@ public:
         return pi >= 0 ? pointValues[pi] : T{};
     }
 
+    // 登録点(x,y)の値をvalueに上書きする。O(log²(N+1))。
     void set(const K &x, const K &y, const T &value) {
         Int xi = std::lower_bound(xs.begin(), xs.end(), x) - xs.begin();
         assert(xi < Int(xs.size()) && xs[xi] == x);
@@ -231,6 +236,7 @@ public:
         addImpl(xi, y, delta);
     }
 
+    // 点pの値を返す。未登録なら零。O(log(N+1))。
     T operator[](std::pair<K, K> p) const {
         return get(p.first, p.second);
     }
@@ -239,24 +245,29 @@ public:
         CompressedFenwick2D *tree;
         std::pair<K, K> p;
 
+        // 現在値を読み取る。O(log(N+1))。
         operator T() const {
             return tree->get(p.first, p.second);
         }
 
+        // 値を代入する。O(log²(N+1))。
         Reference &operator=(const T &value) {
             tree->set(p.first, p.second, value);
             return *this;
         }
 
+        // 別の参照の値を読み取り、この位置へ代入する。O(log²(N+1))。
         Reference &operator=(const Reference &r) {
             return *this = T(r);
         }
     };
 
+    // 点pへの読み書き用参照を返す。取得O(1)、読み取りO(log(N+1))、更新O(log²(N+1))。
     Reference operator[](std::pair<K, K> p) {
         return {this, p};
     }
 
+    // 全登録点の値の合計を返す。O(log²(N+1))。
     T get_all() const {
         T result{};
         Int node = xs.size();
@@ -268,53 +279,64 @@ public:
     }
 };
 
+// 座標列または値付き座標列から二次元Fenwick木を構築する。入力点数Nに対しO(N log(N+1))。
 template <class K, class T = Int> auto initCompressedFenwick2D(std::span<const std::pair<K, K>> p) {
     return CompressedFenwick2D<K, T>(p);
 }
 
+// 座標列または値付き座標列から二次元Fenwick木を構築する。入力点数Nに対しO(N log(N+1))。
 template <class K, class T = Int>
 auto initCompressedFenwick2D(const std::vector<std::pair<K, K>> &p) {
     return CompressedFenwick2D<K, T>(p);
 }
 
+// 座標列または値付き座標列から二次元Fenwick木を構築する。入力点数Nに対しO(N log(N+1))。
 template <class K, class T = Int, std::size_t N>
 auto initCompressedFenwick2D(const std::array<std::pair<K, K>, N> &p) {
     return CompressedFenwick2D<K, T>(p);
 }
 
+// 座標列または値付き座標列から二次元Fenwick木を構築する。入力点数Nに対しO(N log(N+1))。
 template <class K, class T> auto initCompressedFenwick2D(std::span<const std::tuple<K, K, T>> p) {
     return CompressedFenwick2D<K, T>(p);
 }
 
+// 座標列または値付き座標列から二次元Fenwick木を構築する。入力点数Nに対しO(N log(N+1))。
 template <class K, class T>
 auto initCompressedFenwick2D(const std::vector<std::tuple<K, K, T>> &p) {
     return CompressedFenwick2D<K, T>(p);
 }
 
+// 登録点数を返す。O(1)。
 template <class K, class T> Int len(const CompressedFenwick2D<K, T> &t) {
     return t.len();
 }
 
+// 登録点に値を加算する。O(log²(N+1))。
 template <class K, class T>
 void add(CompressedFenwick2D<K, T> &t, const K &x, const K &y, const T &d) {
     t.add(x, y, d);
 }
 
+// 指定された各上限未満の座標を持つ点の和を返す。O(log²(N+1))。
 template <class K, class T>
 auto prefix(const CompressedFenwick2D<K, T> &t, const K &x, const K &y) {
     return t.prefix(x, y);
 }
 
+// xが指定半開区間、yが指定上限未満の点の和を返す。O(log²(N+1))。
 template <class K, class T>
 auto getLess(const CompressedFenwick2D<K, T> &t, const K &l, const K &r, const K &y) {
     return t.getLess(l, r, y);
 }
 
+// 指定された半開矩形内の点の和を返す。O(log²(N+1))。
 template <class K, class T>
 auto get(const CompressedFenwick2D<K, T> &t, const K &xl, const K &xr, const K &yl, const K &yr) {
     return t.get(xl, xr, yl, yr);
 }
 
+// 全登録点の値の合計を返す。O(log²(N+1))。
 template <class K, class T> auto get_all(const CompressedFenwick2D<K, T> &t) {
     return t.get_all();
 }

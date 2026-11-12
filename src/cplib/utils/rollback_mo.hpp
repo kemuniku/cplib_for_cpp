@@ -32,6 +32,8 @@ public:
         return id;
     }
 
+    // 登録済みQ区間を処理する。幅Bでソート O(Q log Q)、追加・巻き戻し O(N²/B + QB + N) 回。
+    // 各コールバックの処理時間は別途必要。
     template <class Add, class Rollback, class Answer>
     void run(Add add, Rollback rollback, Answer answer) const {
         auto qs = queries;
@@ -74,11 +76,13 @@ public:
         }
     }
 
+    // 自動巻き戻しを使い登録済み区間を処理する。runと同じ回数の操作と保存・復元が必要。
     template <class Add, class Answer> void runAutoRollback(Add add, Answer answer) const {
         detail::run_auto_rollback(*this, add, answer);
     }
 };
 
+// 長さN、想定クエリ数QでRollback Moを初期化する。計算量 O(1)。
 inline auto initRollbackMo(Int n, Int q = 0, Int width = 0) {
     return RollbackMo(n, q, width);
 }

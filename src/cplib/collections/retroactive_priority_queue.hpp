@@ -151,6 +151,7 @@ template <class T> class RetroactivePriorityQueue {
     }
 
 public:
+    // n時刻の空操作列を構築する。O(n+1)。
     explicit RetroactivePriorityQueue(Int n, SortOrder ord = Ascending) : capacity(n), order(ord) {
         assert(n >= 0);
         while (treeBase_ < n + 1)
@@ -170,6 +171,7 @@ public:
         return d;
     }
 
+    // 時刻tの操作をpushに変更し、最終状態の差分を返す。O(log(N+1))。
     QueueDelta<Int, T> setPush(Int t, T value) {
         assert(0 <= t && t < capacity);
         Int i = t + 1;
@@ -209,6 +211,7 @@ public:
         return count_;
     }
 
+    // 全操作実行後に残る実要素数を返す。O(1)。
     Int size() const {
         return len();
     }
@@ -268,6 +271,7 @@ public:
     }
 };
 
+// n時刻の空操作列を構築する。O(n+1)。
 template <class T> auto initRetroactivePriorityQueue(Int n, SortOrder order = Ascending) {
     return RetroactivePriorityQueue<T>(n, order);
 }

@@ -15,7 +15,7 @@ template <WeightedGraph G> auto kruskal_edges(const G &g) {
 }
 }
 
-// 最小全域木の重みを求める。非連結ならinf。O(E log E)。
+// 最小全域木の重みを求める。非連結ならinf。O(V+E log(E+1))。
 template <WeightedGraph G, class T = typename G::cost_type>
     requires UnDirectedGraph<G>
 T get_MST_cost(const G &g, T zero = T(0), T inf = detail::distance_inf<T>()) {
@@ -30,7 +30,7 @@ T get_MST_cost(const G &g, T zero = T(0), T inf = detail::distance_inf<T>()) {
     return uf.count == 1 ? result : inf;
 }
 
-// 最小全域森を動的無向グラフで返す。O(E log E)。
+// 最小全域森を動的無向グラフで返す。O(V+E log(E+1))。
 template <WeightedGraph G>
     requires UnDirectedGraph<G>
 auto to_MST_Graph(const G &g) {

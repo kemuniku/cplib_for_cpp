@@ -172,6 +172,7 @@ template <class T, class Next> Int grundy(T state, Next next) {
 }
 
 // 手番側が必勝かを判定し、呼び出し間でメモを再利用する関数を返す。
+// 構築は O(1)、返された関数の評価は新規状態V、遷移Eについて期待 O(V+E)。
 // next(state)は一手の遷移先を返す。合法手がない状態ではterminalがtrueの場合に限り手番側の勝ち。
 // ゲームグラフは有限かつ閉路なし。関数を使う間、nextの結果は同じ引数に対して固定する。
 // next(state, is_first)の形では最初の手番がtrueで、一手ごとに反転し、状態と手番の組でメモ化する。
@@ -181,6 +182,7 @@ template <class T = void, class Next> auto init_can_win(Next next, bool terminal
 }
 
 // 指定状態の勝敗を、呼び出しごとに新しいメモで判定する。ゲームグラフは有限かつ閉路なし。
+// 状態V、遷移Eについて期待 O(V+E)。ハッシュ・比較・コピーは O(1)、遷移列挙は出力数に比例とする。
 template <class T, class Next> bool can_win(T state, Next next, bool terminal = false) {
     return init_can_win<T>(std::move(next), terminal)(state);
 }
@@ -218,7 +220,7 @@ template <class T, class Next> auto optimal_play(T state, Next next, bool termin
 }
 
 // 評価関数付きinit_optimal_playと同じ規則で、呼び出しごとに新しいメモを使って復元する。
-// nextとevaluateの結果は呼び出し中一定。
+// nextとevaluateの結果は呼び出し中一定。計算量は評価関数付きinit_optimal_playと同じ。
 template <class T, class Next, class Evaluate>
     requires(!std::is_same_v<std::remove_cvref_t<Evaluate>, bool>)
 auto optimal_play(T state, Next next, Evaluate evaluate, bool terminal = false) {

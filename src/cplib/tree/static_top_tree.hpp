@@ -14,6 +14,7 @@ struct StaticTopTreeData {
     Int numVertices = 0, root = 0;
     std::vector<StaticTopTreeNode> nodes;
 
+    // 要素数Kに対してO(K log K)。
     // 累積頂点数の中央に最も近い境界で、順序を保って結合する。
     Int mergeRange(const std::vector<Int> &items, const std::vector<Int> &prefix, Int left,
                    Int right, StaticTopTreeNodeKind kind) {

@@ -5,7 +5,7 @@ namespace cplib {
 inline constexpr Int ANGLE_0 = 0, ANGLE_0_90 = 1, ANGLE_90 = 2, ANGLE_90_180 = 3, ANGLE_180 = 4,
                      ANGLE_180_270 = -3, ANGLE_270 = -2, ANGLE_270_360 = -1;
 
-// p, qのなす角を八方位で返す
+// 非零ベクトル p, q のなす角を八方位で返す。計算量 O(1)。
 template <class T> Int angle(Point<T> p, Point<T> q) {
     assert(!(geometry_eq(p.x, 0) && geometry_eq(p.y, 0)) &&
            !(geometry_eq(q.x, 0) && geometry_eq(q.y, 0)));
@@ -25,29 +25,33 @@ template <class T> Int angle(Point<T> p, Point<T> q) {
     return 0;
 }
 
+// 2直線の方向ベクトルのなす角を八方位で返す。計算量 O(1)。
 template <class T> Int angle(const Line<T> &a, const Line<T> &b) {
     return angle(vector(a), vector(b));
 }
 
+// 2線分の方向ベクトルのなす角を八方位で返す。計算量 O(1)。
 template <class T> Int angle(const Segment<T> &a, const Segment<T> &b) {
     return angle(vector(a), vector(b));
 }
 
+// 直線と線分の方向ベクトルのなす角を八方位で返す。計算量 O(1)。
 template <class T> Int angle(const Line<T> &a, const Segment<T> &b) {
     return angle(a, toLine(b));
 }
 
+// 線分と直線の方向ベクトルのなす角を八方位で返す。計算量 O(1)。
 template <class T> Int angle(const Segment<T> &a, const Line<T> &b) {
     return angle(toLine(a), b);
 }
 
-// a, bが平行かどうかを判定
+// a, bが平行かどうかを判定する。計算量 O(1)。
 template <class P, class Q> bool is_parallel(const P &a, const Q &b) {
     Int d = angle(a, b);
     return d == ANGLE_0 || d == ANGLE_180;
 }
 
-// a, bが直角かどうかを判定
+// a, bが直角かどうかを判定する。計算量 O(1)。
 template <class P, class Q> bool is_orthogonal(const P &a, const Q &b) {
     Int d = angle(a, b);
     return d == ANGLE_90 || d == ANGLE_270;

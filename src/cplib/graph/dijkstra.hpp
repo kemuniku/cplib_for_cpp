@@ -14,7 +14,8 @@ template <class T> struct ShortestPath {
     T cost;
 };
 
-// 単一または複数始点から最短距離と前駆を返す。O((V+E) log(V+E))。
+// 非負辺重みのグラフで単一または複数始点から最短距離と前駆を返す。
+// 始点数をSとしてO(V+(S+1)E+(E+S) log(E+S+1))。始点に重複がなければO(V+E+(E+S) log(E+S+1))。
 template <GraphTypes G, class Start, class T = typename G::cost_type>
 RestoredDistances<T> restore_dijkstra(const G &g, const Start &start, T zero = T(0),
                                       T inf = detail::distance_inf<T>()) {
@@ -46,11 +47,13 @@ RestoredDistances<T> restore_dijkstra(const G &g, const Start &start, T zero = T
     return result;
 }
 
+// 単一または複数始点からの最短距離を返す。非負重みのDijkstra法。始点数をSとしてO(V+(S+1)E+(E+S) log(E+S+1))。
 template <GraphTypes G, class Start, class T = typename G::cost_type>
 auto dijkstra(const G &g, const Start &start, T zero = T(0), T inf = detail::distance_inf<T>()) {
     return restore_dijkstra(g, start, zero, inf).costs;
 }
 
+// 始点から終点への経路と距離を返す。到達不能時の経路は終点のみ。非負重みのDijkstra法でO(V+E log(E+2))。
 template <GraphTypes G, class T = typename G::cost_type>
 ShortestPath<T> shortest_path_dijkstra(const G &g, Int start, Int goal, T zero = T(0),
                                        T inf = detail::distance_inf<T>()) {

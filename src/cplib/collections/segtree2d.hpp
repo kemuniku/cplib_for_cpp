@@ -11,6 +11,7 @@ template <class T> class SegmentTree2D {
 public:
     std::vector<SegmentTree<T>> arr;
 
+    // H×Wの配列と結合演算・単位元から構築する。O((H+1)(W+1))回の演算。
     template <class Op>
     SegmentTree2D(const std::vector<std::vector<T>> &v, Op op, T e)
         : identity(e), merge(op), H(v.size()), W(H ? Int(v[0].size()) : 0) {
@@ -29,6 +30,7 @@ public:
         }
     }
 
+    // O(log(H+1) log(W+1))回の演算。
     // 長方形領域 i∈[il,ir), j∈[jl,jr) についての演算結果を返します。
     T get(Int il, Int ir, Int jl, Int jr) const {
         assert(0 <= il && il <= ir && ir <= H && 0 <= jl && jl <= jr && jr <= W);
@@ -46,6 +48,7 @@ public:
         return merge(left, right);
     }
 
+    // 座標(i,j)の値を更新する。O(log(H+1) log(W+1))回の演算。
     void update(Int i, Int j, const T &value) {
         assert(0 <= i && i < H && 0 <= j && j < W);
         i += lastnode;
@@ -57,15 +60,18 @@ public:
     }
 };
 
+// H×Wの配列と結合演算・単位元から構築する。O((H+1)(W+1))回の演算。
 template <class T, class Op>
 auto initSegmentTree2D(const std::vector<std::vector<T>> &v, Op op, T e) {
     return SegmentTree2D<T>(v, op, e);
 }
 
+// 半開矩形[il,ir)×[jl,jr)の演算結果を返す。O(log(H+1) log(W+1))回の演算。
 template <class T> T get(const SegmentTree2D<T> &s, Int il, Int ir, Int jl, Int jr) {
     return s.get(il, ir, jl, jr);
 }
 
+// 座標(i,j)の値を更新する。O(log(H+1) log(W+1))回の演算。
 template <class T> void update(SegmentTree2D<T> &s, Int i, Int j, const T &v) {
     s.update(i, j, v);
 }

@@ -2,7 +2,7 @@
 #include <cplib/collections/bitset_avx512.hpp>
 
 namespace cplib {
-// Myers法。バイト単位、時間O(n ceil(m/64))、領域O(256 ceil(m/64))語。
+// Myers法。n=max(|s|,|t|)、m=min(|s|,|t|)。バイト単位、時間O(n ceil(m/64))、領域O(256 ceil(m/64))語。
 // AVX512F環境では融合した主要ループを8語ずつ処理する。
 // 挿入・削除・置換の各コストは1。空文字列ならO(1)で他方の長さを返す。
 inline Int editDistance_bitset(std::string_view s, std::string_view t) {

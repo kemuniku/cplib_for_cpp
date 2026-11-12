@@ -63,18 +63,21 @@ auto maxk_dijkstra_core(const G &g, const Start &start, T k, T zero, T inf) {
 }
 }
 
+// 辺重みが0以上k以下の整数のとき、始点から各頂点への最短距離を返す。始点数SとしてO(V(k+1)+(S+1)E+S)。始点に重複がなければO(V(k+1)+E+S)。
 template <GraphTypes G, class Start, class T = typename G::cost_type>
 auto maxk_dijkstra(const G &g, const Start &start, std::type_identity_t<T> k, T zero = T(0),
                    T inf = detail::distance_inf<T>()) {
     return detail::maxk_dijkstra_core<false>(g, start, k, zero, inf);
 }
 
+// 辺重みが0以上k以下の整数のとき、最短距離と前駆を返す。始点数SとしてO(V(k+1)+(S+1)E+S)。始点に重複がなければO(V(k+1)+E+S)。
 template <GraphTypes G, class Start, class T = typename G::cost_type>
 auto restore_maxk_dijkstra(const G &g, const Start &start, std::type_identity_t<T> k, T zero = T(0),
                            T inf = detail::distance_inf<T>()) {
     return detail::maxk_dijkstra_core<true>(g, start, k, zero, inf);
 }
 
+// 辺重みが0以上k以下の整数のとき、始点から終点への最短経路と距離を返す。O(V(k+1)+E)。
 template <GraphTypes G, class T = typename G::cost_type>
 ShortestPath<T> shortest_path_maxk_dijkstra(const G &g, Int start, Int goal,
                                             std::type_identity_t<T> k, T zero = T(0),

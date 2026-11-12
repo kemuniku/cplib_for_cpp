@@ -7,6 +7,7 @@ using mint754974721 = StaticMontgomeryModint<754974721>;
 using mint167772161 = StaticMontgomeryModint<167772161>;
 using mint469762049 = StaticMontgomeryModint<469762049>;
 
+// 愚直に畳み込みを求める。入力長を n, m として O(nm)。
 template <class T> auto convolution_naive(const std::vector<T> &f, const std::vector<T> &g) {
     return detail::convolution_schoolbook(f, g);
 }
@@ -31,6 +32,7 @@ std::vector<T> convolution(std::vector<T> f, std::vector<T> g) {
     return f;
 }
 
+// 3つの法の畳み込みを中国剰余定理で復元する。入力長の和を N として O(N log(N+1))。
 inline auto convolution_ll(const std::vector<Int> &f, const std::vector<Int> &g) {
     auto run = [&]<class M>() {
         std::vector<M> a(f.begin(), f.end()), b(g.begin(), g.end());

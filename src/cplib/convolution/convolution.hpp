@@ -87,6 +87,7 @@ template <class T> auto modintFromRawWords(const std::vector<std::uint32_t> &f, 
 }
 }
 
+// 愚直に畳み込みを求める。入力長を n, m として O(nm)。
 template <class T> auto convolution_naive(const std::vector<T> &f, const std::vector<T> &g) {
     return detail::convolution_schoolbook(f, g);
 }
@@ -111,7 +112,7 @@ std::vector<T> convolution(const std::vector<T> &f, const std::vector<T> &g) {
     return detail::convolutionArbitraryMod(f, g);
 }
 
-// 2冪長の巡回積。Montgomery版は通常表現へ変換してカーネルを呼ぶ元経路を保持。
+// 長さ n の巡回畳み込みを返す。n は2の冪、各入力長は n 以下。計算量 O(n log(n+1))。
 template <class T>
     requires(BarrettModint<T> || MontgomeryModint<T>)
 std::vector<T> convolutionCyclicPowerOfTwo(const std::vector<T> &f, const std::vector<T> &g,
@@ -147,6 +148,7 @@ std::vector<T> convolutionCyclicPowerOfTwo(const std::vector<T> &f, const std::v
     return out;
 }
 
+// 整数列を法 M で畳み込む。入力長の和を N として O(N log(N+1))。
 template <Int M>
 std::vector<Int> convolution(const std::vector<Int> &f, const std::vector<Int> &g) {
     static_assert(M > 0 && M < (Int(1) << 31));
@@ -159,7 +161,7 @@ std::vector<Int> convolution(const std::vector<Int> &f, const std::vector<Int> &
     return out;
 }
 
-// 各係数が符号付き64ビットに収まる整数畳み込み。CRTの2^64桁あふれ補正を保持。
+// 各係数が符号付き64ビットに収まる整数畳み込み。入力長の和を N として O(N log(N+1))。
 inline std::vector<Int> convolution_ll(const std::vector<Int> &f, const std::vector<Int> &g) {
     if (f.empty() || g.empty())
         return {};

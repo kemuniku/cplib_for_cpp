@@ -56,7 +56,8 @@ public:
 };
 }
 
-// memo<R(Args...)>([](auto& self,Args...){...})。再帰はself(...)で呼び、版間でメモを共用。
+// memo<R(Args...)>([](auto& self,Args...){...})。再帰はself(...)で呼び、コピー間でメモを共用。
+// 構築は関数オブジェクトの移動に要する時間。各呼出しは引数のハッシュ等が定数時間なら期待 O(1) に本体の計算量を加える。
 template <class Signature, class Body> auto memo(Body body) {
     return detail::Memoized<Signature, Body>(std::move(body));
 }

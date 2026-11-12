@@ -292,6 +292,7 @@ public:
         return roots.size();
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }

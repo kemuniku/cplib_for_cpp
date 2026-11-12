@@ -10,32 +10,39 @@
 
 namespace cplib {
 // C++20の逐次生成範囲。yieldした値は次の反復まで有効、途中終了時も探索状態を解放する。
+// 要素取得は O(1)、反復の進行と破棄は生成器の処理に依存する。
 template <class T> class Generator {
 public:
     struct promise_type {
         const T *current = nullptr;
         std::exception_ptr error;
 
+        // コルーチンから生成器を作る。計算量 O(1)。
         Generator get_return_object() {
             return Generator(std::coroutine_handle<promise_type>::from_promise(*this));
         }
 
+        // 生成器の開始前に中断する。計算量 O(1)。
         std::suspend_always initial_suspend() noexcept {
             return {};
         }
 
+        // 生成器の終了時に中断する。計算量 O(1)。
         std::suspend_always final_suspend() noexcept {
             return {};
         }
 
+        // 次の値への参照を保存して中断する。計算量 O(1)。
         std::suspend_always yield_value(const T &value) noexcept {
             current = &value;
             return {};
         }
 
+        // 生成処理を終了する。計算量 O(1)。
         void return_void() noexcept {
         }
 
+        // 発生した例外を保存する。計算量は例外処理系に依存する。
         void unhandled_exception() {
             error = std::current_exception();
         }
@@ -49,14 +56,17 @@ public:
         using iterator_category = std::input_iterator_tag;
         Handle handle;
 
+        // 現在の値への参照を返す。計算量 O(1)。
         const T &operator*() const {
             return *handle.promise().current;
         }
 
+        // 現在の値へのポインタを返す。計算量 O(1)。
         const T *operator->() const {
             return handle.promise().current;
         }
 
+        // 生成処理を再開し次の値まで進む。計算量は生成処理に依存する。
         Iterator &operator++() {
             handle.resume();
             if (handle.done() && handle.promise().error)
@@ -64,26 +74,32 @@ public:
             return *this;
         }
 
+        // 生成処理を次の値まで進める。計算量は前置 ++ と同じ。
         void operator++(int) {
             ++*this;
         }
 
+        // 生成が終了したか判定する。計算量 O(1)。
         bool operator==(std::default_sentinel_t) const {
             return !handle || handle.done();
         }
     };
 
+    // 空の生成器を作る。計算量 O(1)。
     Generator() = default;
 
+    // コルーチンのハンドルから生成器を作る。計算量 O(1)。
     explicit Generator(Handle h) : handle_(h) {
     }
 
     Generator(const Generator &) = delete;
     Generator &operator=(const Generator &) = delete;
 
+    // 生成器の所有権を移動する。計算量 O(1)。
     Generator(Generator &&b) noexcept : handle_(std::exchange(b.handle_, {})) {
     }
 
+    // 現在の生成状態を破棄して所有権を移動する。計算量は現在の状態の破棄に依存する。
     Generator &operator=(Generator &&b) noexcept {
         if (this != &b) {
             if (handle_)
@@ -93,11 +109,13 @@ public:
         return *this;
     }
 
+    // 生成状態を破棄する。計算量は保持する値の破棄に依存する。
     ~Generator() {
         if (handle_)
             handle_.destroy();
     }
 
+    // 生成を開始し最初の値を指す反復子を返す。計算量は最初の値までの生成処理に依存する。
     Iterator begin() {
         Iterator it{handle_};
         if (handle_)
@@ -105,6 +123,7 @@ public:
         return it;
     }
 
+    // 終端を表す値を返す。計算量 O(1)。
     std::default_sentinel_t end() const {
         return {};
     }
@@ -395,40 +414,48 @@ Generator<std::vector<typename Value<I>::value_type>> cartesian_product(I choice
 
 // 順列・組合せ・直積を遅延列挙する。固定長組合せと差分畳み込みも別経路で維持する。
 // 入力位置の順列をPython itertools.permutationsと同じ順で列挙する。入力に同値要素があれば値の重複を保持する。
+// N要素の位置の順列を列挙する。出力数Qとして全体 O((N+1)(Q+1))、追加領域 O(N)。
 template <class R> auto permutations(R &&v) {
     return detail::itertools::permutations(detail::itertools::hold(std::forward<R>(v)));
 }
 
+// 重複を除いた値の順列を列挙する。出力数Qとして O(N log(N+1)+(N+1)Q)、追加領域 O(N)。
 template <class R> auto distinct_permutations(R &&v) {
     return detail::itertools::distinct_permutations(detail::itertools::hold(std::forward<R>(v)));
 }
 
+// N要素からr個選ぶ組合せを列挙する。出力数Qとして O((r+1)(Q+1))、追加領域 O(r)。
 template <class R> auto combinations(R &&v, Int r) {
     return detail::itertools::combinations(detail::itertools::hold(std::forward<R>(v)), r);
 }
 
+// N個選ぶ組合せを固定長配列で列挙する。出力数Qとして O((N+1)(Q+1))、追加領域 O(N)。
 template <Int N, class R> auto combinations(R &&v) {
     return detail::itertools::combinations<N>(detail::itertools::hold(std::forward<R>(v)));
 }
 
 // combinations(v, r)の各組合せをfで左畳み込みした値を列挙する。fが乗算なら各組合せの総積。
 // 接頭辞畳み込みを保持し、変化のあった添字以降のみ再計算する差分更新版。
+// 出力数Qとして最大 O((r+1)(Q+1)) 回の添字操作と関数呼出しを行う。追加領域 O(r)。
 template <class R, class F> auto combinations_withf(R &&v, Int r, F f) {
     return detail::itertools::combinations_withf(detail::itertools::hold(std::forward<R>(v)), r,
                                                  std::move(f));
 }
 
+// 同じ候補集合からrepeat個選ぶ直積を列挙する。出力数Qとして O((repeat+1)(Q+1))。
+// 追加領域は O(repeat)。
 template <class R> auto product(R &&v, Int repeat) {
     return detail::itertools::product(detail::itertools::hold(std::forward<R>(v)), repeat);
 }
 
 // 各位置の候補から1つずつ選ぶ。右端から候補の添字を進める。
 // 位置が0個なら空列を1件、空の候補があれば0件。候補内の重複は保持。
+// 位置数N、出力数Qとして O((N+1)(Q+1))、追加領域 O(N)。
 template <class R> auto cartesian_product(R &&v) {
     return detail::itertools::cartesian_product(detail::itertools::hold(std::forward<R>(v)));
 }
 
-// 左・右累積演算。初期値ありは長さn+1、なしは長さn。O(n)。
+// 初期値から左に累積した配列を返す。長さ n の入力に対し f を n 回呼び、それ以外の時間・追加領域は O(n+1)。
 template <class T, class F> std::vector<T> accumulated(const std::vector<T> &v, F f, T first) {
     std::vector<T> out(v.size() + 1);
     out[0] = first;
@@ -437,16 +464,19 @@ template <class T, class F> std::vector<T> accumulated(const std::vector<T> &v, 
     return out;
 }
 
+// 左から累積し入力を更新する。長さ n に対し f を max(n-1,0) 回呼び、それ以外の時間 O(n+1)、追加領域 O(1)。
 template <class T, class F> void accumulate(std::vector<T> &v, F f) {
     for (std::size_t i = 1; i < v.size(); ++i)
         v[i] = f(v[i - 1], v[i]);
 }
 
+// 左から累積した配列を返す。計算量はコピーと accumulate の合計。
 template <class T, class F> std::vector<T> accumulated(std::vector<T> v, F f) {
     cplib::accumulate(v, f);
     return v;
 }
 
+// 初期値から右に累積した配列を返す。長さ n の入力に対し f を n 回呼び、それ以外の時間・追加領域は O(n+1)。
 template <class T, class F> std::vector<T> accumulatedr(const std::vector<T> &v, F f, T first) {
     std::vector<T> out(v.size() + 1);
     out.back() = first;
@@ -455,17 +485,20 @@ template <class T, class F> std::vector<T> accumulatedr(const std::vector<T> &v,
     return out;
 }
 
+// 右から累積し入力を更新する。長さ n に対し f を max(n-1,0) 回呼び、それ以外の時間 O(n+1)、追加領域 O(1)。
 template <class T, class F> void accumulater(std::vector<T> &v, F f) {
     for (Int i = Int(v.size()) - 2; i >= 0; --i)
         v[i] = f(v[i], v[i + 1]);
 }
 
+// 右から累積した配列を返す。計算量はコピーと accumulater の合計。
 template <class T, class F> std::vector<T> accumulatedr(std::vector<T> v, F f) {
     cplib::accumulater(v, f);
     return v;
 }
 
 // 非減少の整数分割を元と同じ順序で列挙する。追加領域O(n)。
+// 出力数Qとして全体 O((n+1)(Q+1))。
 inline Generator<std::vector<Int>> partitions(Int n) {
     assert(n >= 0);
     if (!n) {
@@ -496,38 +529,45 @@ template <class R> auto bounded_sequences(R &&upper) {
 // 総和sum、bounds[i].first <= a[i] < bounds[i].secondの数列を辞書順に列挙する。
 // 空のboundsはsum == 0のときだけ空列を返す。空の範囲は解なし。
 // 各範囲の端点・累積和・差の計算はIntに収まること。
+// 長さN、探索する部分列の状態数をTとすると O(N+T+1)、追加領域 O(N)。
 template <class R> auto bounded_sum_sequences(Int sum, R &&bounds) {
     return detail::itertools::bounded_sum_sequences(
         sum, detail::itertools::hold(std::forward<R>(bounds)));
 }
 
 // 長さn、総和sum、各要素が[l,r)の数列を辞書順に列挙する。
+// 探索する部分列の状態数をTとすると O(n+T+1)、追加領域 O(n)。
 inline auto bounded_sum_sequences(Int n, Int sum, Int l, Int r) {
     assert(n >= 0);
     return bounded_sum_sequences(sum, std::vector<std::pair<Int, Int>>(n, {l, r}));
 }
 
 // 長さ n、各要素が [l, r) の広義単調増加列を辞書順に列挙。
+// 探索する部分列の状態数をTとすると O(n+T+1)、追加領域 O(n)。
 inline auto nondecreasing_sequences(Int n, Int l, Int r) {
     return detail::itertools::monotone(n, l, r, 0, std::nullopt);
 }
 
 // 総和sを指定する版。端点・総和の中間計算はIntに収まること。
+// 探索する部分列の状態数をTとすると O(n+T+1)、追加領域 O(n)。
 inline auto nondecreasing_sequences(Int n, Int s, Int l, Int r) {
     return detail::itertools::monotone(n, l, r, 0, s);
 }
 
 // 長さ n、各要素が [l, r) の狭義単調増加列を辞書順に列挙。
+// 探索する部分列の状態数をTとすると O(n+T+1)、追加領域 O(n)。
 inline auto strictly_increasing_sequences(Int n, Int l, Int r) {
     return detail::itertools::monotone(n, l, r, 1, std::nullopt);
 }
 
 // 総和sを指定する狭義単調増加列の版。端点・総和の中間計算はIntに収まること。
+// 探索する部分列の状態数をTとすると O(n+T+1)、追加領域 O(n)。
 inline auto strictly_increasing_sequences(Int n, Int s, Int l, Int r) {
     return detail::itertools::monotone(n, l, r, 1, s);
 }
 
 // 初出順のグループ番号で集合分割を列挙する。k=-1なら個数制限なし。
+// 探索する部分列の状態数をTとすると O(n+T+1)、追加領域 O(n)。
 inline Generator<std::vector<Int>> set_partitions_id(Int n, Int k = -1) {
     assert(n >= 0 && k >= -1);
     if (n == 0) {
@@ -563,6 +603,7 @@ inline Generator<std::vector<Int>> set_partitions_id(Int n, Int k = -1) {
 // 0..<n の集合分割を、各グループの要素の列で返す。k == -1 は個数指定なし。
 // 各グループ内は昇順、グループ間は最小要素の昇順。列挙順は set_partitions_id と同じ。
 // n == 0 は k == -1 または k == 0 のときだけ空列を1件返す。
+// 探索する部分列の状態数をTとすると償却 O(n+T+1)、追加領域 O(n²)。
 inline Generator<std::vector<std::vector<Int>>> set_partitions(Int n, Int k = -1) {
     assert(n >= 0 && k >= -1);
     if (n == 0) {
@@ -614,6 +655,7 @@ inline Generator<std::vector<std::vector<Int>>> set_partitions(Int n, Int k = -1
 
 // 最小の未使用要素から相手を選び、順序による重複のないペア分割を列挙する。
 // n == 0は空列を1件、奇数なら0件。
+// 探索した状態数をTとして全体 O((n+1)(T+1))、追加領域 O(n)。
 inline Generator<std::vector<std::pair<Int, Int>>> pairings(Int n) {
     assert(n >= 0);
     if (!n) {
@@ -650,6 +692,7 @@ inline Generator<std::vector<std::pair<Int, Int>>> pairings(Int n) {
 }
 
 // 非空連続区間の境界を列挙する。空列の場合の唯一の境界は{0}。
+// 出力数Qとして全体 O((n+1)(Q+1))、追加領域 O(n)。
 inline Generator<std::vector<Int>> contiguous_partitions(Int n, Int k = -1) {
     assert(n >= 0 && k >= -1);
     if (n == 0) {
@@ -673,6 +716,7 @@ inline Generator<std::vector<Int>> contiguous_partitions(Int n, Int k = -1) {
 
 // 正しい括弧列を辞書順に列挙する。追加領域O(n)。
 // n 組（長さ 2*n）の正しい括弧列を辞書順に列挙。n == 0 は空文字列。
+// 探索した部分列の状態数Tとして O(n+T+1)、追加領域 O(n)。
 inline Generator<std::string> parenthesis_sequences(Int n) {
     assert(n >= 0);
     if (n == 0) {
@@ -704,6 +748,7 @@ inline Generator<std::string> parenthesis_sequences(Int n) {
 // Prüfer列によるラベル付き木の列挙。元と同じ復号法を使用する。
 // 頂点番号 0..<n の木を重複なく列挙。n >= 1。
 // Prüfer 列を使用し、n >= 2 では n^(n-2) 件。
+// 出力数Qとして O((n+1) log(n+1)(Q+1))、追加領域 O(n)。
 inline Generator<UnWeightedUnDirectedGraph> labeled_trees(Int n) {
     assert(n >= 1);
     if (n == 1) {
@@ -719,6 +764,7 @@ inline Generator<UnWeightedUnDirectedGraph> labeled_trees(Int n) {
 // 辺集合の組合せから単純無向グラフを列挙する。
 // 頂点番号 0..<n、辺数 m の単純無向グラフ。m == -1 は辺数指定なし。
 // 同型でも頂点番号が異なるグラフは区別する。
+// 出力数Qとして O((n²+1)(Q+1))、追加領域 O(n²+1)。
 inline Generator<UnWeightedUnDirectedGraph> simple_graphs(Int n, Int m = -1) {
     assert(n >= 0 && m >= -1);
     std::vector<std::pair<Int, Int>> edges;
@@ -781,11 +827,13 @@ template <class I> Generator<std::vector<Int>> topological_orders(I adj) {
 
 // 入次数を巻き戻しながらトポロジカル順序を辞書順で列挙する。
 // 隣接リストのトポロジカル順序を辞書順に列挙する。有向閉路がある場合は0件。
+// 頂点数V、辺数E、探索状態数Tとして O(V+E+(V+E+1)T)。
 template <class R> auto topological_orders(R &&adj) {
     return detail::itertools::topological_orders(detail::itertools::hold(std::forward<R>(adj)));
 }
 
 // cplib の有向グラフ版。重みは無視。静的グラフは build 済みであること。
+// 頂点数V、辺数E、探索状態数Tとして O(V+E+(V+E+1)T)。
 template <class T, bool S> auto topological_orders(const BasicGraph<T, S, true> &g) {
     std::vector<std::vector<Int>> adj(g.len);
     for (Int u = 0; u < g.len; ++u)
@@ -796,10 +844,12 @@ template <class T, bool S> auto topological_orders(const BasicGraph<T, S, true> 
     return topological_orders(std::move(adj));
 }
 
+// 有向グラフのトポロジカル順序を列挙する。計算量はconstグラフ版と同じ。
 template <class T, bool S> auto topological_orders(BasicGraph<T, S, true> &g) {
     return topological_orders(std::as_const(g));
 }
 
+// 有向グラフのトポロジカル順序を列挙する。計算量はconstグラフ版と同じ。
 template <class T, bool S> auto topological_orders(BasicGraph<T, S, true> &&g) {
     return topological_orders(std::as_const(g));
 }
@@ -807,6 +857,7 @@ template <class T, bool S> auto topological_orders(BasicGraph<T, S, true> &&g) {
 // L1ノルムの上限から次の要素の範囲を絞り、辞書順に列挙する。
 // 長さn、sum(abs(a[i])) <= sの整数列を辞書順に列挙する。
 // s < 0は0件。sはIntの最大値未満であること。
+// 探索する部分列の状態数をTとすると O(n+T+1)、追加領域 O(n)。
 inline Generator<std::vector<Int>> integer_vectors_l1(Int n, Int s) {
     assert(n >= 0 && s < std::numeric_limits<Int>::max());
     if (s < 0)
@@ -840,6 +891,8 @@ template <class T, class U> struct Counterexample {
 };
 
 // 範囲または逐次生成器を先頭から比較し、最初の不一致で中断する。
+// 不一致までの候補数をQとして、比較を最大Q回、solveとnaiveをそれぞれ最大Q回実行する。
+// 候補の生成・反復と、反例および結果のコピーの費用は別途必要。
 template <class R, class F, class N>
     requires requires(R &r) {
         std::begin(r);
@@ -859,6 +912,7 @@ auto find_counterexample(R &&cases, F solve, N naive) {
     return std::optional<Counterexample<T, U>>{};
 }
 
+// 生成した候補列から最初の反例を探す。計算量は生成器の作成と範囲版find_counterexampleに要する費用。
 template <class G, class F, class N>
     requires std::invocable<G>
 auto find_counterexample(G cases, F solve, N naive) {
@@ -870,6 +924,7 @@ auto find_counterexample(G cases, F solve, N naive) {
 // failsが真の整数列を、要素削除・0への置換・0方向への移動で縮小する。
 // 変化するたびに先頭から再試行する貪欲法で、最小の反例とは限らない。
 // failsは決定的で入力を変更しないこと。初期入力でも真であること。
+// failsをR回呼び、長さ最大Nの候補を作る。候補作成 O(R(N+1)) に各failsの費用を加える。
 template <class F> std::vector<Int> shrink_counterexample(std::vector<Int> input, F fails) {
     assert(fails(input));
     while (true) {

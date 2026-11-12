@@ -4,6 +4,7 @@
 
 namespace cplib {
 // 分割統治と Z 配列により最大周期区間を列挙。(最小周期,l,r)、半開区間。
+// 長さNの入力に対し、候補のソートを含め O(N log²(N+1))。
 template <class Range> std::vector<std::tuple<Int, Int, Int>> run_enumerate(const Range &a) {
     using T = typename Range::value_type;
     Int n = a.size();
@@ -49,6 +50,7 @@ template <class Range> std::vector<std::tuple<Int, Int, Int>> run_enumerate(cons
     return result;
 }
 
+// 最大周期区間を列挙する。計算量 O(N log²(N+1))。
 template <class Range> auto RunEnumerate(const Range &s) {
     return run_enumerate(s);
 }

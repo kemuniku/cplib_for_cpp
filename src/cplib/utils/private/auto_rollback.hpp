@@ -17,14 +17,17 @@ class RollbackLog {
     std::vector<unsigned char> saved;
 
 public:
+    // 空の変更履歴を作る。計算量 O(1)。
     RollbackLog() = default;
     RollbackLog(const RollbackLog &) = delete;
     RollbackLog &operator=(const RollbackLog &) = delete;
 
+    // 残る変更をすべて復元する。時間は保存した値の合計サイズに比例する。
     ~RollbackLog() {
         rollback(0);
     }
 
+    // 現在の履歴位置を返す。計算量 O(1)。
     Int snapshot() const {
         return entries.size();
     }
@@ -39,6 +42,7 @@ public:
         return x;
     }
 
+    // 変更前の値を保存してから代入する。償却時間 O(sizeof(T)) と代入の費用。
     template <class T, class V> void set(T &x, V &&v) {
         write(x) = std::forward<V>(v);
     }

@@ -53,6 +53,7 @@ std::vector<E> solve_Rerooting_raw(const G &g, Merge merge, E e, PutEdge put_edg
     return result;
 }
 
+// 各演算がO(1)なら時間・空間O(N)。
 // 各頂点を根とするDP値Vを返す。
 // mergeはモノイドEの結合、eは単位元、put_edgeは辺の情報、put_vertexは頂点の情報を付与する。
 template <class E, class G, class Merge, class PutEdge, class PutVertex>

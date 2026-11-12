@@ -24,18 +24,23 @@ class ConvexHullTrick {
     }
 
 public:
+    // 空の最小値CHTを構築する。O(1)。
     ConvexHullTrick() = default;
 
+    // 直線数nの構造を複製する。O(n)。
     ConvexHullTrick(const ConvexHullTrick &v) : root_(clone(v.root_)) {
     }
 
+    // 構造を複製して代入する。代入前後の直線数の合計をnとしてO(n)。
     ConvexHullTrick &operator=(const ConvexHullTrick &v) {
         if (this != &v)
             root_ = clone(v.root_);
         return *this;
     }
 
+    // 構造をムーブする。O(1)。
     ConvexHullTrick(ConvexHullTrick &&) = default;
+    // 構造をムーブ代入する。代入先の直線数nとしてO(n)。
     ConvexHullTrick &operator=(ConvexHullTrick &&) = default;
 
     // 任意の傾きを追加し、不要な直線を AVL 木から除く。償却 O(log N)。
@@ -88,6 +93,7 @@ public:
     }
 };
 
+// 空の最小値CHTを生成する。O(1)。
 inline ConvexHullTrick initConvexHullTrick() {
     return {};
 }

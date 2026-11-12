@@ -47,6 +47,7 @@ class ParallelUnionFind {
     }
 
 public:
+    // N要素の区間結合用Union-Findを構築する。O(N log(N+1))。
     explicit ParallelUnionFind(Int N) : n(N), components(N) {
         assert(N >= 0);
         Int total = 0, width = 1;
@@ -62,23 +63,28 @@ public:
         data.assign(total, -1);
     }
 
+    // xの代表元を返す。償却O(α(N))。
     Int root(Int x) {
         assert(0 <= x && x < n);
         return find(x);
     }
 
+    // xとyが同じ集合か返す。償却O(α(N))。
     bool issame(Int x, Int y) {
         return root(x) == root(y);
     }
 
+    // xの集合の要素数を返す。償却O(α(N))。
     Int siz(Int x) {
         return -Int(data[root(x)]);
     }
 
+    // 現在の集合数を返す。O(1)。
     Int count() const {
         return components;
     }
 
+    // 代表元を列挙する。O(N)。
     std::vector<Int> roots() const {
         std::vector<Int> result;
         result.reserve(components);
@@ -111,45 +117,55 @@ public:
         return before - components;
     }
 
+    // 2要素の集合を結合し、実際に結合されたか返す。償却O(α(N))とコールバックの計算量。
     template <class Callback = std::nullptr_t>
         requires(!std::integral<Callback>)
     bool unite(Int a, Int b, Callback onMerge = nullptr) {
         return unite(a, b, 1, onMerge) != 0;
     }
 
+    // この構造をコピーする。O(N log(N+1))。
     ParallelUnionFind copy() const {
         return *this;
     }
 };
 
+// n要素の区間結合用Union-Findを生成する。O(n log(n+1))。
 inline auto initParallelUnionFind(Int n) {
     return ParallelUnionFind(n);
 }
 
+// xの代表元を返す。償却O(α(n))。
 inline Int root(ParallelUnionFind &p, Int x) {
     return p.root(x);
 }
 
+// xとyが同じ集合か返す。償却O(α(n))。
 inline bool issame(ParallelUnionFind &p, Int x, Int y) {
     return p.issame(x, y);
 }
 
+// xの集合の要素数を返す。償却O(α(n))。
 inline Int siz(ParallelUnionFind &p, Int x) {
     return p.siz(x);
 }
 
+// 現在の集合数を返す。O(1)。
 inline Int count(const ParallelUnionFind &p) {
     return p.count();
 }
 
+// 代表元を列挙する。O(n)。
 inline auto roots(const ParallelUnionFind &p) {
     return p.roots();
 }
 
+// 構造のコピーを返す。O(n log(n+1))。
 inline auto copy(const ParallelUnionFind &p) {
     return p.copy();
 }
 
+// pのuniteを呼び出す。計算量は対応するuniteと同じ。
 template <class... Args> auto unite(ParallelUnionFind &p, Args &&...args) {
     return p.unite(std::forward<Args>(args)...);
 }

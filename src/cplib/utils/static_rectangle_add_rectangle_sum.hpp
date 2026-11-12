@@ -183,6 +183,7 @@ static_rectangle_add_rectangle_sum(std::span<const std::tuple<K, K, K, K, T>> re
     return out;
 }
 
+// 長方形加算後の各長方形の総和を返す。計算量は span を受け取る同名関数と同じ。
 template <class K, class T>
 auto static_rectangle_add_rectangle_sum(const std::vector<std::tuple<K, K, K, K, T>> &r,
                                         const std::vector<std::tuple<K, K, K, K>> &q) {

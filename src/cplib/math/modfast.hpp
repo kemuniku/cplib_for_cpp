@@ -143,6 +143,7 @@ public:
     // 構築はFarey表・篩と小素数の対数。乱択128回で打ち切り、BSGSへ移る。
     // 素数2 <= p < 2^30用のO(1) inv/log/powを構築する。
     // 法はT::umod()から取得する。動的modintは先にsetModし、使用中は法を変更しない。
+    // 原始根探索を除く処理の保守的上界は O(p²)。原始根探索は乱択で実行時間が変わる。
     ModFast() : modulus(T::umod()) {
         assert(2 <= modulus && modulus < (Int(1) << 30));
         generator = modulus == 2 ? 1 : primitive_root(modulus);
@@ -213,6 +214,7 @@ public:
         return result;
     }
 
+    // modint の離散対数を返す。計算量 O(1)。
     Int log(T x) const {
         return log(x.val());
     }
@@ -223,6 +225,7 @@ public:
         return T(powerRaw(e == 0 ? 0 : modulus - 1 - e));
     }
 
+    // modint の逆元を返す。計算量 O(1)。
     T inv(T x) const {
         return inv(x.val());
     }
@@ -241,35 +244,43 @@ public:
         return T(powerRaw(log(x) * e % (modulus - 1)));
     }
 
+    // modint の整数乗を返す。計算量 O(1)。
     T pow(T x, Int exponent) const {
         return pow(x.val(), exponent);
     }
 };
 
+// 素数法の逆元・離散対数・累乗の表を構築する。計算量は ModFast のコンストラクタと同じ。
 template <Modint T> auto initModFast() {
     return ModFast<T>();
 }
 
+// 法を返す。計算量 O(1)。
 template <Modint T> Int p(const ModFast<T> &t) {
     return t.p();
 }
 
+// 原始根を返す。計算量 O(1)。
 template <Modint T> T root(const ModFast<T> &t) {
     return t.root();
 }
 
+// 原始根の整数乗を返す。計算量 O(1)。
 template <Modint T> T powRoot(const ModFast<T> &t, Int e) {
     return t.powRoot(e);
 }
 
+// 離散対数を返す。計算量 O(1)。
 template <Modint T, class X> Int log(const ModFast<T> &t, X x) {
     return t.log(x);
 }
 
+// 逆元を返す。計算量 O(1)。
 template <Modint T, class X> T inv(const ModFast<T> &t, X x) {
     return t.inv(x);
 }
 
+// 整数乗を返す。計算量 O(1)。
 template <Modint T, class X> T pow(const ModFast<T> &t, X x, Int e) {
     return t.pow(x, e);
 }

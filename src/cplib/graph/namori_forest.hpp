@@ -96,6 +96,7 @@ public:
     // 別成分なら(INF64,INF64)、経路が1本なら第2要素INF64。O(log V)。
     // u, v間の距離を(小さいほう, 大きいほう)の二通り返す。
     // 同じ木部分にいるなら二通り目はINF64。別連結成分なら(INF64, INF64)。
+    // 計算量O(log V)。
     std::pair<Int, Int> dist(Int u, Int v) const {
         if (comp[u] != comp[v])
             return {INF64, INF64};
@@ -107,51 +108,63 @@ public:
         return {std::min(a, b) + base, std::max(a, b) + base};
     }
 
+    // xが閉路上にあるか返す。O(1)。
     bool incycle(Int x) const {
         return roots[x] == x && rootNo[x] != -1;
     }
 
+    // xが属する木部分の根を返す。O(1)。
     Int root(Int x) const {
         return roots[x];
     }
 
+    // xとyが同じ木部分に属するか返す。O(1)。
     bool same_tree(Int x, Int y) const {
         return roots[x] == roots[y];
     }
 
+    // xとyが同じ連結成分に属するか返す。O(1)。
     bool same_component(Int x, Int y) const {
         return comp[x] == comp[y];
     }
 
+    // xの連結成分番号を返す。O(1)。
     Int component(Int x) const {
         return comp[x];
     }
 };
 
+// 各連結成分を閉路と木部分に分解する。O(V+E)。
 inline auto initNamoriForest(const UnWeightedUnDirectedGraph &g) {
     return NamoriForest(g);
 }
 
+// 二頂点間の単純経路の長さを返す。O(log V)。
 inline auto dist(const NamoriForest &g, Int u, Int v) {
     return g.dist(u, v);
 }
 
+// xが閉路上にあるか返す。O(1)。
 inline bool incycle(const NamoriForest &g, Int x) {
     return g.incycle(x);
 }
 
+// xが属する木部分の根を返す。O(1)。
 inline Int root(const NamoriForest &g, Int x) {
     return g.root(x);
 }
 
+// 同じ木部分に属するか返す。O(1)。
 inline bool same_tree(const NamoriForest &g, Int x, Int y) {
     return g.same_tree(x, y);
 }
 
+// 同じ連結成分に属するか返す。O(1)。
 inline bool same_component(const NamoriForest &g, Int x, Int y) {
     return g.same_component(x, y);
 }
 
+// xの連結成分番号を返す。O(1)。
 inline Int component(const NamoriForest &g, Int x) {
     return g.component(x);
 }

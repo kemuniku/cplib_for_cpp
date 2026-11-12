@@ -49,24 +49,29 @@ public:
 
     std::vector<Node> values = std::vector<Node>(4);
 
+    // 登録済みの要素数を返す。O(1)。
     Int len() const {
         return length_;
     }
 
+    // 登録済みの要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // xを追加する。一様なハッシュを仮定して期待償却O(1)。容量Cで再構築を含む最悪O(C²)。
     void incl(const T &x) {
         add_item(x);
         if (detail::open_hash_capacity(fill_) > values.size())
             resize();
     }
 
+    // xが登録済みか返す。一様なハッシュを仮定して期待O(1)、容量Cで最悪O(C)。
     bool contains(const T &x) const {
         return values[find(x)].state == detail::OpenHashState::active;
     }
 
+    // xを削除する。一様なハッシュを仮定して期待O(1)、容量Cで最悪O(C)。
     void excl(const T &x) {
         auto p = find(x);
         if (values[p].state != detail::OpenHashState::active)
@@ -79,44 +84,53 @@ public:
         const HashSet *owner;
         std::size_t pos;
 
+        // 次の有効スロットまで進む。容量Cとして最悪O(C)、全列挙で合計O(C)。
         void skip() {
             while (pos < owner->values.size() &&
                    owner->values[pos].state != detail::OpenHashState::active)
                 ++pos;
         }
 
+        // 現在の要素への参照を返す。O(1)。
         const T &operator*() const {
             return owner->values[pos].value;
         }
 
+        // 次の要素へ進む。容量Cとして最悪O(C)、全列挙で合計O(C)。
         Iterator &operator++() {
             ++pos;
             skip();
             return *this;
         }
 
+        // 同じ位置を指すか比較する。O(1)。
         bool operator==(const Iterator &) const = default;
     };
 
+    // 先頭イテレータを返す。容量Cとして最悪O(C)。
     Iterator begin() const {
         Iterator it{this, 0};
         it.skip();
         return it;
     }
 
+    // 末尾の次のイテレータを返す。O(1)。
     Iterator end() const {
         return {this, values.size()};
     }
 
+    // 列挙用に自身への参照を返す。O(1)。
     const HashSet &items() const {
         return *this;
     }
 };
 
+// 空のハッシュ集合を構築する。O(1)。
 template <class T> HashSet<T> initHashSet() {
     return {};
 }
 
+// 配列からハッシュ集合を構築する。入力長nとして期待O(n)、最悪O(n²)。
 template <class T> HashSet<T> toHashSet(const std::vector<T> &v) {
     HashSet<T> out;
     for (const T &x : v)

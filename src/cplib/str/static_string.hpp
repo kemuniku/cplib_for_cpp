@@ -15,6 +15,7 @@ template <class T> bool static_value_less(const T &a, const T &b) {
 }
 }
 
+// N要素の接尾辞配列を作る。バイト型は O(N+256)、その他は O(N log(N+1))。
 template <class T> std::vector<Int> genericSuffixArray(const std::vector<T> &s) {
     return suffix_array(s);
 }
@@ -26,6 +27,7 @@ template <class T> struct StaticStringBase {
     std::int32_t size = 0;
     bool reversible = false;
 
+    // 長さNの基底と検索用索引を作る。比較を O(1) として計算量 O(N log(N+1)+1)。
     StaticStringBase(std::vector<T> s, bool rev = false)
         : S(std::move(s)), size(S.size()), reversible(rev) {
         if (rev) {
@@ -44,6 +46,8 @@ template <class T> struct StaticStringBase {
         RMQ = initRMQ(LCP);
     }
 
+    // 検索列に対する接尾辞配列の下限または上限を返す。基底長N、検索列長Mとして O((M+1) log(N+2))。
+    // 基底は反転非対応で構築し、要素の比較を O(1) とする。
     template <class Range> Int suffix_bound(const Range &s, bool upper) const {
         assert(!reversible);
         auto compare = [&](Int x) {
@@ -68,23 +72,31 @@ template <class T> struct StaticStringBase {
         return l;
     }
 
+    // 検索列に対する接尾辞配列の下限を返す。基底長N、検索列長Mとして O((M+1) log(N+2))。
+    // 基底は反転非対応で構築し、要素の比較を O(1) とする。
     template <class Range> Int suffix_lowerbound(const Range &s) const {
         return suffix_bound(s, false);
     }
 
+    // 検索列に対する接尾辞配列の上限を返す。基底長N、検索列長Mとして O((M+1) log(N+2))。
+    // 基底は反転非対応で構築し、要素の比較を O(1) とする。
     template <class Range> Int suffix_upperbound(const Range &s) const {
         return suffix_bound(s, true);
     }
 
+    // 検索列を接頭辞に持つ接尾辞数を返す。基底長N、検索列長Mとして O((M+1) log(N+2))。
+    // 基底は反転非対応で構築し、要素の比較を O(1) とする。
     template <class Range> Int count(const Range &s) const {
         return suffix_upperbound(s) - suffix_lowerbound(s);
     }
 };
 
+// 長さNの基底と索引を作る。比較を O(1) として計算量 O(N log(N+1)+1)。
 template <class T> auto initStaticStringBase(const std::vector<T> &s, bool reversible = false) {
     return std::make_shared<StaticStringBase<T>>(s, reversible);
 }
 
+// 長さNの文字列から基底と索引を作る。計算量 O(N log(N+1)+1)。
 inline auto initStaticStringBase(const std::string &s, bool reversible = false) {
     return initStaticStringBase(std::vector<char>(s.begin(), s.end()), reversible);
 }
@@ -109,42 +121,51 @@ template <class T> struct StaticString {
     std::shared_ptr<StaticStringBase<T>> base;
     std::int32_t l = 0, r = 0;
 
+    // 部分列の長さを返す。計算量 O(1)。
     Int len() const {
         return Int(r) - l;
     }
 
+    // 部分列の長さを返す。計算量 O(1)。
     Int size() const {
         return len();
     }
 
+    // 先頭からi番目の要素を返す。計算量 O(1)。
     T operator[](Int i) const {
         assert(0 <= i && i < len());
         return base->S[l + i];
     }
 
+    // 末尾基準の添字で要素を返す。計算量 O(1)。
     T operator[](BackwardsIndex i) const {
         return (*this)[len() - i.value];
     }
 
+    // 半開区間の部分列ビューを返す。計算量 O(1)。
     StaticString substr(Int a, Int b) const {
         assert(0 <= a && a <= b && b <= len());
         return {base, std::int32_t(l + a), std::int32_t(l + b)};
     }
 
+    // 両端を含む区間の部分列ビューを返す。計算量 O(1)。
     template <class L, class R> StaticString operator[](ClosedSlice<L, R> s) const {
         return substr(resolve_index(len(), s.a), resolve_index(len(), s.b) + 1);
     }
 
+    // 反転した部分列のビューを返す。基底は反転対応で構築すること。計算量 O(1)。
     StaticString reversed() const {
         assert(base->reversible);
         return {base, 2 * base->size - r, 2 * base->size - l};
     }
 
+    // 部分列が回文か判定する。基底は反転対応で構築すること。計算量 O(1)。
     bool isPalindrome() const {
         auto other = reversed();
         return detail::static_lcp_range(base, l, r, other.l, other.r) == len();
     }
 
+    // 部分列を文字列に変換する。要素の出力時間の合計と O(長さ+1) が必要。
     std::string to_string() const {
         std::ostringstream out;
         for (Int i = 0; i < len(); ++i) {
@@ -158,31 +179,38 @@ template <class T> struct StaticString {
     }
 };
 
+// 長さNの列から静的文字列と索引を作る。比較を O(1) として O(N log(N+1)+1)。
 template <class T> auto toStaticString(const std::vector<T> &s, bool reversible = false) {
     return StaticString<T>{initStaticStringBase(s, reversible), 0, std::int32_t(s.size())};
 }
 
+// 長さNの文字列から静的文字列と索引を作る。計算量 O(N log(N+1)+1)。
 inline auto toStaticString(const std::string &s, bool reversible = false) {
     return StaticString<char>{initStaticStringBase(s, reversible), 0, std::int32_t(s.size())};
 }
 
+// 部分列の長さを返す。計算量 O(1)。
 template <class T> Int len(const StaticString<T> &s) {
     return s.len();
 }
 
+// 同じ基底の部分列の最長共通接頭辞長を返す。計算量 O(1)。
 template <class T> Int lcp(const StaticString<T> &s, const StaticString<T> &t) {
     assert(s.base == t.base);
     return detail::static_lcp_range(s.base, s.l, s.r, t.l, t.r);
 }
 
+// 反転した部分列ビューを返す。基底は反転対応で構築すること。計算量 O(1)。
 template <class T> auto reversed(const StaticString<T> &s) {
     return s.reversed();
 }
 
+// 部分列が回文か判定する。基底は反転対応で構築すること。計算量 O(1)。
 template <class T> bool isPalindrome(const StaticString<T> &s) {
     return s.isPalindrome();
 }
 
+// 同じ基底の部分列の最長共通接尾辞長を返す。基底は反転対応で構築すること。計算量 O(1)。
 template <class T> Int lcs(const StaticString<T> &s, const StaticString<T> &t) {
     assert(s.base == t.base && s.base->reversible);
     return lcp(s.reversed(), t.reversed());
@@ -200,18 +228,22 @@ template <class T> int cmp(const StaticString<T> &s, const StaticString<T> &t) {
     return a < b ? -1 : 1;
 }
 
+// 同じ基底の部分列が等しいか判定する。計算量 O(1)。
 template <class T> bool operator==(const StaticString<T> &s, const StaticString<T> &t) {
     return s.len() == t.len() && lcp(s, t) == s.len();
 }
 
+// 同じ基底の部分列を辞書順に比較する。計算量 O(1)。
 template <class T> auto operator<=>(const StaticString<T> &s, const StaticString<T> &t) {
     return cmp(s, t) <=> 0;
 }
 
+// 同じ基底の部分列が指定接頭辞で始まるか判定する。計算量 O(1)。
 template <class T> bool startsWith(const StaticString<T> &s, const StaticString<T> &prefix) {
     return lcp(s, prefix) == prefix.len();
 }
 
+// 部分列を文字列に変換する。要素の出力時間の合計と O(長さ+1) が必要。
 template <class T> std::string to_string(const StaticString<T> &s) {
     return s.to_string();
 }
@@ -269,10 +301,12 @@ template <class T> void sortStaticStrings(std::span<StaticString<T>> strings) {
     std::copy(out.begin(), out.end(), strings.begin());
 }
 
+// 同じ基底のN個の部分列を辞書順に並べる。基底長Mとして O(N log(M+2))。
 template <class T> void sortStaticStrings(std::vector<StaticString<T>> &s) {
     sortStaticStrings<T>(std::span<StaticString<T>>(s));
 }
 
+// 基底の全接尾辞を辞書順に返す。長さNとして反転対応なら O(N log(N+1)+1)、それ以外は O(N+1)。
 template <class T> auto initSuffixArray(const std::shared_ptr<StaticStringBase<T>> &base) {
     std::vector<Int> sa;
     if (base->reversible)
@@ -285,6 +319,7 @@ template <class T> auto initSuffixArray(const std::shared_ptr<StaticStringBase<T
     return out;
 }
 
+// 長さNの部分列の全接尾辞を辞書順に返す。比較を O(1) として O(N log(N+1)+1)。
 template <class T> auto initSuffixArray(const StaticString<T> &s) {
     auto sa = genericSuffixArray(std::vector<T>(s.base->S.begin() + s.l, s.base->S.begin() + s.r));
     std::vector<StaticString<T>> out;
@@ -293,6 +328,7 @@ template <class T> auto initSuffixArray(const StaticString<T> &s) {
     return out;
 }
 
+// 複数の文字列を共通基底にまとめる。文字列数Kと全長Lに対し O((L+K) log(L+K+1)+1)。
 inline auto toStaticStrings(const std::vector<std::string> &strings, bool reversible = false) {
     std::string tmp;
     for (const auto &s : strings) {
@@ -309,16 +345,22 @@ inline auto toStaticStrings(const std::vector<std::string> &strings, bool revers
     return out;
 }
 
+// 反転非対応の基底について、接尾辞配列の下限を求める。
+// 基底長N、検索列長M、要素の比較を O(1) として O((M+1) log(N+2))。
 template <class T, class Range>
 Int suffix_lowerbound(const std::shared_ptr<StaticStringBase<T>> &base, const Range &s) {
     return base->suffix_lowerbound(s);
 }
 
+// 反転非対応の基底について、接尾辞配列の上限を求める。
+// 基底長N、検索列長M、要素の比較を O(1) として O((M+1) log(N+2))。
 template <class T, class Range>
 Int suffix_upperbound(const std::shared_ptr<StaticStringBase<T>> &base, const Range &s) {
     return base->suffix_upperbound(s);
 }
 
+// 反転非対応の基底について、検索列を接頭辞に持つ接尾辞数を返す。
+// 基底長N、検索列長M、要素の比較を O(1) として O((M+1) log(N+2))。
 template <class T, class Range>
 Int count(const std::shared_ptr<StaticStringBase<T>> &base, const Range &s) {
     return base->count(s);

@@ -43,6 +43,7 @@ public:
         return data.size();
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
@@ -52,11 +53,13 @@ public:
         return data.at(i);
     }
 
+    // 内部配列の先頭イテレータを返す。O(1)。列挙全体はO(N)、列挙中の要素数変更は不可。
     // 内部配列の順に全要素を列挙する。列挙中の要素数変更は不可。O(N)。
     auto begin() const {
         return data.begin();
     }
 
+    // 内部配列の末尾の次のイテレータを返す。O(1)。
     auto end() const {
         return data.end();
     }
@@ -141,10 +144,12 @@ public:
     }
 };
 
+// 空の最大ヒープを生成する。O(1)。
 template <class T> auto initMaxHeapQueue() {
     return MaxHeapQueue<T>();
 }
 
+// 配列から最大ヒープを構築する。要素数をnとしてO(n)。
 template <class R> auto toMaxHeapQueue(const R &r) {
     using T = typename R::value_type;
     return MaxHeapQueue<T>(r);

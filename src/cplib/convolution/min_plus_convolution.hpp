@@ -147,7 +147,7 @@ void concaveDivide(const std::vector<T> &a, const std::vector<T> &b, Int top, In
 }
 }
 
-// 凸同士は差分のマージでO(N+M)。
+// 凸列 a, b の min-plus 畳み込みを差分のマージで求める。入力長 N, M に対して O(N+M)。
 template <class T>
 std::vector<T> minPlusConvolutionConvexConvex(const std::vector<T> &a, const std::vector<T> &b) {
     detail::checkConvolutionShape<true>(a);
@@ -181,7 +181,7 @@ auto minPlusConvolutionConvexArbitrarySmawk(const std::vector<T> &a, const std::
     return detail::convexArbitrary<true>(a, b);
 }
 
-// 凹同士は候補区間の両端を比較する。O(N+M)。
+// 凹列 a, b の min-plus 畳み込みを候補区間の両端の比較で求める。入力長 N, M に対して O(N+M)。
 template <class T>
 std::vector<T> minPlusConvolutionConcaveConcave(const std::vector<T> &a, const std::vector<T> &b) {
     detail::checkConvolutionShape<false>(a);
@@ -197,7 +197,8 @@ std::vector<T> minPlusConvolutionConcaveConcave(const std::vector<T> &a, const s
     return out;
 }
 
-// 有効領域を長方形に分割し、反転した列のSMAWKを適用。O((N+M)log(N+M))。
+// 凹列 a と任意の列 b の min-plus 畳み込みを求める。
+// 有効領域を分割しSMAWKを適用。入力長 N, M に対して O((N+M)log(N+M))。
 template <class T>
 std::vector<T> minPlusConvolutionConcaveArbitrary(const std::vector<T> &a,
                                                   const std::vector<T> &b) {

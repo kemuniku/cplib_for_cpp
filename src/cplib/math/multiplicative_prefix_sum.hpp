@@ -137,6 +137,7 @@ T multiplicativePrefixSum(Int n, std::span<const T> primeCoefficients, PrimePowe
     return answer;
 }
 
+// 係数を vector で受け取り乗法的関数の総和を求める。計算量は span を受け取る同名関数と同じ。
 template <class T, class F> T multiplicativePrefixSum(Int n, const std::vector<T> &c, F f) {
     return multiplicativePrefixSum<T>(n, std::span<const T>(c), f);
 }

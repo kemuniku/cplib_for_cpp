@@ -13,6 +13,7 @@ template <class T, class Merge = std::function<T(T, T)>> class SegmentTree {
 public:
     std::vector<T> arr;
 
+    // O(n+1)回の演算とO(n+1)領域。
     // 長さnの全要素を単位元eで構築する。opに区間のマージ関数を指定する。
     SegmentTree(Int n, Merge op, T e) : identity(e), merge(op), length(n) {
         assert(n >= 0);
@@ -23,6 +24,7 @@ public:
             arr[i] = merge(arr[2 * i], arr[2 * i + 1]);
     }
 
+    // 要素数nとしてO(n+1)回の演算とO(n+1)領域。
     // vを元に構築する。opに区間のマージ関数、eに単位元を指定する。
     SegmentTree(std::span<const T> v, Merge op, T e) : SegmentTree(v.size(), op, e) {
         std::copy(v.begin(), v.end(), arr.begin() + lastnode);
@@ -30,14 +32,17 @@ public:
             arr[i] = merge(arr[2 * i], arr[2 * i + 1]);
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return length;
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // O(log(n+1))回の演算。
     // xの要素をvalueに変更する。
     void update(Int x, const T &value) {
         assert(0 <= x && x < length);
@@ -49,6 +54,7 @@ public:
         }
     }
 
+    // O(log(n+1))回の演算。
     // 半開区間[l,r)の演算結果を返す。
     T get(Int l, Int r) const {
         assert(0 <= l && l <= r && r <= length);
@@ -66,14 +72,17 @@ public:
         return merge(a, b);
     }
 
+    // 両端を含む区間の積を返す。O(log(n+1))回の演算。
     template <class L, class R> T get(ClosedSlice<L, R> s) const {
         return get(resolve_index(length, s.a), resolve_index(length, s.b) + 1);
     }
 
+    // 両端を含む区間の積を返す。O(log(n+1))回の演算。
     template <class L, class R> T operator[](ClosedSlice<L, R> s) const {
         return get(s);
     }
 
+    // i番目の値を返す。O(1)。
     T operator[](Int i) const {
         assert(0 <= i && i < length);
         return arr[i + lastnode];
@@ -83,20 +92,24 @@ public:
         SegmentTree *tree;
         Int index;
 
+        // 対象の値を返す。O(1)。
         operator T() const {
             return std::as_const(*tree)[index];
         }
 
+        // 対象の値を更新する。O(log(n+1))回の演算。
         Reference &operator=(const T &v) {
             tree->update(index, v);
             return *this;
         }
 
+        // 他の位置の値を読み取り代入する。O(log(n+1))回の演算。
         Reference &operator=(const Reference &v) {
             return *this = T(v);
         }
     };
 
+    // i番目を読み書きする参照を返す。O(1)。
     Reference operator[](Int i) {
         assert(0 <= i && i < length);
         return {this, i};
@@ -109,6 +122,7 @@ public:
         return arr[1];
     }
 
+    // 全要素を空白区切りで文字列化する。O(n+出力長)と各要素の文字列化の計算量。
     std::string str() const {
         std::ostringstream s;
         for (Int i = 0; i < length; ++i) {
@@ -119,6 +133,7 @@ public:
         return s.str();
     }
 
+    // f(積[l,r))が真となる最大のrを返す。fは単位元で真かつ単調。O(log(n+1))回の演算と述語呼出し。
     template <class F> Int max_right(Int l, F f) const {
         assert(0 <= l && l <= length && f(identity));
         if (l == length)
@@ -144,6 +159,7 @@ public:
         return length;
     }
 
+    // f(積[l,r))が真となる最小のlを返す。fは単位元で真かつ単調。O(log(n+1))回の演算と述語呼出し。
     template <class F> Int min_left(Int r, F f) const {
         assert(0 <= r && r <= length && f(identity));
         if (r == 0)
@@ -170,51 +186,63 @@ public:
     }
 };
 
+// 長さnの単位元列から木を構築する。O(n+1)回の演算。
 template <class T, class Op> auto initSegmentTree(Int n, Op op, T e) {
     return SegmentTree<T>(n, op, e);
 }
 
+// 配列から木を構築する。要素数をnとしてO(n+1)回の演算。
 template <class T, class Op> auto initSegmentTree(std::span<const T> v, Op op, T e) {
     return SegmentTree<T>(v, op, e);
 }
 
+// 配列から木を構築する。要素数をnとしてO(n+1)回の演算。
 template <class T, class Op> auto initSegmentTree(const std::vector<T> &v, Op op, T e) {
     return SegmentTree<T>(v, op, e);
 }
 
+// 配列から木を構築する。要素数をnとしてO(n+1)回の演算。
 template <class V, class Op, class T> auto newSegWith(const V &v, Op op, T e) {
     return initSegmentTree(v, op, e);
 }
 
+// 要素数を返す。O(1)。
 template <class T, class M> Int len(const SegmentTree<T, M> &s) {
     return s.len();
 }
 
+// i番目の値を更新する。O(log(n+1))回の演算。
 template <class T, class M> void update(SegmentTree<T, M> &s, Int i, const T &v) {
     s.update(i, v);
 }
 
+// 半開区間[l,r)の積を返す。O(log(n+1))回の演算。
 template <class T, class M> auto get(const SegmentTree<T, M> &s, Int l, Int r) {
     return s.get(l, r);
 }
 
+// 両端を含む区間の積を返す。O(log(n+1))回の演算。
 template <class T, class M, class L, class R>
 auto get(const SegmentTree<T, M> &s, ClosedSlice<L, R> range) {
     return s.get(range);
 }
 
+// 全区間の積を返す。O(1)。
 template <class T, class M> auto get_all(const SegmentTree<T, M> &s) {
     return s.get_all();
 }
 
+// 全要素を空白区切りで文字列化する。O(n+出力長)と各要素の文字列化の計算量。
 template <class T, class M> auto to_string(const SegmentTree<T, M> &s) {
     return s.str();
 }
 
+// f(積[l,r))が真となる最大のrを返す。単調なfについてO(log(n+1))回の演算と述語呼出し。
 template <class T, class M, class F> Int max_right(const SegmentTree<T, M> &s, Int l, F f) {
     return s.max_right(l, f);
 }
 
+// f(積[l,r))が真となる最小のlを返す。単調なfについてO(log(n+1))回の演算と述語呼出し。
 template <class T, class M, class F> Int min_left(const SegmentTree<T, M> &s, Int r, F f) {
     return s.min_left(r, f);
 }

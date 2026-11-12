@@ -23,6 +23,7 @@ public:
         assert(n >= 0);
     }
 
+    // 容量capの有向辺を追加し、辺番号を返す。償却O(1)。
     Int add_edge(Int src, Int dst, Cap cap) {
         assert(0 <= src && src < Int(graph.size()) && 0 <= dst && dst < Int(graph.size()) &&
                cap >= Cap(0));
@@ -34,6 +35,7 @@ public:
         return id;
     }
 
+    // 辺番号iの端点、容量、現在の流量を返す。O(1)。
     FlowEdge<Cap> get_edge(Int i) const {
         auto [src, index] = positions[i];
         auto e = graph[src][index];
@@ -41,6 +43,7 @@ public:
         return {src, e.dst, e.cap + flow, flow};
     }
 
+    // 全辺の端点、容量、現在の流量を追加順に返す。O(E)。
     std::vector<FlowEdge<Cap>> get_edges() const {
         std::vector<FlowEdge<Cap>> result;
         result.reserve(positions.size());
@@ -49,6 +52,7 @@ public:
         return result;
     }
 
+    // 残余グラフでsrcから到達可能な頂点を返す。O(V+E)。
     std::vector<bool> min_cut(Int src) const {
         assert(0 <= src && src < Int(graph.size()));
         std::vector<bool> result(graph.size());

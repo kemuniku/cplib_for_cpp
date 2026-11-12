@@ -103,7 +103,8 @@ template <std::uint32_t M, bool Dynamic> struct NttConfigFor<BasicBarrettModint<
 };
 }
 
-// radix-4を基本とする元のNTT。静的法は係数をコンパイル時に構築。O(N log N)。
+// radix-4を基本とするNTT。長さ N に対して O(N log(N+1))。
+// 静的法の係数はコンパイル時に構築し、動的法は変更後に最悪 O(p log²(p+1)) の初期化が別途必要。
 template <class T>
     requires(BarrettModint<T> || MontgomeryModint<T>)
 void ntt(std::vector<T> &f) {
@@ -146,6 +147,8 @@ void ntt(std::vector<T> &f) {
     }
 }
 
+// 逆NTTをその場で実行する。配列長 N に対し O(N log(N+1))。
+// 動的法では法の変更後に原始根探索などの初期化が別途必要（法 p に対し最悪 O(p log²(p+1))）。
 template <class T>
     requires(BarrettModint<T> || MontgomeryModint<T>)
 void intt(std::vector<T> &f) {

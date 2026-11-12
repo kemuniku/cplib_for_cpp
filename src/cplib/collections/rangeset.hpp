@@ -9,10 +9,12 @@ template <class T> struct RangeSet {
     AvlSortedMultiSet<Segment> st;
     T default_value;
 
+    // 全域を初期値valueで初期化する。値のコピーがO(1)ならO(1)。
     explicit RangeSet(T value) : default_value(value) {
         st.incl({std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), value});
     }
 
+    // [l,r)をvalueに設定し隣接する同値区間をまとめる。削除される区間数をk、区間数をnとしてO((k+1) log(n+1))。
     void update(Int l, Int r, const T &value) {
         for (;;) {
             auto x = st.ge({l, std::numeric_limits<Int>::min(), default_value});
@@ -60,11 +62,13 @@ template <class T> struct RangeSet {
         st.incl({l, r, value});
     }
 
+    // xを含む区間とその値を返す。区間数をnとしてO(log(n+1))。
     Segment get_segment(Int x) const {
         return st.le({x, std::numeric_limits<Int>::max(), default_value}).value();
     }
 };
 
+// 全域をvalueで初期化した区間集合を生成する。値のコピーがO(1)ならO(1)。
 template <class T> auto initRangeSet(T value) {
     return RangeSet<T>(value);
 }

@@ -39,7 +39,7 @@ template <bool OnlyInts = false> class ReplayInputState {
 
 public:
     // 値を記録・再生する。小さなtrivially copyable型は直接格納し、ほかは型別バッファに保存する。
-    // 再生する値の型は記録時と一致させること。
+    // 再生する値の型は記録時と一致させること。記録・再生は期待償却 O(1) に値のコピー・破棄と入力の費用を加える。
     template <class T, class Source> T read(Source &&source) {
         static_assert(!OnlyInts || std::is_same_v<T, Int>);
         constexpr bool inlineValue = std::is_trivially_copyable_v<T> && sizeof(T) <= sizeof(UInt);
@@ -92,6 +92,7 @@ public:
     }
 
     // 例外で抜ける場合も読み取り位置を戻す。先読みはネストできる。
+    // 計算量はbodyの実行時間に加え O(1)。
     template <class Body> decltype(auto) peekInput(Body &&body) {
         struct Guard {
             ReplayInputState *owner;
@@ -114,13 +115,16 @@ template <class Source = cplib::InputSource, bool OnlyInts = false> class Replay
     ReplayInputState<OnlyInts> state_;
 
 public:
+    // 入力元を保持する。計算量は入力元の移動に加え O(1)。
     explicit ReplayableInput(Source source = {}) : source_(std::move(source)) {
     }
 
+    // 値を一つ読み取るか再生する。期待償却 O(1) に値のコピー・破棄と入力の費用を加える。
     template <class T = Int> T input() {
         return state_.template read<T>([&] { return source_.template input<T>(); });
     }
 
+    // n個の値を読み取るか再生する。期待償却 O(n) に各値のコピー・破棄と入力の費用を加える。
     template <class T = Int> std::vector<T> input(Int n) {
         assert(n >= 0);
         std::vector<T> out(n);
@@ -129,20 +133,24 @@ public:
         return out;
     }
 
+    // 整数を一つ読み取るか再生する。期待償却 O(1) に入力の費用を加える。
     Int ii() {
         return input<Int>();
     }
 
+    // 整数をn個読み取るか再生する。期待償却 O(n) に入力の費用を加える。
     auto lii(Int n) {
         return input<Int>(n);
     }
 
+    // 文字列を一つ読み取るか再生する。期待償却 O(1) に文字列のコピー・破棄と入力の費用を加える。
     std::string si()
         requires(!OnlyInts)
     {
         return input<std::string>();
     }
 
+    // bodyの実行後に読み取り位置を戻す。計算量はbodyの実行時間に加え O(1)。
     template <class Body> decltype(auto) peekInput(Body &&body) {
         return state_.peekInput([&]() -> decltype(auto) {
             if constexpr (std::invocable<Body, ReplayableInput &>)
@@ -153,16 +161,19 @@ public:
     }
 };
 
+// 指定した入力元から再生可能な入力を作ってbodyに渡す。入力元の移動、bodyの実行と記録データの破棄の費用が必要。
 template <bool OnlyInts = false, class Source, class Body>
 decltype(auto) replayableInput(Source source, Body &&body) {
     ReplayableInput<Source, OnlyInts> input(std::move(source));
     return std::invoke(std::forward<Body>(body), input);
 }
 
+// 標準入力から再生可能な入力を作ってbodyに渡す。bodyの実行と記録データの破棄の費用が必要。
 template <bool OnlyInts = false, class Body> decltype(auto) replayableInput(Body &&body) {
     return replayableInput<OnlyInts>(cplib::InputSource{}, std::forward<Body>(body));
 }
 
+// bodyを実行し読み取り位置を戻す。計算量はbodyの実行時間に加え O(1)。
 template <class Source, bool OnlyInts, class Body>
 decltype(auto) peekInput(ReplayableInput<Source, OnlyInts> &input, Body &&body) {
     return input.peekInput(std::forward<Body>(body));

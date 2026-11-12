@@ -39,8 +39,10 @@ template <Int Size = -1> class ScalarBitSet {
     }
 
 public:
+    // 全ビット0で構築する。固定長nではO(1+n/64)、動的長では空でO(1)。
     ScalarBitSet() = default;
 
+    // 動的長nの全ビット0の列を構築する。O(1+n/64)。
     explicit ScalarBitSet(Int n)
         requires(Size < 0)
         : size_(n) {
@@ -49,6 +51,7 @@ public:
         bits_.resize((n + 63) / 64);
     }
 
+    // 動的長nのビット列を配列vから構築する。O(1+n/64+v.size())。
     ScalarBitSet(const std::vector<bool> &v, Int n)
         requires(Size < 0)
         : ScalarBitSet(n) {
@@ -59,6 +62,7 @@ public:
                 bits_[i >> 6] |= UInt(1) << (i & 63);
     }
 
+    // 配列vからビット列を構築する。長さをnとしてO(1+n/64+v.size())。
     explicit ScalarBitSet(const std::vector<bool> &v) {
         if constexpr (Size < 0) {
             size_ = v.size();
@@ -76,19 +80,23 @@ public:
         return size_;
     }
 
+    // ビット数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // 格納された64ビット整数列への読み取り専用ビューを返す。O(1)。
     std::span<const UInt> words() const {
         return bits_;
     }
 
+    // i番目のビットを返す。O(1)。
     bool operator[](Int i) const {
         check(i);
         return (bits_[i >> 6] >> (i & 63)) & 1;
     }
 
+    // i番目のビットを設定する。O(1)。
     void set(Int i, bool value) {
         check(i);
         UInt mask = UInt(1) << (i & 63);
@@ -102,35 +110,42 @@ public:
         ScalarBitSet *owner;
         Int index;
 
+        // 対象のビットを返す。O(1)。
         operator bool() const {
             return std::as_const(*owner)[index];
         }
 
+        // 対象のビットを設定する。O(1)。
         Reference &operator=(bool v) {
             owner->set(index, v);
             return *this;
         }
 
+        // 値が0または1なら対象のビットを設定する。O(1)。
         Reference &operator=(Int v) {
             if (v == 0 || v == 1)
                 owner->set(index, v == 1);
             return *this;
         }
 
+        // 値が0または1なら対象のビットを設定する。O(1)。
         Reference &operator=(int v) {
             return *this = Int(v);
         }
 
+        // 別のビットを読み取って代入する。O(1)。
         Reference &operator=(const Reference &v) {
             return *this = bool(v);
         }
     };
 
+    // i番目を読み書きする参照を返す。O(1)。
     Reference operator[](Int i) {
         return {this, i};
     }
 
     CPLIB_BACKWARDS_INDEX_OVERLOADS
+    // 同じ長さのビット列とのANDを返す。長さnとしてO(1+n/64)。
     ScalarBitSet operator&(const ScalarBitSet &y) const {
         same(y);
         auto out = empty();
@@ -139,6 +154,7 @@ public:
         return out;
     }
 
+    // 同じ長さのビット列とのORを返す。長さnとしてO(1+n/64)。
     ScalarBitSet operator|(const ScalarBitSet &y) const {
         same(y);
         auto out = empty();
@@ -147,6 +163,7 @@ public:
         return out;
     }
 
+    // 同じ長さのビット列とのXORを返す。長さnとしてO(1+n/64)。
     ScalarBitSet operator^(const ScalarBitSet &y) const {
         same(y);
         auto out = empty();
@@ -155,6 +172,7 @@ public:
         return out;
     }
 
+    // 同じ長さのビット列とのANDで更新する。長さnとしてO(1+n/64)。
     ScalarBitSet &operator&=(const ScalarBitSet &y) {
         same(y);
         for (std::size_t i = 0; i < bits_.size(); ++i)
@@ -162,6 +180,7 @@ public:
         return *this;
     }
 
+    // 同じ長さのビット列とのORで更新する。長さnとしてO(1+n/64)。
     ScalarBitSet &operator|=(const ScalarBitSet &y) {
         same(y);
         for (std::size_t i = 0; i < bits_.size(); ++i)
@@ -169,6 +188,7 @@ public:
         return *this;
     }
 
+    // 同じ長さのビット列とのXORで更新する。長さnとしてO(1+n/64)。
     ScalarBitSet &operator^=(const ScalarBitSet &y) {
         same(y);
         for (std::size_t i = 0; i < bits_.size(); ++i)
@@ -176,6 +196,7 @@ public:
         return *this;
     }
 
+    // 添字の小さい方向にxビットずらした列を返す。長さnとしてO(1+n/64)。
     ScalarBitSet operator>>(Int x) const {
         if (x < 0)
             throw std::invalid_argument("shift count must be non-negative");
@@ -206,6 +227,7 @@ public:
         return out;
     }
 
+    // 長さnとしてO(1+n/64)。
     // 添字が大きい方向へxビットずらし、範囲外を切り捨てる。
     ScalarBitSet operator<<(Int x) const {
         if (x < 0)
@@ -238,6 +260,7 @@ public:
         return out;
     }
 
+    // 全ビットを反転した列を返す。長さnとしてO(1+n/64)。
     ScalarBitSet operator~() const {
         auto out = empty();
         if constexpr (Size < 0) {
@@ -255,6 +278,7 @@ public:
         return out;
     }
 
+    // 1のビット数を返す。長さnとしてO(1+n/64)。
     Int popcount() const {
         Int result = 0;
         for (UInt w : bits_)
@@ -262,6 +286,7 @@ public:
         return result;
     }
 
+    // yとのANDの1の個数を返す。長さnとしてO(1+n/64)。
     Int andpopcount(const ScalarBitSet &y) const {
         same(y);
         Int out = 0;
@@ -270,6 +295,7 @@ public:
         return out;
     }
 
+    // yとのORの1の個数を返す。長さnとしてO(1+n/64)。
     Int orpopcount(const ScalarBitSet &y) const {
         same(y);
         Int out = 0;
@@ -278,6 +304,7 @@ public:
         return out;
     }
 
+    // yとのXORの1の個数を返す。長さnとしてO(1+n/64)。
     Int xorpopcount(const ScalarBitSet &y) const {
         same(y);
         Int out = 0;
@@ -286,6 +313,7 @@ public:
         return out;
     }
 
+    // 1のビットの最小添字を返す。存在しなければ-1。長さnとしてO(1+n/64)。
     Int lowestBit() const {
         for (std::size_t i = 0; i < bits_.size(); ++i)
             if (bits_[i]) {
@@ -313,10 +341,12 @@ public:
         return cmp(y) < 0;
     }
 
+    // 添字0から辞書順で比較する。長さnとしてO(1+n/64)。
     auto operator<=>(const ScalarBitSet &y) const {
         return cmp(y) <=> 0;
     }
 
+    // 長さと全ビットが一致するか返す。長さnとしてO(1+n/64)。
     bool operator==(const ScalarBitSet &y) const {
         return size_ == y.size_ && bits_ == y.bits_;
     }
@@ -343,6 +373,7 @@ public:
         return rem && (bits_[full] & ((UInt(1) << rem) - 1));
     }
 
+    // 大きい添字から順に0と1の文字列を返す。長さnとしてO(n)。
     std::string to_string() const {
         std::string out(size_, '0');
         for (Int i = 0; i < size_; ++i)
@@ -356,82 +387,100 @@ public:
         std::size_t word;
         UInt remaining;
 
+        // 次に1のあるワードまで進む。長さnとして最悪O(1+n/64)。
         void skip() {
             while (!remaining && word < owner->bits_.size())
                 if (++word < owner->bits_.size())
                     remaining = owner->bits_[word];
         }
 
+        // 現在の1のビットの添字を返す。O(1)。
         Int operator*() const {
             return word * 64 + std::countr_zero(remaining);
         }
 
+        // 次の1のビットへ進む。長さnとして最悪O(1+n/64)、列挙全体はO(1+n/64+1の個数)。
         Iterator &operator++() {
             remaining &= remaining - 1;
             skip();
             return *this;
         }
 
+        // 同じビット位置を指すか比較する。O(1)。
         bool operator==(const Iterator &other) const {
             return owner == other.owner && word == other.word && remaining == other.remaining;
         }
     };
 
+    // 1のビットの最小添字を指すイテレータを返す。長さnとして最悪O(1+n/64)。
     Iterator begin() const {
         Iterator it{this, 0, bits_.empty() ? 0 : bits_[0]};
         it.skip();
         return it;
     }
 
+    // 1のビットの列挙終了を表すイテレータを返す。O(1)。
     Iterator end() const {
         return {this, bits_.size(), 0};
     }
 
+    // 1のビットの添字を列挙するため自身への参照を返す。O(1)。
     const ScalarBitSet &items() const {
         return *this;
     }
 };
 
+// ビット数を返す。長さnとしてO(1)。
 template <Int N> Int len(const ScalarBitSet<N> &s) {
     return s.len();
 }
 
+// 1のビット数を返す。長さnとしてO(1+n/64)。
 template <Int N> Int popcount(const ScalarBitSet<N> &s) {
     return s.popcount();
 }
 
+// 1のビットの最小添字を返す。長さnとしてO(1+n/64)。
 template <Int N> Int lowestBit(const ScalarBitSet<N> &s) {
     return s.lowestBit();
 }
 
+// 全ビットが1かを返す。長さnとしてO(1+n/64)。
 template <Int N> bool all(const ScalarBitSet<N> &s) {
     return s.all();
 }
 
+// 1のビットがあるかを返す。長さnとしてO(1+n/64)。
 template <Int N> bool any(const ScalarBitSet<N> &s) {
     return s.any();
 }
 
+// 添字0からの辞書順比較結果を返す。長さnとしてO(1+n/64)。
 template <Int N> int cmp(const ScalarBitSet<N> &s, const ScalarBitSet<N> &t) {
     return s.cmp(t);
 }
 
+// 添字0からの辞書順で小さいかを返す。長さnとしてO(1+n/64)。
 template <Int N> bool lexLess(const ScalarBitSet<N> &s, const ScalarBitSet<N> &t) {
     return s.lexLess(t);
 }
 
+// ANDの1のビット数を返す。長さnとしてO(1+n/64)。
 template <Int N> Int andpopcount(const ScalarBitSet<N> &s, const ScalarBitSet<N> &t) {
     return s.andpopcount(t);
 }
 
+// ORの1のビット数を返す。長さnとしてO(1+n/64)。
 template <Int N> Int orpopcount(const ScalarBitSet<N> &s, const ScalarBitSet<N> &t) {
     return s.orpopcount(t);
 }
 
+// XORの1のビット数を返す。長さnとしてO(1+n/64)。
 template <Int N> Int xorpopcount(const ScalarBitSet<N> &s, const ScalarBitSet<N> &t) {
     return s.xorpopcount(t);
 }
 
+// 大きい添字から順に表したビット列を返す。長さnとしてO(n)。
 template <Int N> std::string to_string(const ScalarBitSet<N> &s) {
     return s.to_string();
 }

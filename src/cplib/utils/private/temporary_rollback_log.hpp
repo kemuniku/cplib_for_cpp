@@ -55,10 +55,12 @@ class TemporaryRollbackLog {
     }
 
 public:
+    // 空の一時変更履歴を作る。計算量 O(1)。
     TemporaryRollbackLog() = default;
     TemporaryRollbackLog(const TemporaryRollbackLog &) = delete;
     TemporaryRollbackLog &operator=(const TemporaryRollbackLog &) = delete;
 
+    // 残る変更をすべて復元する。計算量は復元バイト数と履歴・キャッシュ数に比例。
     ~TemporaryRollbackLog() {
         restore(0);
     }
@@ -68,11 +70,12 @@ public:
         return entries.size();
     }
 
+    // 保存している復元処理の数を返す。計算量 O(1)。
     Int size() const {
         return len();
     }
 
-    // 同じスコープでは同じアドレス・サイズの最初の値だけを保存する。重複判定は期待O(1)。
+    // 同じスコープでは同じアドレス・サイズの最初の値だけを保存する。期待償却 O(sizeof(T))。
     template <class T> void remember(T *p) {
         Location key{p, sizeof(T)};
         auto it = latest.find(key);
@@ -84,6 +87,7 @@ public:
         latest[key] = i;
     }
 
+    // 添字用キャッシュで重複を判定し変更前の値を記録する。初回はキャッシュ長Lの確保 O(L)、以後は値の保存に償却 O(sizeof(T))。不一致時はrememberに委ねる。
     template <class T> void rememberIndexed(T *p, T *base, Int length, TemporaryIndexCache &cache) {
         if (!cache.owner) {
             if (length > Int(cache.stamps.size()))
@@ -109,17 +113,20 @@ public:
         stamp = i + 1;
     }
 
+    // 変更前の値を記録し参照を返す。計算量はrememberと同じ。
     template <class T> T &write(T &x) {
         remember(&x);
         return x;
     }
 
+    // 変更前の値を記録してから代入する。計算量はrememberと代入の費用。
     template <class T, class V> void set(T &x, V &&v) {
         write(x) = std::forward<V>(v);
     }
 
     // 保存順の逆順で復元する。範囲が重なる値も最初の状態へ戻る。
     // 保存用vectorの容量を保ち、次の記録で再利用する。
+    // 復元する履歴数K・合計サイズB、解放するキャッシュ数Cとして期待 O(K+B+C)。
     void restore(Int position) {
         assert(0 <= position && position <= len());
         while (len() > position) {
@@ -148,7 +155,7 @@ public:
         return c;
     }
 
-    // 入れ子の変更を復元し、親スコープの重複判定へ戻す。
+    // 入れ子の変更を復元し、親スコープの重複判定へ戻す。計算量はrestoreと同じ。
     void endTemporary(TemporaryCheckpoint c) {
         restore(c.position);
         scopeStart = c.parentStart;

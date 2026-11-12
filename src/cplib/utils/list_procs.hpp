@@ -13,6 +13,7 @@ template <class T> struct DoublyLinkedList {
     DoublyLinkedNode<T> *tail = nullptr;
 };
 
+// ノードaの直前にbを挿入する。計算量 O(1)。
 template <class T>
 void insertPrev(DoublyLinkedList<T> &l, DoublyLinkedNode<T> *a, DoublyLinkedNode<T> *b) {
     if (l.head == a) {
@@ -27,6 +28,7 @@ void insertPrev(DoublyLinkedList<T> &l, DoublyLinkedNode<T> *a, DoublyLinkedNode
     }
 }
 
+// ノードaの直後にbを挿入する。計算量 O(1)。
 template <class T>
 void insert(DoublyLinkedList<T> &l, DoublyLinkedNode<T> *a, DoublyLinkedNode<T> *b) {
     if (l.tail == a) {

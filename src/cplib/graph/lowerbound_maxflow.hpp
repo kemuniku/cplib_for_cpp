@@ -82,22 +82,27 @@ public:
     }
 };
 
+// n頂点の流量グラフを構築する。O(1)。
 template <class Cap = Int> auto initLowerBoundMaxFlow(Int n, Cap = Cap(0)) {
     return LowerBoundMaxFlow<Cap>(n);
 }
 
+// 有向辺を追加し、辺番号を返す。償却O(1)。
 template <class Cap> Int add_edge(LowerBoundMaxFlow<Cap> &g, Int s, Int t, Cap l, Cap u) {
     return g.add_edge(s, t, l, u);
 }
 
+// 辺番号iに対応する辺の情報を返す。O(1)。
 template <class Cap> auto get_edge(const LowerBoundMaxFlow<Cap> &g, Int i) {
     return g.get_edge(i);
 }
 
+// 全辺の情報を追加順に返す。O(E)。
 template <class Cap> auto get_edges(const LowerBoundMaxFlow<Cap> &g) {
     return g.get_edges();
 }
 
+// 下限制約付きの最大流量を返す。O(V²(V+E))。
 template <class Cap> Cap flow(LowerBoundMaxFlow<Cap> &g, Int s, Int t) {
     return g.flow(s, t);
 }

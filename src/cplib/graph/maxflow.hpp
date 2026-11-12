@@ -9,6 +9,7 @@ template <class Cap = Int> class MaxFlow : public detail::FlowGraph<Cap> {
     using Base::graph;
 
 public:
+    // n頂点の流量グラフを構築する。O(n)。
     explicit MaxFlow(Int n) : Base(n) {
     }
 
@@ -85,28 +86,34 @@ public:
     }
 };
 
+// n頂点の流量グラフを構築する。O(n)。
 template <class Cap = Int> auto initMaxFlow(Int n, Cap = Cap(0)) {
     return MaxFlow<Cap>(n);
 }
 
+// 有向辺を追加し、辺番号を返す。償却O(1)。
 template <class Cap> Int add_edge(MaxFlow<Cap> &g, Int s, Int t, Cap c) {
     return g.add_edge(s, t, c);
 }
 
+// 辺番号iに対応する辺の情報を返す。O(1)。
 template <class Cap> auto get_edge(const MaxFlow<Cap> &g, Int i) {
     return g.get_edge(i);
 }
 
+// 全辺の情報を追加順に返す。O(E)。
 template <class Cap> auto get_edges(const MaxFlow<Cap> &g) {
     return g.get_edges();
 }
 
+// Dinic法で流量を追加する。O(V²E)。
 template <class Cap>
 Cap flow(MaxFlow<Cap> &g, Int s, Int t, Cap limit = std::numeric_limits<Cap>::max()) {
     return g.flow(s, t, limit);
 }
 
 // 残余グラフでsから到達可能な頂点を返す。最大流計算後は最小カット。O(V+E)。
+// 残余グラフでsから到達可能な頂点を返す。O(V+E)。
 template <class Cap> auto min_cut(const MaxFlow<Cap> &g, Int s) {
     return g.min_cut(s);
 }

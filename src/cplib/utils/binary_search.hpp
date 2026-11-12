@@ -16,7 +16,7 @@ template <class Predicate> Int meguru_bisect(Int ok, Int ng, Predicate is_ok) {
     return ok;
 }
 
-// 絶対・相対誤差のいずれかがeps以下になるまで二分探索する。
+// 絶対・相対誤差のいずれかがeps以下になるまで二分探索する。反復回数をKとして判定をO(K)回行う。
 template <std::floating_point T, class Predicate>
 T meguru_bisect(T ok, T ng, Predicate is_ok, T eps = T(1e-10)) {
     while (std::abs(ok - ng) > eps &&

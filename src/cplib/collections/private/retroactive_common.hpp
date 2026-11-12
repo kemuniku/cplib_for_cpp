@@ -25,6 +25,7 @@ template <class K, class T> struct QueueDelta {
     std::vector<QueueValue<K, T>> added, removed;
 };
 
+// 操作列を再実行し、各popの結果を設定する。操作数Mに対しO(M log(M+1))。
 template <class K, class T>
 void replayQueueDebug(std::vector<QueueDebugEntry<K, T>> &entries, SortOrder order) {
     auto cmp = [&](Int a, Int b) {
@@ -50,6 +51,7 @@ void replayQueueDebug(std::vector<QueueDebugEntry<K, T>> &entries, SortOrder ord
     }
 }
 
+// 操作列とpop結果を表示用文字列にする。操作数M、出力長LとしてO(M+L)。
 template <class R> std::string formatQueueDebug(const R &entries) {
     std::ostringstream out;
     bool first = true;

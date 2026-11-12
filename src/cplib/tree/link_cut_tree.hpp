@@ -90,12 +90,14 @@ private:
     }
 };
 
+// 値と演算を指定してLink-Cut Treeを構築する。O(N)。
 template <class V, class Op, class S, class Inv = std::function<S(S)>>
 auto initLinkCutTree(V &&values, Op merge, S defaultValue, Inv inverse = {}) {
     return LinkCutTree<S>(std::forward<V>(values), std::move(merge), std::move(defaultValue),
                           std::move(inverse));
 }
 
+// 値と演算を指定してLink-Cut Treeを構築する。O(N)。
 template <class... A> auto newLinkCutTreeWith(A &&...args) {
     return initLinkCutTree(std::forward<A>(args)...);
 }

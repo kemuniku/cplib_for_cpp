@@ -12,6 +12,7 @@ struct CompressedTrieNode {
 
 using CompressedTriePtr = std::shared_ptr<CompressedTrieNode>;
 
+// 同一基底の小文字列N個から圧縮Trieを構築する。未ソートなら O(N log(N+1))、ソート済みなら O(N+1)。
 inline CompressedTriePtr initCompressedTrie(std::vector<StaticString<char>> strings,
                                             bool sorted = false) {
     if (!sorted)
@@ -77,6 +78,7 @@ inline CompressedTriePtr initCompressedTrie(std::vector<StaticString<char>> stri
     return root;
 }
 
+// 圧縮Trieの各辺に文字列を重みとして付けたグラフを作る。節点数をNとして O(N+1)。
 inline auto toGraph(const CompressedTriePtr &root) {
     std::vector<std::pair<Int, StaticString<char>>> p{{-1, {}}};
     auto dfs = [&](auto &&self, const CompressedTriePtr &node, Int id) -> void {
@@ -98,6 +100,7 @@ struct VirtualTrieNode {
     CompressedTriePtr current_node;
     StaticString<char> now;
 
+    // 文字cで遷移できるか判定する。計算量 O(1)。
     bool has_child(char c) const {
         assert('a' <= c && c <= 'z');
         if (!now.len())
@@ -105,6 +108,7 @@ struct VirtualTrieNode {
         return current_node->child[now[0] - 'a']->s[current_node->s.len() + now.len()] == c;
     }
 
+    // 文字cで遷移した仮想節点を返す。計算量 O(1)。
     VirtualTrieNode get_child(char c) const {
         assert(has_child(c));
         auto child = current_node->child[(now.len() ? now[0] : c) - 'a'];
@@ -114,32 +118,39 @@ struct VirtualTrieNode {
         return {current_node, child->s.substr(n, n + length)};
     }
 
+    // 現在位置に完全一致する文字列の個数を返す。計算量 O(1)。
     Int get_cnt() const {
         return now.len() ? 0 : current_node->cnt;
     }
 
+    // 現在位置を接頭辞とする文字列の総数を返す。計算量 O(1)。
     Int get_subtree_sum() const {
         return now.len() ? current_node->child[now[0] - 'a']->subtree_sum
                          : current_node->subtree_sum;
     }
 };
 
+// 実節点から仮想節点を作る。計算量 O(1)。
 inline VirtualTrieNode get_virtualnode(const CompressedTriePtr &n) {
     return {n, n->s.substr(0, 0)};
 }
 
+// 文字cで遷移した仮想節点を返す。計算量 O(1)。
 inline auto get_child(const VirtualTrieNode &n, char c) {
     return n.get_child(c);
 }
 
+// 文字cで遷移できるか判定する。計算量 O(1)。
 inline bool has_child(const VirtualTrieNode &n, char c) {
     return n.has_child(c);
 }
 
+// 完全一致する文字列の個数を返す。計算量 O(1)。
 inline Int get_cnt(const VirtualTrieNode &n) {
     return n.get_cnt();
 }
 
+// 接頭辞に一致する文字列の総数を返す。計算量 O(1)。
 inline Int get_subtree_sum(const VirtualTrieNode &n) {
     return n.get_subtree_sum();
 }

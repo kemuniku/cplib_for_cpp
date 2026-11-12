@@ -96,6 +96,7 @@ class EratosthenesSieve {
 
 public:
     // 閉区間を30輪とブロック篩で構築する。保持領域は約(high-low)/30 byte。
+    // W=high-low+1、H=highとして、篩とブロック走査の時間は O((W+√H)log log(H+2) + (W/32768+1)√H)。
     EratosthenesSieve(Int low, Int high) : first(low), last(high), first_byte(low / 30) {
         assert(0 <= low && low <= high);
         bits.resize(high / 30 - first_byte + 1);
@@ -199,70 +200,81 @@ public:
         using value_type = Int;
         using difference_type = std::ptrdiff_t;
         using iterator_category = std::input_iterator_tag;
+        // 終端イテレータを作る。計算量 O(1)。
         iterator() = default;
 
+        // 先頭の素数を探索する。最悪 O(区間長+1)。
         explicit iterator(const EratosthenesSieve *s) : sieve(s), done(false) {
             advance();
         }
 
+        // 現在の素数を返す。計算量 O(1)。
         Int operator*() const {
             return current;
         }
 
+        // 次の素数に進む。全列挙では O(区間長+素数の個数)。
         iterator &operator++() {
             advance();
             return *this;
         }
 
+        // 現在位置を返して次の素数に進む。計算量は前置 ++ と同じ。
         iterator operator++(int) {
             auto old = *this;
             advance();
             return old;
         }
 
+        // 位置が等しいか判定する。計算量 O(1)。
         bool operator==(const iterator &rhs) const {
             return done || rhs.done ? done == rhs.done
                                     : sieve == rhs.sieve && current == rhs.current;
         }
     };
 
+    // 最初の素数の位置を返す。最悪 O(区間長+1)。
     iterator begin() const {
         return iterator(this);
     }
 
+    // 終端位置を返す。計算量 O(1)。
     iterator end() const {
         return iterator();
     }
 };
 
-// 閉区間[low,high]の篩を構築する。
+// 閉区間[low,high]の篩を構築する。計算量は EratosthenesSieve のコンストラクタと同じ。
 inline EratosthenesSieve initSegmentedEratosthenes(Int low, Int high) {
     return {low, high};
 }
 
-// 閉区間[0,limit]の篩を構築する。
+// 閉区間[0,limit]の篩を構築する。計算量は EratosthenesSieve のコンストラクタと同じ。
 inline EratosthenesSieve initEratosthenes(Int limit) {
     return {0, limit};
 }
 
+// 範囲内の素数判定を行う。計算量 O(1)。
 inline bool is_prime(const EratosthenesSieve &s, Int n) {
     return s.is_prime(n);
 }
 
+// 圧縮配列のバイト数を返す。計算量 O(1)。
 inline Int byte_size(const EratosthenesSieve &s) {
     return s.byte_size();
 }
 
+// 区間内の素数の個数を返す。計算量は s.count_primes() と同じ。
 inline Int count_primes(const EratosthenesSieve &s) {
     return s.count_primes();
 }
 
-// 区間内の素数を昇順に O(区間長 / 30 + 素数の個数) 時間で列挙する。
+// 篩の参照を返す。取得 O(1)、列挙全体は O(区間長 / 30 + 素数の個数)。
 inline const EratosthenesSieve &items(const EratosthenesSieve &s) {
     return s;
 }
 
-// limit以下の素数を昇順のvectorで返す。limit < 2なら空列。
+// limit以下の素数を昇順のvectorで返す。篩の構築と列挙の計算量を要する。
 inline std::vector<Int> get_primes(Int limit) {
     if (limit < 2)
         return {};
@@ -274,7 +286,7 @@ inline std::vector<Int> get_primes(Int limit) {
     return result;
 }
 
-// 半開区間[l, r)の素数を区間篩で昇順のvectorにする。l >= rなら空列。
+// 半開区間[l, r)の素数を区間篩で昇順のvectorにする。篩の構築と列挙の計算量を要する。
 inline std::vector<Int> get_primes(Int l, Int r) {
     if (l >= r || r <= 2)
         return {};

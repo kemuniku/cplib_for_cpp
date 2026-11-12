@@ -6,6 +6,7 @@ template <Modint T> struct PolynomialProductTree {
     Int pointCount, leafCount = 1;
     std::vector<std::vector<T>> nodes;
 
+    // 点列から多項式積木を構築する。N点に対し O(M(N) log(N+1))。Mは畳み込みの計算量。
     explicit PolynomialProductTree(const std::vector<T> &xs) : pointCount(xs.size()) {
         while (leafCount < pointCount)
             leafCount *= 2;
@@ -17,7 +18,8 @@ template <Modint T> struct PolynomialProductTree {
             nodes[i] = nodes[i * 2] * nodes[i * 2 + 1];
     }
 
-    // 剰余木を64点のブロックまで降り、末端は直接評価。O(M(N)log N)。
+    // 剰余木を64点のブロックまで降り、末端は直接評価。
+    // 点数 N、f の長さ F、畳み込みの計算量 M に対し O(M(F+N) + M(N)log(N+1))。
     // 木の構築に使ったすべての点でfを評価する。
     std::vector<T> evaluate(const std::vector<T> &f) const {
         std::vector<T> out(pointCount);
@@ -44,15 +46,18 @@ template <Modint T> struct PolynomialProductTree {
     }
 };
 
+// 点列から積木を構築する。N点に対し O(M(N) log(N+1))。Mは畳み込みの計算量。
 template <Modint T> auto initPolynomialProductTree(const std::vector<T> &xs) {
     return PolynomialProductTree<T>(xs);
 }
 
+// 積木の点で f を評価する。計算量は tree.evaluate(f) と同じ。
 template <Modint T> auto evaluate(const PolynomialProductTree<T> &tree, const std::vector<T> &f) {
     return tree.evaluate(f);
 }
 
-// 反転積木・中間積版。16点ブロックで直接評価する独立した実装。O(M(N)log N)。
+// 反転積木・中間積版。点数 N、f の長さ F、畳み込みの計算量 M に対し
+// O(M(F+N) + M(N)log(N+1))。
 // 反転積木と中間積を用いてfをすべての点で評価する。
 template <Modint T>
 std::vector<T> multipointEvaluation(const std::vector<T> &f, const std::vector<T> &xs) {

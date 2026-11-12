@@ -220,54 +220,67 @@ protected:
 public:
     using value_type = S;
 
+    // 頂点数を返す。O(1)。
     Int len() const {
         return impl_->len();
     }
 
+    // 頂点数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // vを所属する木の根にする。償却O(log N)。
     void makeRoot(Int v) const {
         impl_->makeRoot(v);
     }
 
+    // vが属する木の根を返す。償却O(log N)。
     Int findRoot(Int v) const {
         return impl_->findRoot(v);
     }
 
+    // uとvが同じ木に属するか返す。償却O(log N)。
     bool connected(Int u, Int v) const {
         return impl_->connected(u, v);
     }
 
+    // 異なる木のuとvを辺で結ぶ。償却O(log N)。
     void link(Int u, Int v) const {
         impl_->link(u, v);
     }
 
+    // 辺(u,v)を削除する。償却O(log N)。
     void cut(Int u, Int v) const {
         impl_->cut(u, v);
     }
 
+    // 頂点vの値を更新する。償却O(log N)。
     void update(Int v, const S &value) const {
         impl_->update(v, value);
     }
 
+    // 頂点vの値を返す。償却O(log N)。
     S get(Int v) const {
         return impl_->point(v);
     }
 
+    // uからvへのパスを集約する。根をuに変更する。償却O(log N)。
     S get(Int u, Int v) const {
         return impl_->pathProd(u, v);
     }
 
+    // uからvへのパスを集約する。根をuに変更する。償却O(log N)。
     S pathProd(Int u, Int v) const {
         return impl_->pathProd(u, v);
     }
 
+    // vを含む木全体を集約する。可換群と逆元が必要。償却O(log N)。
     S componentProd(Int v) const {
         return impl_->componentProd(v);
     }
 
+    // 辺(v,parent)のv側を集約する。可換群と逆元が必要。償却O(log N)。
     S subtreeProd(Int v, Int parent) const {
         return impl_->subtreeProd(v, parent);
     }
@@ -276,25 +289,30 @@ public:
         const LinkCutTreeHandle *owner;
         Int vertex;
 
+        // 参照先の値を返す。償却O(log(N+1))。
         operator S() const {
             return owner->get(vertex);
         }
 
+        // 参照先の値を更新する。償却O(log(N+1))。
         Reference &operator=(const S &value) {
             owner->update(vertex, value);
             return *this;
         }
 
+        // 別の参照先の値を読み取り代入する。償却O(log(N+1))。
         Reference &operator=(const Reference &b) {
             return *this = S(b);
         }
     };
 
+    // 頂点vの読み書き用参照を返す。参照取得O(1)、読み書き償却O(log N)。
     Reference operator[](Int v) {
         impl_->check(v);
         return {this, v};
     }
 
+    // 頂点vの値を返す。償却O(log N)。
     S operator[](Int v) const {
         return get(v);
     }

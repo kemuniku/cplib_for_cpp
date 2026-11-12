@@ -5,6 +5,7 @@ namespace cplib {
 // Pass the log to the update callback; the body receives the logged update and log.
 // updateへ渡すlogに記録した変更を、bodyの終了・例外時に復元する。
 // 記録対象の変更先は復元まで生存し、アドレスを保つこと。
+// 本体と更新の処理時間に加え、保存・復元した値の合計バイト数に比例する時間が必要。
 template <class Update, class Body> decltype(auto) withAutoRollback(Update update, Body body) {
     RollbackLog log;
     auto tracked = [&](auto &&...args) -> decltype(auto) {
@@ -15,6 +16,7 @@ template <class Update, class Body> decltype(auto) withAutoRollback(Update updat
 
 // bodyへ渡すlogに記録した変更を、終了・例外時に開始前へ復元する。
 // 同じlogを使う入れ子では、各スコープ内の最初の値だけを保存する。
+// 本体の処理時間に加え、記録・復元した値の合計バイト数に比例する時間が必要。
 template <class Body> auto Temporary(TemporaryRollbackLog &log, Body body) {
     auto c = log.beginTemporary();
 
@@ -30,6 +32,7 @@ template <class Body> auto Temporary(TemporaryRollbackLog &log, Body body) {
     return std::invoke(body, log);
 }
 
+// 新しい履歴を使う一時変更を実行する。計算量は履歴を指定するTemporaryと同じ。
 template <class Body> auto Temporary(Body body) {
     TemporaryRollbackLog log;
     return Temporary(log, std::move(body));

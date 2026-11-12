@@ -189,6 +189,7 @@ public:
     }
 };
 
+// 各変数の値域を指定して初期化する。変数数n、値域サイズの和Sとして O(n+S)。
 template <class Cost = Int> auto initKProjectSelection(std::span<const Int> sizes) {
     return KProjectSelection<Cost>(sizes);
 }
@@ -200,6 +201,7 @@ template <class Cost = Int> auto initKProjectSelection(Int n, Int k) {
     return KProjectSelection<Cost>(std::vector<Int>(n, k));
 }
 
+// 最小費用と整数の割当を返す。内部グラフの頂点数V、辺数Eで O(V²E+V)。
 template <class Cost> auto solve(const KProjectSelection<Cost> &p) {
     return p.solve();
 }

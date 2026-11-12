@@ -21,6 +21,7 @@ template <int Shift, class T> class PersistentArray {
     }
 
 public:
+    // 配列から永続配列を構築する。要素数をn、木の高さをhとしてO(n+h+1)。
     explicit PersistentArray(std::span<const T> values)
         : size_(values.size()), h((std::bit_width(UInt(size_)) + Shift - 1) / Shift),
           root(std::make_shared<Node>()) {
@@ -41,10 +42,12 @@ public:
         dfs(dfs, root, 0, 0);
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return size_;
     }
 
+    // この版の全要素を配列にして返す。要素数をn、木の高さをhとしてO(n+h+1)。
     std::vector<T> toseq() const {
         std::vector<T> result;
         result.reserve(size_);
@@ -64,10 +67,12 @@ public:
         return result;
     }
 
+    // この版の全要素を配列にして返す。要素数をn、木の高さをhとしてO(n+h+1)。
     std::vector<T> toSeq() const {
         return toseq();
     }
 
+    // 指定位置の値を返す。木の高さをhとしてO(h+1)。
     T operator[](Int index) const {
         assert(0 <= index && index < size_);
         std::vector<Int> indices(h);
@@ -81,6 +86,7 @@ public:
         return now->value;
     }
 
+    // 指定位置を変更した新版を返す。木の高さをh、分岐数をBとしてO(Bh+1)。
     PersistentArray change_value(Int index, const T &value) const {
         assert(0 <= index && index < size_);
         std::vector<Int> indices(h);
@@ -107,22 +113,27 @@ public:
     }
 };
 
+// 配列から永続配列を構築する。要素数をn、木の高さをhとしてO(n+h+1)。
 template <class T, int Shift = 5> auto initPersistentArray(std::span<const T> v) {
     return PersistentArray<Shift, T>(v);
 }
 
+// 配列から永続配列を構築する。要素数をn、木の高さをhとしてO(n+h+1)。
 template <class T, int Shift = 5> auto initPersistentArray(const std::vector<T> &v) {
     return PersistentArray<Shift, T>(v);
 }
 
+// この版の全要素を配列にして返す。要素数をn、木の高さをhとしてO(n+h+1)。
 template <int Shift, class T> auto toseq(const PersistentArray<Shift, T> &p) {
     return p.toseq();
 }
 
+// この版の全要素を配列にして返す。要素数をn、木の高さをhとしてO(n+h+1)。
 template <int Shift, class T> auto toSeq(const PersistentArray<Shift, T> &p) {
     return p.toseq();
 }
 
+// 位置iをvに変更した新版を返す。木の高さをh、分岐数をBとしてO(Bh+1)。
 template <int Shift, class T>
 auto change_value(const PersistentArray<Shift, T> &p, Int i, const T &v) {
     return p.change_value(i, v);

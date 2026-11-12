@@ -21,10 +21,12 @@ public:
     }
 };
 
+// 高さH、幅Wの配列から二次元累積和を構築する。計算量 O(HW)。
 inline Cumsum2D toCumSum2D(std::span<const std::vector<Int>> x) {
     return Cumsum2D(x);
 }
 
+// 半開矩形の総和を返す。計算量 O(1)。
 inline Int query(const Cumsum2D &s, Int il, Int ir, Int jl, Int jr) {
     return s.query(il, ir, jl, jr);
 }

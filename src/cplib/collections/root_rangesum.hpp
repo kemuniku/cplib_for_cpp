@@ -11,6 +11,7 @@ template <class T> class RootRangeSum {
     T e_;
 
 public:
+    // 配列をブロック長bsizeで平方分割する。省略時は約√n。要素数nとしてO(n)。
     explicit RootRangeSum(std::vector<T> v, Int bsize = 0, T e = T(0))
         : blocksize_(bsize > 0 ? bsize : std::max(Int(std::sqrt(v.size())), Int(1))),
           arr_(std::move(v)), blocks_((arr_.size() + blocksize_ - 1) / blocksize_, e), e_(e) {
@@ -18,20 +19,24 @@ public:
             blocks_[i / blocksize_] = blocks_[i / blocksize_] + arr_[i];
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return arr_.size();
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // i番目の値を設定する。O(1)回の要素演算。
     void update(Int i, const T &value) {
         assert(0 <= i && i < len());
         blocks_[i / blocksize_] = blocks_[i / blocksize_] + value - arr_[i];
         arr_[i] = value;
     }
 
+    // 要素数n、ブロック長BとしてO(B+n/B)回の要素演算。
     // 半開区間[l,r)の演算結果を返します。
     T get(Int l, Int r) const {
         assert(0 <= l && l <= r && r <= len());
@@ -51,14 +56,17 @@ public:
         return result;
     }
 
+    // 両端を含む区間の和を返す。要素数n、ブロック長BとしてO(B+n/B)。
     template <class L, class R> T get(ClosedSlice<L, R> s) const {
         return get(resolve_index(len(), s.a), resolve_index(len(), s.b) + 1);
     }
 
+    // 両端を含む区間の和を返す。要素数n、ブロック長BとしてO(B+n/B)。
     template <class L, class R> T operator[](ClosedSlice<L, R> s) const {
         return get(s);
     }
 
+    // i番目の値を返す。O(1)。
     T operator[](Int i) const {
         assert(0 <= i && i < len());
         return arr_[i];
@@ -68,26 +76,31 @@ public:
         RootRangeSum *owner;
         Int i;
 
+        // 対象の値を取得する。O(1)。
         operator T() const {
             return owner->arr_[i];
         }
 
+        // 対象の値を設定する。O(1)回の要素演算。
         Reference &operator=(const T &v) {
             owner->update(i, v);
             return *this;
         }
 
+        // 他の位置の値を読み取って代入する。O(1)回の要素演算。
         Reference &operator=(const Reference &v) {
             return *this = T(v);
         }
     };
 
+    // i番目を読み書きする参照を返す。O(1)。
     Reference operator[](Int i) {
         assert(0 <= i && i < len());
         return {this, i};
     }
 
     CPLIB_BACKWARDS_INDEX_OVERLOADS
+    // f(和[l,r))が真となる最大のrを返す。fは単位元で真かつ単調。要素数n、ブロック長BとしてO(B+n/B)回の演算と述語呼出し。
     template <class F> Int max_right(Int l, F f) const {
         assert(0 <= l && l <= len() && f(e_));
         if (l == len())
@@ -114,6 +127,7 @@ public:
         return len();
     }
 
+    // f(和[l,r))が真となる最小のlを返す。fは単位元で真かつ単調。要素数n、ブロック長BとしてO(B+n/B)回の演算と述語呼出し。
     template <class F> Int min_left(Int r, F f) const {
         assert(0 <= r && r <= len() && f(e_));
         if (!r)
@@ -138,6 +152,7 @@ public:
         return 0;
     }
 
+    // 全要素を文字列化する。要素数nとしてO(n+出力長)と各要素の文字列化の計算量。
     std::string to_string() const {
         std::ostringstream out;
         out << "@[";
@@ -150,6 +165,7 @@ public:
     }
 };
 
+// 配列から平方分割区間和を構築する。要素数nとしてO(n)。
 template <class T> auto initrangesum(const std::vector<T> &v, Int bsize = 0, T e = T(0)) {
     return RootRangeSum<T>(v, bsize, e);
 }

@@ -16,6 +16,7 @@ class DynamicBipartite {
 public:
     Int cnt_sum;
 
+    // n頂点の辺がないグラフを構築する。O(n)。
     explicit DynamicBipartite(Int n) : N(n), uf(make_uf(n)), cnt_sum(n) {
     }
 
@@ -26,6 +27,7 @@ public:
         return bipartite && !uf.issame(u, v);
     }
 
+    // 償却O(α(N))。
     // 辺(u,v)の追加
     void unite(Int u, Int v) {
         if (uf.issame(u, v + N) || !bipartite)
@@ -43,23 +45,28 @@ public:
         cnt_sum += std::max(uf.get(u), uf.get(u + N));
     }
 
+    // 現在のグラフが二部グラフか返す。O(1)。
     bool is_bipartite() const {
         return bipartite;
     }
 
+    // uとvが同じ連結成分に属するか返す。償却O(α(N))。
     bool issame(Int u, Int v) {
         return uf.issame(u, v) || uf.issame(u, v + N);
     }
 };
 
+// n頂点の空グラフを構築する。O(n)。
 inline auto initDynamicBipartite(Int n) {
     return DynamicBipartite(n);
 }
 
+// 辺を追加した場合も二部グラフかを返す。償却O(α(N))。
 inline bool can_unite(DynamicBipartite &g, Int u, Int v) {
     return g.can_unite(u, v);
 }
 
+// 現在のグラフが二部グラフか返す。O(1)。
 inline bool is_bipartite(const DynamicBipartite &g) {
     return g.is_bipartite();
 }

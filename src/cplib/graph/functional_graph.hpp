@@ -13,6 +13,7 @@ public:
     std::vector<Int> cycle_number, cycle_idx, roots;
     std::vector<std::vector<Int>> cycle;
 
+    // 各頂点の遷移先から関数グラフを構築する。O(N)。
     explicit FunctionalGraph(std::span<const Int> next) {
         Int n = next.size();
         std::vector<Int> removed, indegree(n), parent(n + 1, -1);
@@ -67,20 +68,24 @@ public:
             }
     }
 
+    // xが閉路上にあるか返す。O(1)。
     bool incycle(Int x) const {
         return cycle_number[x] != -1;
     }
 
+    // 計算量O(1)。
     // 何回の移動でcycleに入るか
     Int depth(Int x) const {
         return tree.depth(x) - 1;
     }
 
+    // 計算量O(1)。
     // xから進んでいったときに、初めてサイクルに入ったときの頂点を返す
     Int root(Int x) const {
         return roots[x];
     }
 
+    // 計算量O(1)。
     // xから到達することができるサイクルのサイズ
     Int cyclesize(Int x) const {
         return cycle[cycle_number[roots[x]]].size();
@@ -96,11 +101,13 @@ public:
         return cycle[cid][(cycle_idx[r] + (count - d) % size) % size];
     }
 
+    // 計算量O(1)。
     // xから到達することのできる頂点数(xも含む)
     Int canmove_size(Int x) const {
         return depth(x) + cyclesize(x);
     }
 
+    // 計算量O(1)。
     // xに到達することのできる頂点数(xも含む)
     Int reachable_to_size(Int x) const {
         if (incycle(x))
@@ -109,6 +116,7 @@ public:
         return r - l;
     }
 
+    // 計算量O(log N)。
     // uからvへ最短何回の移動で到達が可能か
     // ただし、到達できないときは-1を返す。
     Int dist(Int u, Int v) const {
@@ -124,6 +132,7 @@ public:
         return -1;
     }
 
+    // 閉路長をLとしてO(L)。
     // xから到達できるサイクルを返す
     std::vector<Int> get_cycle(Int x) const {
         return cycle[cycle_number[roots[x]]];
@@ -149,6 +158,7 @@ public:
         return std::tuple{std::move(forest), std::move(compressed), std::move(new_roots)};
     }
 
+    // xの遷移先を返す。O(1)。
     Int next(Int x) const {
         if (!incycle(x))
             return tree.P[x];
@@ -190,10 +200,12 @@ public:
 
 using Functional_Graph = FunctionalGraph;
 
+// 遷移先から関数グラフを構築する。辺数E、頂点数Nに対してO(N+E)。
 inline auto initFunctionalGraph(std::span<const Int> next) {
     return FunctionalGraph(next);
 }
 
+// 遷移先から関数グラフを構築する。辺数E、頂点数Nに対してO(N+E)。
 inline auto initFunctionalGraph(const UnWeightedDirectedGraph &graph) {
     std::vector<Int> next(graph.len);
     for (Int v = 0; v < graph.len; ++v)
@@ -202,50 +214,62 @@ inline auto initFunctionalGraph(const UnWeightedDirectedGraph &graph) {
     return FunctionalGraph(next);
 }
 
+// xが閉路上にあるか返す。O(1)。
 inline bool incycle(const FunctionalGraph &f, Int x) {
     return f.incycle(x);
 }
 
+// xからk回遷移した頂点を返す。O(log N)。
 inline Int movekth(const FunctionalGraph &f, Int x, Int k) {
     return f.movekth(x, k);
 }
 
+// xから到達できる閉路の長さを返す。O(1)。
 inline Int cyclesize(const FunctionalGraph &f, Int x) {
     return f.cyclesize(x);
 }
 
+// xから到達できる頂点数を返す。O(1)。
 inline Int canmove_size(const FunctionalGraph &f, Int x) {
     return f.canmove_size(x);
 }
 
+// xに到達できる頂点数を返す。O(1)。
 inline Int reachable_to_size(const FunctionalGraph &f, Int x) {
     return f.reachable_to_size(x);
 }
 
+// xから閉路に入るまでの遷移回数を返す。O(1)。
 inline Int depth(const FunctionalGraph &f, Int x) {
     return f.depth(x);
 }
 
+// uからvまでの最小遷移回数を返す。到達不能なら-1。O(log N)。
 inline Int dist(const FunctionalGraph &f, Int u, Int v) {
     return f.dist(u, v);
 }
 
+// xから到達できる閉路を返す。閉路長LとしてO(L)。
 inline auto get_cycle(const FunctionalGraph &f, Int x) {
     return f.get_cycle(x);
 }
 
+// xから初めて到達する閉路上の頂点を返す。O(1)。
 inline Int root(const FunctionalGraph &f, Int x) {
     return f.root(x);
 }
 
+// 各閉路を縮約した森と頂点対応を返す。O(N)。
 inline auto compressed_forest(const FunctionalGraph &f) {
     return f.compressed_forest();
 }
 
+// xからk回遷移するまでの頂点列を返す。O(k+1)。
 inline auto walk(const FunctionalGraph &f, Int x, Int k) {
     return f.walk(x, k);
 }
 
+// k回の遷移でxに到達する始点数を返す。O(log N)。
 inline Int count_kth(const FunctionalGraph &f, Int x, Int k) {
     return f.count_kth(x, k);
 }

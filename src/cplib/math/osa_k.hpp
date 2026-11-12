@@ -41,19 +41,22 @@ public:
     }
 };
 
-// 最大素因数表を構築する。
+// 最大素因数表を構築する。O(maxn log log maxn)時間、O(maxn)領域。
 inline PrimeFactorTable initPrimeFactorTable(Int maxn) {
     return PrimeFactorTable(maxn);
 }
 
+// 表を使い素因数を昇順に返す。計算量 O(log x)。
 inline auto primefactor(const PrimeFactorTable &t, Int x) {
     return t.primefactor(x);
 }
 
+// 表を使い素因数ごとの指数を返す。ハッシュ表操作を期待 O(1) として O(log x)。
 inline auto primefactor_table(const PrimeFactorTable &t, Int x) {
     return t.primefactor_table(x);
 }
 
+// 表を使い素因数と指数の組を昇順で返す。計算量 O(log x)。
 inline auto primefactor_tuple(const PrimeFactorTable &t, Int x) {
     return t.primefactor_tuple(x);
 }

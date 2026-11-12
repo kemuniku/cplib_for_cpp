@@ -152,29 +152,35 @@ public:
     }
 };
 
+// n頂点の最小費用流グラフを構築する。O(n)。
 template <class Cap = Int, class Cost = Int>
 auto initMinCostFlow(Int n, Cap = Cap(0), Cost = Cost(0)) {
     return MinCostFlow<Cap, Cost>(n);
 }
 
+// 容量と単位費用を指定して辺を追加する。償却O(1)。
 template <class Cap, class Cost>
 Int add_edge(MinCostFlow<Cap, Cost> &g, Int s, Int t, Cap cap, Cost cost) {
     return g.add_edge(s, t, cap, cost);
 }
 
+// 辺番号iに対応する辺の情報を返す。O(1)。
 template <class Cap, class Cost> auto get_edge(const MinCostFlow<Cap, Cost> &g, Int i) {
     return g.get_edge(i);
 }
 
+// 全辺の情報を追加順に返す。O(E)。
 template <class Cap, class Cost> auto get_edges(const MinCostFlow<Cap, Cost> &g) {
     return g.get_edges();
 }
 
+// 流量と最小費用の折れ点を返す。増加回数AとしてO(VE+A E log(V+E)+V)。
 template <class Cap, class Cost>
 auto slope(MinCostFlow<Cap, Cost> &g, Int s, Int t, Cap limit = std::numeric_limits<Cap>::max()) {
     return g.slope(s, t, limit);
 }
 
+// 上限以下の流量とその最小費用を返す。増加回数AとしてO(VE+A E log(V+E)+V)。
 template <class Cap, class Cost>
 auto flow(MinCostFlow<Cap, Cost> &g, Int s, Int t, Cap limit = std::numeric_limits<Cap>::max()) {
     return g.flow(s, t, limit);

@@ -6,8 +6,8 @@ namespace cplib {
 using KnapsackItem = std::pair<Int, Int>;
 using BoundedKnapsackItem = std::tuple<Int, Int, Int>;
 
-// 0/1ナップサックを容量DPで解く。O(NW)。
-// 各品物(v,w)を最大一回選び、総重量がW以下となる最大価値を返す。
+// 0/1ナップサックを容量DPで解く。品物数 N と容量 W に対し O((N+1)(W+1))。
+// 各品物(v,w)を最大一回選び、総重量がW以下となる最大価値を返す。W,wは非負。
 inline Int solve_01knapsack_NW(std::span<const KnapsackItem> items, Int W) {
     std::vector<Int> dp(W + 1, -INF64);
     dp[0] = 0;
@@ -17,7 +17,8 @@ inline Int solve_01knapsack_NW(std::span<const KnapsackItem> items, Int W) {
     return *std::max_element(dp.begin(), dp.end());
 }
 
-// 0/1ナップサックを価値DPで解く。O(NΣv)。
+// 0/1ナップサックを価値DPで解く。品物数 N、価値の総和 V に対し O((N+1)(V+1))。
+// 品物は(価値,重量)で、価値・重量・容量 W は非負とする。
 inline Int solve_01knapsack_NV(std::span<const KnapsackItem> items, Int W) {
     Int V = 0;
     for (auto [v, w] : items)
@@ -33,7 +34,8 @@ inline Int solve_01knapsack_NV(std::span<const KnapsackItem> items, Int W) {
     return 0;
 }
 
-// 半分全列挙で0/1ナップサックを解く。O(N 2^(N/2))。
+// 半分全列挙で0/1ナップサックを解く。品物数 N に対し O((N+1) 2^(N/2))。
+// 品物は(価値,重量)で、重量と容量 W は非負とする。
 inline Int solve_01knapsack_meet_in_middle(std::span<const KnapsackItem> items, Int W) {
     auto enumerate = [](std::span<const KnapsackItem> part) {
         std::vector<KnapsackItem> r(std::size_t(1) << part.size());
@@ -61,7 +63,8 @@ inline Int solve_01knapsack_meet_in_middle(std::span<const KnapsackItem> items, 
     return ans;
 }
 
-// 個数無制限のナップサックを容量DPで解く。O(NW)。
+// 個数無制限のナップサックを容量DPで解く。品物数 N と容量 W に対し O((N+1)(W+1))。
+// 品物は(価値,重量)で、重量は正、容量 W は非負とする。
 inline Int solve_UBknapsack_NW(std::span<const KnapsackItem> items, Int W) {
     std::vector<Int> dp(W + 1, -INF64);
     dp[0] = 0;
@@ -71,8 +74,9 @@ inline Int solve_UBknapsack_NW(std::span<const KnapsackItem> items, Int W) {
     return *std::max_element(dp.begin(), dp.end());
 }
 
-// 個数制限付きナップサックをブロック内の前後走査で解く。O(NW)。
+// 個数制限付きナップサックをブロック内の前後走査で解く。品物数 N と容量 W に対し O((N+1)(W+1))。
 // 各品物(v,w,m)を最大m個選ぶ。個数0の品物は無視し、総重量W以下の最大価値を返す。
+// 重量・個数・容量 W は非負とし、重量0の場合の価値 v は非負とする。
 inline Int solve_BoundedKnapsack(std::span<const BoundedKnapsackItem> items, Int W) {
     std::vector<Int> dp(W + 1);
     for (auto [v, w, m0] : items) {

@@ -13,10 +13,12 @@ template <class T> struct F_rch {
     T lb, ub, add;
 };
 
+// 値valueがsize個ある区間の集約値を作る。O(1)。
 template <class T> S_rch<T> init_S(T value, T inf, Int size = 1) {
     return {value, -inf, value, inf, value * T(size), size, size, size, false};
 }
 
+// 区間の集約情報を出力する。数値の出力桁数の合計をLとしてO(L)。
 template <class T> std::ostream &operator<<(std::ostream &out, const S_rch<T> &x) {
     return out << "(max: " << x.max << ", max2: " << x.max2 << ", min: " << x.min
                << ", min2: " << x.min2 << ", sum: " << x.sum << ", sz: " << x.sz
@@ -24,6 +26,7 @@ template <class T> std::ostream &operator<<(std::ostream &out, const S_rch<T> &x
                << ", fail: " << (x.fail ? "true" : "false") << ")";
 }
 
+// 以降の操作は算術演算がO(1)とする。各操作はO(log(N+1)+D)、Dは伝播時の失敗回数。
 // 区間chmin/chmax/addとsum/min/max。元と同じ第2極値による失敗判定を使う。
 template <class T> class RangeChminChmaxRangeSumMaxMin {
     static T second_lowest(T a, T b, T c, T d) {
@@ -52,6 +55,7 @@ public:
     SegmentTreeBeats<S_rch<T>, F_rch<T>> seg;
     T inf, zero;
 
+    // 初期配列から区間chmin/chmax/addと集約の木を構築する。O(N+1)。
     RangeChminChmaxRangeSumMaxMin(std::span<const T> values, T infinity, T zero)
         : inf(infinity), zero(zero) {
         auto identity = S_rch<T>{-inf, -inf, inf, inf, zero, 0, 0, 0, false};
@@ -92,22 +96,27 @@ public:
                                     F_rch<T>{-inf, inf, zero});
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return seg.len();
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // 位置pをvalueで上書きする。O(log(N+1)+D)、Dは伝播時の失敗回数。
     void update(Int p, T value) {
         seg.update(p, init_S(value, inf));
     }
 
+    // 位置pの集約情報を返す。O(log(N+1)+D)、Dは伝播時の失敗回数。
     S_rch<T> get(Int p) {
         return seg.get(p);
     }
 
+    // 半開区間[l,r)の和・最小値・最大値などを返す。O(log(N+1)+D)、Dは伝播時の失敗回数。
     S_rch<T> get(Int l, Int r) {
         return seg.get(l, r);
     }
@@ -116,10 +125,12 @@ public:
         RangeChminChmaxRangeSumMaxMin *owner;
         Int index;
 
+        // 位置iの値を読み込む。O(log(N+1)+D)、Dは伝播時の失敗回数。
         Reference(RangeChminChmaxRangeSumMaxMin *tree, Int i)
             : S_rch<T>(tree->get(i)), owner(tree), index(i) {
         }
 
+        // この位置をvalueに更新する。O(log(N+1)+D)、Dは伝播時の失敗回数。
         Reference &operator=(T value) {
             owner->update(index, value);
             static_cast<S_rch<T> &>(*this) = init_S(value, owner->inf);
@@ -127,58 +138,71 @@ public:
         }
     };
 
+    // 位置pの値を読み書きする参照を返す。取得と更新はO(log(N+1)+D)、Dは伝播時の失敗回数。
     Reference operator[](Int p) {
         return {this, p};
     }
 
+    // 末尾から指定した位置の参照を返す。取得と更新はO(log(N+1)+D)、Dは伝播時の失敗回数。
     Reference operator[](BackwardsIndex p) {
         return (*this)[len() - p.value];
     }
 
+    // O(log(N+1)+D)、Dは伝播時の失敗回数。
     // 閉区間rangeの集約値を返します。
     template <class L, class R> S_rch<T> operator[](ClosedSlice<L, R> range) {
         return seg.get(range);
     }
 
+    // 半開区間の各値をvalue以下に抑える。O(log(N+1)+D)、Dはmappingの失敗回数。
     void chmin(Int l, Int r, T value) {
         seg.apply(l, r, {-inf, value, zero});
     }
 
+    // 半開区間の各値をvalue以上に上げる。O(log(N+1)+D)、Dはmappingの失敗回数。
     void chmax(Int l, Int r, T value) {
         seg.apply(l, r, {value, inf, zero});
     }
 
+    // 半開区間の各値にvalueを加算する。O(log(N+1)+D)、Dはmappingの失敗回数。
     void add(Int l, Int r, T value) {
         seg.apply(l, r, {-inf, inf, value});
     }
 
+    // 閉区間の各値をvalue以下に抑える。O(log(N+1)+D)、Dはmappingの失敗回数。
     template <class L, class R> void chmin(ClosedSlice<L, R> range, T value) {
         seg.apply(range, {-inf, value, zero});
     }
 
+    // 閉区間の各値をvalue以上に上げる。O(log(N+1)+D)、Dはmappingの失敗回数。
     template <class L, class R> void chmax(ClosedSlice<L, R> range, T value) {
         seg.apply(range, {value, inf, zero});
     }
 
+    // 閉区間の各値にvalueを加算する。O(log(N+1)+D)、Dはmappingの失敗回数。
     template <class L, class R> void add(ClosedSlice<L, R> range, T value) {
         seg.apply(range, {-inf, inf, value});
     }
 
+    // 全要素の集約情報を文字列で返す。出力長L、全取得の失敗回数の合計DとしてO(N log(N+1)+D+L)。
     std::string str() {
         return seg.str();
     }
 };
 
+// 初期配列から区間chmin/chmax/addと集約の木を構築する。O(N+1)。
 template <class T>
 auto initRangeChminChmaxRangeSumMaxMin(std::span<const T> values, T inf, T zero) {
     return RangeChminChmaxRangeSumMaxMin<T>(values, inf, zero);
 }
 
+// 初期配列から区間chmin/chmax/addと集約の木を構築する。O(N+1)。
 template <class T>
 auto initRangeChminChmaxRangeSumMaxMin(const std::vector<T> &values, T inf, T zero) {
     return initRangeChminChmaxRangeSumMaxMin(std::span<const T>(values), inf, zero);
 }
 
+// 初期配列から区間chmin/chmax/addと集約の木を構築する。O(N+1)。
 template <class T> auto initRangeChminChmaxRangeSumMaxMin(std::span<const T> values) {
     T inf;
     if constexpr (std::is_floating_point_v<T>)
@@ -190,32 +214,39 @@ template <class T> auto initRangeChminChmaxRangeSumMaxMin(std::span<const T> val
     return initRangeChminChmaxRangeSumMaxMin(values, inf, T(0));
 }
 
+// 初期配列から区間chmin/chmax/addと集約の木を構築する。O(N+1)。
 template <class T> auto initRangeChminChmaxRangeSumMaxMin(const std::vector<T> &values) {
     return initRangeChminChmaxRangeSumMaxMin(std::span<const T>(values));
 }
 
+// 位置pをvalueで上書きする。O(log(N+1)+D)、Dは伝播時の失敗回数。
 template <class T> void update(RangeChminChmaxRangeSumMaxMin<T> &tree, Int p, T value) {
     tree.update(p, value);
 }
 
+// 要素数を返す。O(1)。
 template <class T> Int len(const RangeChminChmaxRangeSumMaxMin<T> &tree) {
     return tree.len();
 }
 
+// 全要素の集約情報を文字列で返す。出力長L、全取得の失敗回数の合計DとしてO(N log(N+1)+D+L)。
 template <class T> std::string to_string(RangeChminChmaxRangeSumMaxMin<T> &tree) {
     return tree.str();
 }
 
+// 閉区間の各値をvalue以下に抑える。O(log(N+1)+D)、Dはmappingの失敗回数。
 template <class T, class L, class R>
 void chmin(RangeChminChmaxRangeSumMaxMin<T> &tree, ClosedSlice<L, R> range, T value) {
     tree.chmin(range, value);
 }
 
+// 閉区間の各値をvalue以上に上げる。O(log(N+1)+D)、Dはmappingの失敗回数。
 template <class T, class L, class R>
 void chmax(RangeChminChmaxRangeSumMaxMin<T> &tree, ClosedSlice<L, R> range, T value) {
     tree.chmax(range, value);
 }
 
+// 閉区間の各値にvalueを加算する。O(log(N+1)+D)、Dはmappingの失敗回数。
 template <class T, class L, class R>
 void add(RangeChminChmaxRangeSumMaxMin<T> &tree, ClosedSlice<L, R> range, T value) {
     tree.add(range, value);

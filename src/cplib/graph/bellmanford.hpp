@@ -2,7 +2,7 @@
 #include <cplib/graph/dijkstra.hpp>
 
 namespace cplib {
-// Bellman–Ford法で最短距離を求める。負閉路の影響先は-inf。O(VE)。
+// Bellman–Ford法で最短距離を求める。負閉路の影響先は-inf。O(V(V+E))。
 template <GraphTypes G, class Start, class T = typename G::cost_type>
 RestoredDistances<T> restore_bellmanford(const G &g, const Start &start, T zero = T(0),
                                          T inf = detail::distance_inf<T>()) {
@@ -48,11 +48,13 @@ RestoredDistances<T> restore_bellmanford(const G &g, const Start &start, T zero 
     return result;
 }
 
+// 単一または複数始点からの最短距離を返す。Bellman–Ford法。O(V(V+E))。
 template <GraphTypes G, class Start, class T = typename G::cost_type>
 auto bellmanford(const G &g, const Start &start, T zero = T(0), T inf = detail::distance_inf<T>()) {
     return restore_bellmanford(g, start, zero, inf).costs;
 }
 
+// 始点から終点への経路と距離を返す。到達不能時の経路は終点のみ。Bellman–Ford法。O(V(V+E))。
 template <GraphTypes G, class T = typename G::cost_type>
 ShortestPath<T> shortest_path_bellmanford(const G &g, Int start, Int goal, T zero = T(0),
                                           T inf = detail::distance_inf<T>()) {

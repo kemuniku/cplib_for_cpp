@@ -9,6 +9,7 @@ namespace cplib {
 template <class T> struct SparseTerm {
     Int degree;
     T coefficient;
+    // 次数と係数が等しいかを比較する。係数比較を O(1) として O(1)。
     bool operator==(const SparseTerm &) const = default;
 };
 template <class T> using SparseFPS = std::vector<SparseTerm<T>>;
@@ -32,10 +33,12 @@ template <class T> SparseFPS<T> initSparseFPS(SparseFPS<T> terms) {
     return out;
 }
 
+// 項の列を次数順に正規化する。K項に対して O(K log(K+1))。
 template <class T> SparseFPS<T> initSparseFPS(std::span<const SparseTerm<T>> terms) {
     return initSparseFPS<T>(SparseFPS<T>(terms.begin(), terms.end()));
 }
 
+// 項の初期化リストを次数順に正規化する。K項に対して O(K log(K+1))。
 template <class T> SparseFPS<T> initSparseFPS(std::initializer_list<SparseTerm<T>> terms) {
     return initSparseFPS<T>(SparseFPS<T>(terms));
 }
@@ -56,43 +59,53 @@ template <Modint T> class SparseLiteral {
     }
 
 public:
+    // 定数項の式を作る。計算量 O(1)。
     SparseLiteral(T c) : node(std::make_shared<Node>(Node{0, c, {}, {}, false})) {
     }
 
+    // 整数定数の式を作る。計算量 O(1)。
     template <std::integral I> SparseLiteral(I c) : SparseLiteral(T(c)) {
     }
 
+    // 変数 x の式を作る。計算量 O(1)。
     static SparseLiteral variable() {
         return SparseLiteral(std::make_shared<Node>(Node{1, T(1), {}, {}, false}));
     }
 
+    // 和の式を作る。計算量 O(1)。
     friend SparseLiteral operator+(SparseLiteral a, SparseLiteral b) {
         return SparseLiteral(std::make_shared<Node>(Node{0, T(0), a.node, b.node, false}));
     }
 
+    // 差の式を作る。計算量 O(1)。
     friend SparseLiteral operator-(SparseLiteral a, SparseLiteral b) {
         return SparseLiteral(std::make_shared<Node>(Node{0, T(0), a.node, b.node, true}));
     }
 
+    // 符号反転の式を作る。計算量 O(1)。
     friend SparseLiteral operator-(SparseLiteral a) {
         return SparseLiteral(T(0)) - a;
     }
 
+    // 単項式に係数を掛ける。計算量 O(1)。
     friend SparseLiteral operator*(T c, SparseLiteral a) {
         assert(!a.node->left);
         return SparseLiteral(
             std::make_shared<Node>(Node{a.node->degree, c * a.node->coefficient, {}, {}, false}));
     }
 
+    // 単項式に係数を掛ける。計算量 O(1)。
     friend SparseLiteral operator*(SparseLiteral a, T c) {
         return c * a;
     }
 
+    // 変数 x の非負整数冪を表す単項式を作る。計算量 O(1)。
     friend SparseLiteral operator^(SparseLiteral a, Int k) {
         assert(k >= 0 && !a.node->left && a.node->degree == 1 && a.node->coefficient == T(1));
         return SparseLiteral(std::make_shared<Node>(Node{k, T(1), {}, {}, false}));
     }
 
+    // 式木の項を列挙する。式木のノード数を K として O(K)。
     SparseFPS<T> terms() const {
         SparseFPS<T> out;
         auto visit = [&](auto &&self, const std::shared_ptr<const Node> &p, bool neg) -> void {
@@ -108,20 +121,24 @@ public:
     }
 };
 
+// 式を疎なFPSに変換する。式木のノード数を K として O(K log(K+1))。
 template <Modint T> auto sfps(const SparseLiteral<T> &expression) {
     return initSparseFPS<T>(expression.terms());
 }
 
+// 変数を受け取る関数から疎なFPSを作る。式構築の後、式木のノード数 K に対して O(K log(K+1))。
 template <Modint T, class Expression>
     requires std::invocable<Expression, SparseLiteral<T>>
 auto sfps(Expression expression) {
     return sfps<T>(SparseLiteral<T>(expression(SparseLiteral<T>::variable())));
 }
 
+// sfps と同じく式から疎なFPSを作る。計算量は sfps と同じ。
 template <Modint T, class Expression> auto SFPS(Expression expression) {
     return sfps<T>(std::move(expression));
 }
 
+// 定数を加えた疎なFPSを返す。K項に対して O(K)。
 template <class T, std::integral I> SparseFPS<T> operator+(SparseFPS<T> f, I c) {
     T value = T(c);
     if (value.val() == 0)
@@ -136,24 +153,27 @@ template <class T, std::integral I> SparseFPS<T> operator+(SparseFPS<T> f, I c) 
     return f;
 }
 
+// 定数と疎なFPSの和を返す。K項に対して O(K)。
 template <class T, std::integral I> auto operator+(I c, const SparseFPS<T> &f) {
     return f + c;
 }
 
+// 疎なFPSに定数を加える。K項に対して O(K)。
 template <class T, std::integral I> auto &operator+=(SparseFPS<T> &f, I c) {
     return f = f + c;
 }
 
+// 疎なFPSが零か判定する。計算量 O(1)。
 template <class T> bool isZero(const SparseFPS<T> &f) {
     return f.empty();
 }
 
-// 零FPSに対しては -1 を返す。
+// 次数を返す。零FPSには -1 を返す。計算量 O(1)。
 template <class T> Int degree(const SparseFPS<T> &f) {
     return f.empty() ? -1 : f.back().degree;
 }
 
-// 指定した次数の係数を返す。項が存在しなければ零を返す。
+// 指定した次数の係数を返す。項が存在しなければ零を返す。K項に対して O(log(K+1))。
 template <class T> T coefficient(const SparseFPS<T> &f, Int degree) {
     if (degree < 0)
         return T(0);
@@ -162,11 +182,12 @@ template <class T> T coefficient(const SparseFPS<T> &f, Int degree) {
     return it != f.end() && it->degree == degree ? it->coefficient : T(0);
 }
 
+// 定数項を返す。K項に対して O(log(K+1))。
 template <class T> T constantTerm(const SparseFPS<T> &f) {
     return coefficient(f, 0);
 }
 
-// x^n で打ち切った密な係数列へ変換する。
+// x^n で打ち切った密な係数列へ変換する。K項に対して O(n+K)。
 template <class T> std::vector<T> toDense(const SparseFPS<T> &f, Int n) {
     if (n <= 0)
         return {};
@@ -179,7 +200,7 @@ template <class T> std::vector<T> toDense(const SparseFPS<T> &f, Int n) {
     return out;
 }
 
-// 密なFPSと疎なFPSの積を x^n で打ち切って返す。
+// 密なFPSと疎なFPSの積を x^n で打ち切って返す。疎な側の項数を K として O(n(K+1))。
 template <class T> std::vector<T> mulPrefix(const std::vector<T> &f, const SparseFPS<T> &g, Int n) {
     if (n <= 0)
         return {};
@@ -193,17 +214,19 @@ template <class T> std::vector<T> mulPrefix(const std::vector<T> &f, const Spars
     return out;
 }
 
+// 密なFPSと疎なFPSの積を返す。計算量は mulPrefix と同じ。
 template <class T> std::vector<T> operator*(const std::vector<T> &f, const SparseFPS<T> &g) {
     if (f.empty() || g.empty())
         return {};
     return mulPrefix(f, g, Int(f.size()) + degree(g));
 }
 
+// 疎なFPSと密なFPSの積を返す。計算量は mulPrefix と同じ。
 template <class T> auto operator*(const SparseFPS<T> &f, const std::vector<T> &g) {
     return g * f;
 }
 
-// fの長さを保ち、疎なFPSを掛けた結果で置き換える。
+// fの長さを保ち、疎なFPSを掛けた結果で置き換える。計算量は mulPrefix(f, g, f.size()) と同じ。
 template <class T> auto &operator*=(std::vector<T> &f, const SparseFPS<T> &g) {
     return f = mulPrefix(f, g, f.size());
 }
@@ -299,16 +322,17 @@ template <class T> std::vector<T> divPrefix(const std::vector<T> &f, const Spars
     return out;
 }
 
+// f.size() 項まで密なFPSを疎なFPSで割る。計算量は divPrefix と同じ。
 template <class T> auto operator/(const std::vector<T> &f, const SparseFPS<T> &g) {
     return divPrefix(f, g, f.size());
 }
 
-// fの長さを保ち、疎なFPSで割った結果で置き換える。
+// fの長さを保ち、疎なFPSで割った結果で置き換える。計算量は divPrefix(f, g, f.size()) と同じ。
 template <class T> auto &operator/=(std::vector<T> &f, const SparseFPS<T> &g) {
     return f = divPrefix(f, g, f.size());
 }
 
-// 疎なFPSの乗法逆元を x^n で打ち切って返す。
+// 疎なFPSの乗法逆元を x^n で打ち切って返す。計算量は divPrefix と同じ。
 template <class T> auto inv(const SparseFPS<T> &f, Int n) {
     return divPrefix(std::vector<T>{T(1)}, f, n);
 }
@@ -362,7 +386,7 @@ template <class T> std::vector<T> log(const SparseFPS<T> &f, Int n) {
     return out;
 }
 
-// 疎なFPSの非負整数冪を x^n で打ち切って返す。
+// 疎なFPSの非負整数冪を x^n で打ち切って返す。素数法で K 項なら O(n(K+1)+log(k+1))。
 template <class T> std::vector<T> pow(const SparseFPS<T> &f, Int k, Int n) {
     assert(k >= 0);
     if (n <= 0)
@@ -393,7 +417,8 @@ template <class T> std::vector<T> pow(const SparseFPS<T> &f, Int k, Int n) {
     return out;
 }
 
-// 疎なFPSの形式的平方根を x^n で打ち切って返す。
+// 疎なFPSの形式的平方根を x^n で打ち切って返す。素数法で O(n(K+1)+S(mod))。
+// K は項数、S(p) は法上の平方根の計算量で、保守的上界 O(p log(p+1) + log²(p+1))。
 template <class T> std::optional<std::vector<T>> sqrt(const SparseFPS<T> &f, Int n) {
     if (n <= 0)
         return std::vector<T>{};
@@ -559,13 +584,14 @@ PolynomialRecurrence<T> powTransition(const SparseFPS<T> &f, T exponent, Int d) 
 }
 }
 
-// 単項取得。逆元と対数はO(M(d)log k)、指数と冪はO(d³M(sqrt(k))log k)。
+// 逆元の指定係数を求める。次数 d とし O(M(d+1) log(degree+2))。M は畳み込みの計算量。
 template <class T> T invCoefficient(const SparseFPS<T> &f, Int degree) {
     assert(degree >= 0 && constantTerm(f).val() != 0);
     auto relevant = detail::sparseTruncated(f, degree + 1);
     return bostanMori(std::vector<T>{T(1)}, toDense(relevant, cplib::degree(relevant) + 1), degree);
 }
 
+// 形式的対数の指定係数を求める。次数 d とし O(M(d+1) log(degree+2))。M は畳み込みの計算量。
 template <class T> T logCoefficient(const SparseFPS<T> &f, Int degree) {
     assert(degree >= 0 && constantTerm(f).val() == 1);
     if (degree == 0)
@@ -580,6 +606,7 @@ template <class T> T logCoefficient(const SparseFPS<T> &f, Int degree) {
     return bostanMori(numerator, denominator, degree - 1) / T(degree);
 }
 
+// 形式的指数の指定係数を求める。次数 d とし O(d³ M(√(degree+1)+1) log(degree+2))。M は畳み込みの計算量。
 template <class T> T expCoefficient(const SparseFPS<T> &f, Int degree) {
     assert(degree >= 0 && degree < T::umod() && constantTerm(f).val() == 0);
     if (degree == 0)
@@ -595,6 +622,7 @@ template <class T> T expCoefficient(const SparseFPS<T> &f, Int degree) {
     return detail::nthTermPolynomialRecurrence(initial, rec.matrix, rec.denominator, degree);
 }
 
+// 非負整数冪の指定係数を求める。次数 d とし O(d³ M(√(degree+1)+1) log(degree+2)+log(k+1))。M は畳み込みの計算量。
 template <class T> T powCoefficient(const SparseFPS<T> &f, Int k, Int degree) {
     assert(k >= 0 && degree >= 0);
     if (k == 0)

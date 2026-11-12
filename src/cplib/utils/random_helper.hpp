@@ -10,20 +10,24 @@ namespace cplib {
 
 inline std::mt19937_64 generator(std::random_device{}());
 
+// 乱数生成器のシードを設定する。固定サイズの生成器に対し O(1)。
 inline void seed(UInt value) {
     generator.seed(value);
 }
 
+// 閉区間[lo,hi]から整数を一様に選ぶ。期待 O(1)。
 inline Int draw(Int lo, Int hi) {
     assert(lo <= hi);
     return std::uniform_int_distribution<Int>(lo, hi)(generator);
 }
 
+// N要素を乱数で並べ替える。期待 O(N)。
 template <class T> void shuffle(std::vector<T> &v) {
     std::shuffle(v.begin(), v.end(), generator);
 }
 
 struct PairHash {
+    // 整数の組のハッシュを返す。計算量 O(1)。
     std::size_t operator()(const std::pair<Int, Int> &p) const {
         auto a = std::hash<Int>{}(p.first), b = std::hash<Int>{}(p.second);
         return a ^ (b + 0x9e3779b97f4a7c15ULL + (a << 6) + (a >> 2));
@@ -31,6 +35,7 @@ struct PairHash {
 };
 
 // 一様な整数列。重複なしでは密度に応じて全列シャッフルと棄却法を使い分ける。
+// 区間長をMとする。重複ありは期待 O(n)、重複なしは高密度時 O(M)、低密度時は期待 O(n)。
 template <class L, class R>
 std::vector<Int> randomseq(Int n, ClosedSlice<L, R> slice, bool unique = false) {
     Int l = slice.a, r = slice.b, length = r - l + 1;
@@ -60,6 +65,7 @@ std::vector<Int> randomseq(Int n, ClosedSlice<L, R> slice, bool unique = false) 
 }
 
 // 長さn,総和がsumである各要素が非負整数である数列を一様ランダムに返す
+// 区切りの選択とソートを行う。期待 O(n log(n+1))。
 inline std::vector<Int> randomseq_from_sum(Int n, Int sum) {
     assert(n >= 0 && sum >= 0);
     if (n == 0) {
@@ -79,6 +85,7 @@ inline std::vector<Int> randomseq_from_sum(Int n, Int sum) {
 }
 
 // 長さnの括弧列を返す。1は"("、-1は")"を表す。
+// 長さnの括弧列を生成する。期待 O(n)。
 inline std::vector<Int> random_parenthesis_sequence(Int n) {
     assert(n >= 0 && n % 2 == 0);
     Int N = n / 2, M = n / 2;
@@ -97,6 +104,7 @@ inline std::vector<Int> random_parenthesis_sequence(Int n) {
     return result;
 }
 
+// 長さnの括弧列を文字列として生成する。期待 O(n)。
 inline std::string random_parenthesis_string(Int n) {
     std::string out;
     for (Int x : random_parenthesis_sequence(n))
@@ -105,6 +113,7 @@ inline std::string random_parenthesis_string(Int n) {
 }
 
 // 括弧列から二分木を復元
+// 長さ2nの括弧列からn頂点の二分木を復元する。O(n)。
 inline UnWeightedUnDirectedGraph make_binary_tree_from_sequence(const std::vector<Int> &ps) {
     Int n = ps.size() / 2;
     assert(n >= 1);
@@ -139,12 +148,14 @@ inline UnWeightedUnDirectedGraph make_binary_tree_from_sequence(const std::vecto
 }
 
 // n頂点の二分木を一様ランダムに返す
+// n頂点の二分木を生成する。期待 O(n)。
 inline auto random_binary_tree(Int n) {
     assert(n >= 1);
     return make_binary_tree_from_sequence(random_parenthesis_sequence(2 * n));
 }
 
 // n頂点の木を一様ランダムに返す
+// n頂点の木を生成する。期待 O(n log(n+1))。
 inline UnWeightedUnDirectedGraph random_tree(Int n) {
     assert(n >= 1);
     if (n == 1)
@@ -158,6 +169,7 @@ inline UnWeightedUnDirectedGraph random_tree(Int n) {
 }
 
 // sliceに含まれる素数を一様ランダムに返す
+// 区間長M、素数個数P>0、1回の素数判定の費用をTとする。期待 O((M/P+M)T)（短い区間の存在確認を含む）。
 template <class L, class R> Int random_prime(ClosedSlice<L, R> slice) {
     Int l = slice.a, r = slice.b;
     if (r - l + 1 <= 1500) {
@@ -176,6 +188,7 @@ template <class L, class R> Int random_prime(ClosedSlice<L, R> slice) {
     }
 }
 
+// 区間内の素数をn個生成する。区間長M、総試行回数R、素数判定の費用Tとして期待 O((M+R)(T+1)+n)。
 template <class L, class R>
 std::vector<Int> random_prime_sequence(Int n, ClosedSlice<L, R> slice, bool unique = false) {
     std::vector<Int> out;
@@ -202,6 +215,7 @@ std::vector<Int> random_prime_sequence(Int n, ClosedSlice<L, R> slice, bool uniq
 }
 
 // ランダムな単純グラフを作成。
+// n頂点m辺の単純グラフを生成する。候補全列挙時は期待 O(n²)、棄却法では試行回数とnに比例する。
 inline UnWeightedUnDirectedGraph random_simple_graph(Int n, Int m) {
     assert(n >= 0 && m >= 0 && m <= n * (n - 1) / 2);
     auto g = initUnWeightedUnDirectedGraph(n);
@@ -256,6 +270,7 @@ inline UnWeightedUnDirectedGraph random_planar_graph(Int n, Int m) {
 }
 
 // ランダムな単純連結グラフを生成。ただし、一様ランダムでない。
+// n頂点m辺の連結グラフを生成する。候補全列挙時は期待 O(n²+n log(n+1))、棄却法では試行回数を加える。
 inline UnWeightedUnDirectedGraph random_connected_graph(Int n, Int m) {
     assert(n >= 1 && m >= n - 1);
     auto g = random_tree(n);
@@ -290,6 +305,7 @@ inline UnWeightedUnDirectedGraph random_connected_graph(Int n, Int m) {
 }
 
 // 1の数がoneであるような長さnの01列を一様ランダムに返す
+// 長さn、1がone個の列を生成する。期待 O(n)。
 inline std::vector<Int> random_01sequence(Int n, Int one) {
     assert(0 <= one && one <= n);
     auto indices = randomseq(one, closed_slice(Int(0), n - 1), true);
@@ -300,6 +316,7 @@ inline std::vector<Int> random_01sequence(Int n, Int one) {
 }
 
 // sliceに含まれる文字からなる長さnの文字列を一様ランダムに返す
+// 指定範囲の文字で長さnの文字列を生成する。期待 O(n)。
 inline std::string random_string(Int n, ClosedSlice<char, char> slice) {
     assert(n >= 0 && slice.a <= slice.b);
     std::string out;
@@ -310,6 +327,7 @@ inline std::string random_string(Int n, ClosedSlice<char, char> slice) {
 }
 
 // alphabetの位置を一様に選んで長さnの文字列を返す。重複文字の重みも保持する。
+// 指定した文字列から文字を選び長さnの文字列を生成する。期待 O(n)。
 inline std::string random_string(Int n, const std::string &alphabet) {
     assert(n >= 0 && !alphabet.empty());
     std::string out;

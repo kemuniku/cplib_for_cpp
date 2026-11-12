@@ -28,10 +28,12 @@ void dump_graph(const G &g, Int indexed = 0, std::ostream &output = std::cout) {
     });
 }
 
+// グラフを頂点番号0始まりで出力する。出力の各操作をO(1)としてO(V+E)。
 template <GraphTypes G> void dump_graph(const G &g, std::ostream &output) {
     dump_graph(g, 0, output);
 }
 
+// グラフを可視化用URLの文字列に変換する。出力する文字数をLとしてO(V+E+L)。
 template <GraphTypes G> std::string to_graph_graph(const G &g, bool indexed = false) {
     Int m = 0;
     detail::graph_debug_edges(g, [&](Int, Int, auto) { ++m; });

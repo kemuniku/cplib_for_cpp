@@ -14,6 +14,7 @@ template <class K> struct AvlTreeNode {
     Int h = 1, len = 1;
     K key;
 
+    // keyを指定して孤立したノードを構築する。O(1)とkeyのムーブに要する時間。
     explicit AvlTreeNode(K value, bool sentinel = false) : key(std::move(value)) {
         if (!sentinel) {
             l = r = get_avltree_nilnode<K>();
@@ -23,6 +24,7 @@ template <class K> struct AvlTreeNode {
 };
 template <class K> using AvlNodePtr = std::shared_ptr<AvlTreeNode<K>>;
 
+// K型のAVL木で共有される番兵ノードを返す。O(1)。
 template <class K> AvlNodePtr<K> get_avltree_nilnode() {
     static AvlTreeNode<K> node(K{}, true);
     static AvlNodePtr<K> ptr = []() {
@@ -117,20 +119,24 @@ template <class K> auto avl_search(AvlNodePtr<K> n, const K &key, bool strict) {
 }
 }
 
+// ノードnから親をたどって根を返す。木の高さをhとしてO(h)。
 template <class K> AvlNodePtr<K> rootOf(AvlNodePtr<K> n) {
     while (n->p.lock() != get_avltree_nilnode<K>())
         n = n->p.lock();
     return n;
 }
 
+// key未満の最大ノードとkey以上の最小ノードの組を返す。木の高さをhとしてO(h)。
 template <class K> auto lower_bound_node(AvlNodePtr<K> n, const K &key) {
     return detail::avl_search(n, key, false);
 }
 
+// key以下の最大ノードとkeyより大きい最小ノードの組を返す。木の高さをhとしてO(h)。
 template <class K> auto upper_bound_node(AvlNodePtr<K> n, const K &key) {
     return detail::avl_search(n, key, true);
 }
 
+// 根nのAVL木にノードxを挿入し、新しい根を返す。要素数をnとしてO(log(n+1))。
 template <class K> AvlNodePtr<K> insert(AvlNodePtr<K> n, AvlNodePtr<K> x) {
     if (n == get_avltree_nilnode<K>())
         return x;
@@ -143,6 +149,7 @@ template <class K> AvlNodePtr<K> insert(AvlNodePtr<K> n, AvlNodePtr<K> x) {
     return detail::avl_to_root(r);
 }
 
+// ノードxを削除し、新しい根を返す。nxtにはxの次ノードを渡す。要素数をnとしてO(log(n+1))。
 template <class K> AvlNodePtr<K> erase(AvlNodePtr<K>, AvlNodePtr<K> x, AvlNodePtr<K> nxt) {
     auto xp = x->p.lock();
     AvlNodePtr<K> result = get_avltree_nilnode<K>();
@@ -191,6 +198,7 @@ template <class K> AvlNodePtr<K> erase(AvlNodePtr<K>, AvlNodePtr<K> x, AvlNodePt
     return result;
 }
 
+// 昇順で次のノードを返す。木の高さをhとしてO(h)。
 template <class K> AvlNodePtr<K> next(AvlNodePtr<K> n) {
     if (n->r != get_avltree_nilnode<K>()) {
         n = n->r;
@@ -207,6 +215,7 @@ template <class K> AvlNodePtr<K> next(AvlNodePtr<K> n) {
     return get_avltree_nilnode<K>();
 }
 
+// 昇順で前のノードを返す。木の高さをhとしてO(h)。
 template <class K> AvlNodePtr<K> prev(AvlNodePtr<K> n) {
     if (n->l != get_avltree_nilnode<K>()) {
         n = n->l;
@@ -223,6 +232,7 @@ template <class K> AvlNodePtr<K> prev(AvlNodePtr<K> n) {
     return get_avltree_nilnode<K>();
 }
 
+// 部分木nの昇順でidx番目のノードを返す。木の高さをhとしてO(h)。
 template <class K> AvlNodePtr<K> get(AvlNodePtr<K> n, Int idx) {
     assert(idx >= 0);
     if (idx >= n->len)
@@ -239,6 +249,7 @@ template <class K> AvlNodePtr<K> get(AvlNodePtr<K> n, Int idx) {
     }
 }
 
+// ノードnの木全体での昇順順位を返す。木の高さをhとしてO(h)。
 template <class K> Int index(AvlNodePtr<K> n) {
     if (n == get_avltree_nilnode<K>())
         return 0;

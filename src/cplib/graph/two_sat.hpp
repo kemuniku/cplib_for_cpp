@@ -38,6 +38,7 @@ struct Literal2sat {
     }
 };
 
+// リテラルをそのまま返す。O(1)。
 inline Literal2sat toLiteral(Literal2sat a) {
     return a;
 }
@@ -59,6 +60,7 @@ inline Constraint2sat operator||(Literal2sat a, Literal2sat b) {
     return r;
 }
 
+// 2リテラルのOR制約を生成する。O(1)。
 inline Constraint2sat operator|(Literal2sat a, Literal2sat b) {
     return a || b;
 }
@@ -96,6 +98,7 @@ inline Constraint2sat operator==(Literal2sat a, bool b) {
     return b ? (a || a) : (!a || !a);
 }
 
+// リテラルの真偽値を指定値に固定する制約を生成する。O(1)。
 inline Constraint2sat operator==(bool a, Literal2sat b) {
     return b == a;
 }
@@ -105,6 +108,7 @@ inline Constraint2sat operator!=(Literal2sat a, bool b) {
     return a == !b;
 }
 
+// リテラルを指定値と異なる真偽値に固定する制約を生成する。O(1)。
 inline Constraint2sat operator!=(bool a, Literal2sat b) {
     return b == !a;
 }
@@ -113,6 +117,7 @@ class Problem2sat {
     std::shared_ptr<detail::TwoSatState> p;
 
 public:
+    // 未初期化の問題を作る。O(1)。
     Problem2sat() = default;
 
     // n変数の問題を構築する。コピーは元実装と同じ問題を共有する。O(n)。
@@ -238,30 +243,37 @@ public:
     }
 };
 
+// n変数の2-SAT問題を構築する。O(n)。
 inline Problem2sat initTwoSat(Int n) {
     return Problem2sat(n);
 }
 
+// 二つのリテラルのOR制約を追加する。償却O(1)。
 inline void add_clause(Problem2sat &p, Int i, bool f, Int j, bool g) {
     p.add_clause(i, f, j, g);
 }
 
+// 制約を解く。変数数n、制約数mとしてO(n+m)、変更なしの再実行はO(1)。
 inline bool solve(Problem2sat &p) {
     return p.solve();
 }
 
+// 充足可能か判定する。変数数n、制約数mとしてO(n+m)、変更なしの再実行はO(1)。
 inline bool satisfiable(Problem2sat &p) {
     return p.satisfiable();
 }
 
+// 最後に求めた全変数の値を返す。O(n)。
 inline auto answer(const Problem2sat &p) {
     return p.answer();
 }
 
+// 最後に求めたリテラルの値を返す。O(1)。
 inline bool get(const Literal2sat &a) {
     return a.get();
 }
 
+// 最後に求めたリテラルの値を文字列で返す。O(1)。
 inline std::string to_string(const Literal2sat &a) {
     return a.to_string();
 }

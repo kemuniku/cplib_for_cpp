@@ -362,16 +362,19 @@ static inline void cplib_matrix_write_row(const uint32_t *values, size_t count, 
 #include <cplib/utils/backwards_index.hpp>
 
 namespace cplib {
+// 通常表現の剰余行列 n×m と m×k を掛ける。保守的に O((n+1)(m+1)(k+1))。
 inline void matrixProductKernel(const std::uint32_t *a, const std::uint32_t *b, std::uint32_t *c,
                                 int n, int m, int k, std::uint32_t p) {
     detail::matrix_avx2_native::cplib_matrix_product(a, b, c, n, m, k, p);
 }
 
+// Montgomery表現の剰余行列 n×m と m×k を掛ける。保守的に O((n+1)(m+1)(k+1))。
 inline void matrixProductMontgomeryKernel(const std::uint32_t *a, const std::uint32_t *b,
                                           std::uint32_t *c, int n, int m, int k, std::uint32_t p) {
     detail::matrix_avx2_native::cplib_matrix_product_montgomery(a, b, c, n, m, k, p);
 }
 
+// count 個の値を指定区切りで文字列に連結する。計算量は count と出力文字数に比例。
 inline std::string matrixJoinValues(const std::uint32_t *values, Int count, std::uint32_t p,
                                     bool montgomery, std::string_view separator) {
     if (!count)
@@ -385,12 +388,14 @@ inline std::string matrixJoinValues(const std::uint32_t *values, Int count, std:
     return out;
 }
 
+// count 個の値を指定の剰余表現へ変換する。計算量 O(count)。
 inline void matrixConvertValues(const std::uint32_t *values, std::uint32_t *output, Int count,
                                 std::uint32_t p, bool montgomery) {
     if (count)
         detail::matrix_avx2_native::cplib_matrix_convert(values, output, count, p, montgomery);
 }
 
+// count 個の値を一行に出力する。計算量は count と出力文字数に比例。
 inline void matrixWriteRow(const std::uint32_t *values, Int count, std::uint32_t p, bool montgomery,
                            FILE *output = stdout) {
     detail::matrix_avx2_native::cplib_matrix_write_row(values, count, p, montgomery, output);

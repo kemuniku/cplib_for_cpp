@@ -6,19 +6,23 @@ template <class T> struct RepeatedStaticString {
     StaticString<T> period;
     Int size = 0;
 
+    // 長さを返す。計算量 O(1)。
     Int len() const {
         return size;
     }
 
+    // i番目の要素を返す。計算量 O(1)。
     T operator[](Int i) const {
         assert(0 <= i && i < size);
         return period[i % period.len()];
     }
 
+    // 末尾基準の添字で要素を返す。計算量 O(1)。
     T operator[](BackwardsIndex i) const {
         return (*this)[size - i.value];
     }
 
+    // 文字列に変換する。要素の出力時間の合計と O(長さ+1) が必要。
     std::string to_string() const {
         std::ostringstream out;
         for (Int i = 0; i < size; ++i) {
@@ -33,7 +37,7 @@ template <class T> struct RepeatedStaticString {
 };
 
 // sを無限に繰り返した列の先頭k要素を表す。kは反復回数ではなく要素数。
-// kは非負。k > 0ならsは空でないこと。
+// kは非負。k > 0ならsは空でないこと。計算量 O(1)。
 template <class T> auto initRepeatedStaticString(const StaticString<T> &s, Int k) {
     assert(k >= 0 && (k == 0 || s.len() > 0));
     return RepeatedStaticString<T>{s, k};
@@ -54,56 +58,68 @@ template <class S, class T> int repeated_cmp(const S &s, const T &t, Int common)
 }
 }
 
+// 同じ基底の反復列同士の最長共通接頭辞長を返す。計算量 O(1)。
 template <class T> Int lcp(const RepeatedStaticString<T> &s, const RepeatedStaticString<T> &t) {
     assert(s.period.base == t.period.base);
     Int n = std::min(s.len(), t.len());
     return n ? std::min(n, detail::infinite_lcp(s.period, t.period)) : 0;
 }
 
+// 同じ基底の反復列と部分列の最長共通接頭辞長を返す。計算量 O(1)。
 template <class T> Int lcp(const RepeatedStaticString<T> &s, const StaticString<T> &t) {
     assert(s.period.base == t.base);
     Int n = std::min(s.len(), t.len());
     return n ? std::min(n, detail::infinite_lcp(s.period, t)) : 0;
 }
 
+// 同じ基底の部分列と反復列の最長共通接頭辞長を返す。計算量 O(1)。
 template <class T> Int lcp(const StaticString<T> &s, const RepeatedStaticString<T> &t) {
     return lcp(t, s);
 }
 
+// 同じ基底の反復列同士を辞書順に比較する。計算量 O(1)。
 template <class T> int cmp(const RepeatedStaticString<T> &s, const RepeatedStaticString<T> &t) {
     return detail::repeated_cmp(s, t, lcp(s, t));
 }
 
+// 同じ基底の反復列と部分列を辞書順に比較する。計算量 O(1)。
 template <class T> int cmp(const RepeatedStaticString<T> &s, const StaticString<T> &t) {
     return detail::repeated_cmp(s, t, lcp(s, t));
 }
 
+// 同じ基底の部分列と反復列を辞書順に比較する。計算量 O(1)。
 template <class T> int cmp(const StaticString<T> &s, const RepeatedStaticString<T> &t) {
     return detail::repeated_cmp(s, t, lcp(s, t));
 }
 
+// 同じ基底の反復列同士が等しいか判定する。計算量 O(1)。
 template <class T>
 bool operator==(const RepeatedStaticString<T> &s, const RepeatedStaticString<T> &t) {
     return s.len() == t.len() && lcp(s, t) == s.len();
 }
 
+// 同じ基底の反復列同士を辞書順に比較する。計算量 O(1)。
 template <class T>
 auto operator<=>(const RepeatedStaticString<T> &s, const RepeatedStaticString<T> &t) {
     return cmp(s, t) <=> 0;
 }
 
+// 同じ基底の反復列と部分列が等しいか判定する。計算量 O(1)。
 template <class T> bool operator==(const RepeatedStaticString<T> &s, const StaticString<T> &t) {
     return s.len() == t.len() && lcp(s, t) == s.len();
 }
 
+// 同じ基底の反復列と部分列を辞書順に比較する。計算量 O(1)。
 template <class T> auto operator<=>(const RepeatedStaticString<T> &s, const StaticString<T> &t) {
     return cmp(s, t) <=> 0;
 }
 
+// 反復列の長さを返す。計算量 O(1)。
 template <class T> Int len(const RepeatedStaticString<T> &s) {
     return s.len();
 }
 
+// 反復列を文字列に変換する。要素の出力時間の合計と O(長さ+1) が必要。
 template <class T> std::string to_string(const RepeatedStaticString<T> &s) {
     return s.to_string();
 }

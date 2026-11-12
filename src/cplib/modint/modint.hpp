@@ -29,11 +29,12 @@ template <Modint M> std::string estimate_rational(M a, Int ub) {
     return std::to_string(std::get<1>(v[0])) + "/" + std::to_string(std::get<2>(v[0]));
 }
 
+// 分母の上限を floor(sqrt(mod)) として分数を推定する。計算量は estimate_rational(a, ub) と同じ。
 template <Modint M> std::string estimate_rational(M a) {
     return estimate_rational(a, isqrt(Int(M::mod())));
 }
 
-// Nimのstatic int除算に相当。静的modintなら逆元を定数評価する。
+// 定数で除算する。静的modintでは逆元をコンパイル時に評価して実行時 O(1)、動的法では O(log mod)。
 template <Int Divisor, Modint M> constexpr M divide_constant(M a) {
     if constexpr (requires { std::integral_constant<Int, M::mod()>{}; }) {
         constexpr M inverse = M(Divisor).inv();

@@ -41,18 +41,22 @@ protected:
     }
 
 public:
+    // 全要素の総積を返す。モノイド演算を1回行う。
     T fold() const {
         return op(topfold.back(), bottomfold.back());
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return top.size() + bottom.size();
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // i番目の要素への参照を返す。O(1)。
     const T &operator[](Int i) const {
         if (i < 0 || i >= len())
             throw std::out_of_range("SWAG index");

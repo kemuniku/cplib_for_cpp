@@ -31,9 +31,12 @@ class Input {
     bool characters_ = false;
 
 public:
+    // 指定したストリームを入力元にする。計算量 O(1)。
     explicit Input(std::istream &stream = std::cin) : stream_(&stream) {
     }
 
+    // 次のトークン、またはトークンの次の1文字を読む。終端では空文字列を返す。
+    // 計算量は今回走査した入力文字数と返す文字数に比例する。
     std::string readNext(bool getsChar = false) {
         while (true) {
             if (token_ < tokens_.size()) {
@@ -68,6 +71,7 @@ public:
         }
     }
 
+    // 指定型の値を1つ読む。計算量は readNext と文字列の型変換にかかる時間の和。
     template <class T> T input() {
         if constexpr (std::is_same_v<T, std::string>)
             return readNext();
@@ -97,6 +101,8 @@ public:
 
 inline Input reader;
 
+// 指定した型の値を順に読み、1個なら値、多数なら組で返す。
+// 計算量は各値の読み込みと型変換の合計。
 template <class... T> auto input() {
     static_assert(sizeof...(T) > 0);
     if constexpr (sizeof...(T) == 1)
@@ -105,6 +111,8 @@ template <class... T> auto input() {
         return std::tuple<T...>{reader.template input<T>()...};
 }
 
+// 指定型の値または組を n 個読み、配列で返す。
+// 計算量は O(n) と各値の読み込み・型変換の合計。
 template <class... T> auto input(Int n) {
     assert(n >= 0);
     using V = decltype(input<T...>());
@@ -114,6 +122,8 @@ template <class... T> auto input(Int n) {
     return out;
 }
 
+// 指定された各次元の配列に値を読み込む。
+// 計算量は作成する配列・要素数と、各値の読み込み・型変換の合計。
 template <class T, class... D> auto input(Int n, Int m, D... dimensions) {
     assert(n >= 0);
     using V = decltype(input<T>(m, dimensions...));
@@ -123,6 +133,8 @@ template <class T, class... D> auto input(Int n, Int m, D... dimensions) {
     return out;
 }
 
+// 値やコンテナを出力用文字列に変換する。
+// 計算量は要素ごとの文字列化と連結に要する時間の合計。
 template <class T> std::string fmtprint(const T &x) {
     if constexpr (std::floating_point<T>) {
         std::ostringstream os;
@@ -167,6 +179,8 @@ template <class T> std::string fmtprint(const T &x) {
         return detail::template_support::stringValue(x);
 }
 
+// 優先度付きキューを取り出し順に文字列化する。比較・要素のコピーを O(1) とすると、
+// n要素なら O(n log(n+1)) と各要素の文字列化・連結の時間。
 template <class T, class C, class Compare>
 std::string fmtprint(std::priority_queue<T, C, Compare> q) {
     std::string out;
@@ -179,15 +193,18 @@ std::string fmtprint(std::priority_queue<T, C, Compare> q) {
     return out;
 }
 
+// 出力設定に従い各値を文字列化して書き出す。計算量は各値の変換と出力に要する時間の合計。
 template <class... T> void print(const PrintOptions &options, const T &...values) {
     std::array<std::string, sizeof...(T)> formatted{fmtprint(values)...};
     detail::template_support::write(options, formatted);
 }
 
+// 各値を既定の区切りで出力する。計算量は設定付き print と同じ。
 template <class... T> void print(const T &...values) {
     cplib::print(PrintOptions{}, values...);
 }
 
+// aの非負整数n乗を法mで計算する。計算量 O(log(n+1))。
 inline Int pow(Int a, Int n, Int m = INF64) {
     Int result = 1;
     while (n > 0) {
@@ -200,26 +217,32 @@ inline Int pow(Int a, Int n, Int m = INF64) {
     return result;
 }
 
+// 真なら Yes、偽なら No を出力する。計算量 O(1)。
 inline void Yes(bool b = true) {
     cplib::print(b ? "Yes" : "No");
 }
 
+// 真なら No、偽なら Yes を出力する。計算量 O(1)。
 inline void No(bool b = true) {
     Yes(!b);
 }
 
+// 真なら YES、偽なら NO を出力する。計算量 O(1)。
 inline void YES_upper(bool b = true) {
     cplib::print(b ? "YES" : "NO");
 }
 
+// 真なら NO、偽なら YES を出力する。計算量 O(1)。
 inline void NO_upper(bool b = true) {
     YES_upper(!b);
 }
 
+// 空のハッシュ集合を作る。計算量 O(1)。
 template <class T> auto initHashSet() {
     return std::unordered_set<T>{};
 }
 
+// 関数を実行してから正常終了する。計算量は関数と終了処理の実行時間の合計。
 template <class F> [[noreturn]] void exit(F &&statement) {
     std::forward<F>(statement)();
     std::exit(0);

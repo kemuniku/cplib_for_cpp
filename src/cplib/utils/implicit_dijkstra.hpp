@@ -70,12 +70,13 @@ template <class T, class Adjacent> auto restore_implicit_dijkstra(T start, Adjac
 }
 
 // 始点から到達可能な各頂点までの最短距離を返す。到達不能な頂点は返り値のunordered_mapに含まれない。
+// 探索頂点V、辺E、ハッシュ等を定数時間とし、期待 O((V+E) log(V+E))。
 template <class T, class Adjacent> auto implicit_dijkstra(T start, Adjacent adjacent) {
     return restore_implicit_dijkstra(start, adjacent).costs;
 }
 
 // 非負辺を仮定し、最短距離が確定した頂点が初めてfinishを満たしたとき、その頂点までのコストを返す。
-// 該当する頂点がなければinfを返す。
+// 該当する頂点がなければinfを返す。探索頂点V、辺E、ハッシュ等を定数時間とし、期待 O((V+E) log(V+E))。
 template <class T, class Adjacent, class Finish>
 Int implicit_dijkstra_until(T start, Adjacent adjacent, Finish finish, Int inf = INF64) {
     return detail::implicit_dijkstra_run<false>(start, adjacent, finish, inf).second;
@@ -83,6 +84,7 @@ Int implicit_dijkstra_until(T start, Adjacent adjacent, Finish finish, Int inf =
 
 // 非負辺を仮定し、goalの最短距離が確定した時点で探索を終了する。
 // 到達できた場合はstartからgoalまでの経路とコスト、到達不能なら空の経路とinfを返す。
+// 探索頂点V、辺E、ハッシュ等を定数時間とし、期待 O((V+E) log(V+E))。
 template <class T, class Adjacent>
 auto shortest_path_implicit_dijkstra(T start, T goal, Adjacent adjacent, Int inf = INF64) {
     bool reached = false;

@@ -55,7 +55,8 @@ inline Int find_factor(Int n) {
 }
 }
 
-// 素因数を重複込みで列挙する。元実装と同じPollard rho法。
+// 素因数を重複込みで列挙する。Pollard rho法を用い、実行時間は乱数に依存する。
+// 各因数探索の期待反復回数は概ね最小素因数 p に対して O(√p)、素数判定は O(log n)。
 inline std::vector<Int> primefactor(Int n, bool sorted = true) {
     std::vector<Int> result;
     while (n > 1 && !isprime(n)) {
@@ -72,7 +73,7 @@ inline std::vector<Int> primefactor(Int n, bool sorted = true) {
     return result;
 }
 
-// 素因数ごとの指数を返す。
+// 素因数ごとの指数を返す。計算量は primefactor と同じ（ハッシュ表操作は期待 O(1)）。
 inline std::unordered_map<Int, Int> primefactor_table(Int n) {
     std::unordered_map<Int, Int> result;
     for (auto p : primefactor(n))
@@ -80,7 +81,7 @@ inline std::unordered_map<Int, Int> primefactor_table(Int n) {
     return result;
 }
 
-// 素因数と指数の組を昇順で返す。
+// 素因数と指数の組を昇順で返す。計算量は primefactor と同じ。
 inline std::vector<std::pair<Int, Int>> primefactor_tuple(Int n) {
     return run_length_encode(primefactor(n));
 }

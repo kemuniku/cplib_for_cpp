@@ -80,6 +80,7 @@ public:
         return nodes.empty() ? 0 : nodes[0].subtree;
     }
 
+    // 重複を含む文字列の総数を返す。計算量 O(1)。
     Int size() const {
         return len();
     }
@@ -116,7 +117,7 @@ public:
         return node < 0 ? 0 : nodes[node].subtree;
     }
 
-    // 文字列をv個追加する。O(σ|s|+1)。
+    // 文字列をv個追加する。文字種数σとして償却 O(σ|s|+1)。
     void incl(std::string_view s, Int v = 1) {
         assert(v >= 0);
         if (!v)
@@ -195,6 +196,7 @@ template <char First = 'a', char Last = 'z'> class TriePointer {
     Int id = 0;
 
 public:
+    // 参照先のないポインタを作る。計算量 O(1)。
     TriePointer() = default;
 
     // 指定した節点を指すポインタを作る。省略時は根。σ固定で O(1)。
@@ -267,19 +269,23 @@ public:
     }
 };
 
+// 文字種数をσとして空のTrieを O(σ) で作る。
 template <char First = 'a', char Last = 'z'> Trie<First, Last> initTrie() {
     return {};
 }
 
+// 文字列列からTrieを作る。文字種数σ、語数K、全長Lとして O(σ(1+L)+K)。
 template <char First = 'a', char Last = 'z'>
 Trie<First, Last> initTrie(std::span<const std::string> words) {
     return Trie<First, Last>(words);
 }
 
+// 指定節点を指すポインタを作る。通常 O(1)、空の節点配列を初期化する場合 O(σ)。
 template <char First, char Last> auto initTriePointer(Trie<First, Last> &trie, Int node = 0) {
     return TriePointer<First, Last>(trie, node);
 }
 
+// ポインタの指す文字列を復元する。深さをdとして O(d+1)。
 template <char First, char Last> std::string to_string(const TriePointer<First, Last> &p) {
     return p.restoreString();
 }

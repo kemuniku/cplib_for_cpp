@@ -39,6 +39,7 @@ class LiChaoTree {
     }
 
 public:
+    // 与えた座標数をNとしてO(N log(N+1))。
     // LiChaoTreeを初期化します
     // get_minで用いる可能性のあるXを配列で与えてください。
     explicit LiChaoTree(std::vector<Int> x) {
@@ -52,12 +53,14 @@ public:
         b_.assign(2 * last_, INF64);
     }
 
+    // 計算量は座標数Nに対してO(log(N+1))。
     // 直線ax+bを追加します。
     // aは32bit整数に収まるようにしてください。
     void add_line(Int a, Int b) {
         query(a, b, 1);
     }
 
+    // 計算量は座標数Nに対してO(log²(N+1))。
     // 線分ax+b (l<=x<r)を追加します。
     // aは32bit整数に収まるようにしてください。
     void add_segment(Int a, Int b, Int l, Int r) {
@@ -73,6 +76,7 @@ public:
         }
     }
 
+    // 計算量は座標数Nに対してO(log(N+1))。
     // xにおける最小値を返します。
     // xは32bit整数に収まるようにしてください。
     // 線分が存在しない場合、INF64が返ります。
@@ -90,6 +94,7 @@ public:
     }
 };
 
+// 問い合わせる座標を指定してLi Chao木を構築する。座標数をNとしてO(N log(N+1))。
 inline LiChaoTree initLiChaoTree(const std::vector<Int> &x) {
     return LiChaoTree(x);
 }

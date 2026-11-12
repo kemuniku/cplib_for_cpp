@@ -34,11 +34,13 @@ std::vector<std::vector<T>> steiner_tree_dp(const G &g, std::span<const Int> ter
     return dp;
 }
 
+// 各端点部分集合を含み各頂点を根とする最小コストを返す。端点数KとしてO(V3^K + 2^K(V+E)log(V+E))。
 template <GraphTypes G, class T = typename G::cost_type>
 auto steiner_tree_dp(const G &g, std::span<const Int> terminal, T inf = detail::distance_inf<T>()) {
     return steiner_tree_dp(g, terminal, T(0), inf);
 }
 
+// terminalに含まれる頂点を全て連結にする最小コストを返す。端点数KとしてO(V3^K + 2^K(V+E)log(V+E))。
 // terminalに含まれる頂点を全て連結にするために必要な最小のコストを返す。
 template <GraphTypes G, class T = typename G::cost_type>
 T steiner_tree_mincost(const G &g, std::span<const Int> terminal, T zero, T inf) {
@@ -48,6 +50,7 @@ T steiner_tree_mincost(const G &g, std::span<const Int> terminal, T zero, T inf)
     return dp.back()[terminal[0]];
 }
 
+// terminalを全て連結にする最小コストを返す。端点数KとしてO(V3^K + 2^K(V+E)log(V+E))。
 template <GraphTypes G, class T = typename G::cost_type>
 T steiner_tree_mincost(const G &g, std::span<const Int> terminal,
                        T inf = detail::distance_inf<T>()) {

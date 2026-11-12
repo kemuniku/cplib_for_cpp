@@ -27,6 +27,7 @@ template <char First = 'a', char Last = 'z'> class AhoCorasick {
     }
 
 public:
+    // 空の未構築オートマトンを作る。計算量 O(1)。
     AhoCorasick() = default;
 
     // 辞書とfailure遷移を構築する。O(Σ|s|+語数+σN)時間・O(σN+語数)領域。
@@ -141,24 +142,29 @@ public:
             const AhoCorasick *owner;
             Int id;
 
+            // 現在の一致語の節点IDを返す。計算量 O(1)。
             Int operator*() const {
                 return id;
             }
 
+            // 次の一致語の節点に進む。計算量 O(1)。
             iterator &operator++() {
                 id = owner->nodes[id].output;
                 return *this;
             }
 
+            // 反復子の位置が等しいか判定する。計算量 O(1)。
             bool operator==(const iterator &other) const {
                 return id == other.id;
             }
         };
 
+        // 一致語の先頭を指す反復子を返す。計算量 O(1)。
         iterator begin() const {
             return {owner, first};
         }
 
+        // 一致語の終端を指す反復子を返す。計算量 O(1)。
         iterator end() const {
             return {owner, -1};
         }
@@ -204,6 +210,7 @@ template <char First = 'a', char Last = 'z'> class AhoCorasickPointer {
     Int id = 0;
 
 public:
+    // 参照先のないポインタを作る。計算量 O(1)。
     AhoCorasickPointer() = default;
 
     // 指定した頂点を指すポインタを作る。省略時は根。O(1)。
@@ -229,6 +236,7 @@ public:
         return AhoCorasickPointer(*owner, owner->failure(id));
     }
 
+    // 文字または文字列を追加して遷移したポインタを返す。長さLとして O(L+1)。
     template <class S> AhoCorasickPointer next(const S &s) const {
         assert(owner);
         return AhoCorasickPointer(*owner, owner->next(id, s));
@@ -244,6 +252,7 @@ public:
         *this = next(s);
     }
 
+    // 文字または文字列を追加して遷移する。長さLとして O(L+1)。
     template <class S> AhoCorasickPointer &operator&=(const S &s) {
         add(s);
         return *this;
@@ -255,6 +264,7 @@ public:
         return owner->terminal(id);
     }
 
+    // 現在位置で終わる登録語の個数を重複・空文字列も含めて返す。計算量 O(1)。
     Int matchCount() const {
         assert(owner);
         return owner->matchCount(id);
@@ -273,16 +283,19 @@ public:
     }
 };
 
+// 辞書の全長L、語数K、文字種数σ、節点数Nとして O(L+K+σN) で構築する。
 template <char First = 'a', char Last = 'z'>
 auto initAhoCorasick(std::span<const std::string> words) {
     return AhoCorasick<First, Last>(words);
 }
 
+// 指定した節点を指すポインタを作る。計算量 O(1)。
 template <char First, char Last>
 auto initAhoCorasickPointer(AhoCorasick<First, Last> &ac, Int node = 0) {
     return AhoCorasickPointer<First, Last>(ac, node);
 }
 
+// ポインタが指す文字列を復元する。深さdとして O(d+1)。
 template <char First, char Last> std::string to_string(const AhoCorasickPointer<First, Last> &p) {
     return p.restoreString();
 }

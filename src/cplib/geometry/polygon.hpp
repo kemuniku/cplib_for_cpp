@@ -6,36 +6,43 @@ namespace cplib {
 template <class T> struct Polygon {
     std::vector<Point<T>> v;
 
+    // 頂点数を返す。計算量 O(1)。
     Int len() const {
         return v.size();
     }
 
+    // 頂点数を返す。計算量 O(1)。
     Int size() const {
         return len();
     }
 
+    // 頂点列の先頭イテレータを返す。計算量 O(1)。
     auto begin() const {
         return v.begin();
     }
 
+    // 頂点列の終端イテレータを返す。計算量 O(1)。
     auto end() const {
         return v.end();
     }
 };
 
+// 多角形の頂点数を返す。計算量 O(1)。
 template <class T> Int len(const Polygon<T> &p) {
     return p.len();
 }
 
-// 頂点列 v の多角形型を初期化
+// N個の頂点列 v をコピーして多角形を初期化する。計算量 O(N)。
 template <class T> auto initPolygon(std::span<const Point<T>> v) {
     return Polygon<T>{{v.begin(), v.end()}};
 }
 
+// N個の頂点列をコピーして多角形を初期化する。計算量 O(N)。
 template <class T> auto initPolygon(const std::vector<Point<T>> &v) {
     return Polygon<T>{v};
 }
 
+// N個の頂点列をコピーして多角形を初期化する。計算量 O(N)。
 template <class T> auto initPolygon(std::initializer_list<Point<T>> v) {
     return Polygon<T>{{v.begin(), v.end()}};
 }
@@ -54,7 +61,8 @@ template <class T> T area(const Polygon<T> &p) {
     return out;
 }
 
-// 頂点列が反時計回りの多角形に対して、凸かどうかを判定
+// 頂点数をNとして計算量 O(N)。頂点列が反時計回りの多角形に対して、凸かどうかを判定する。
+// 隣り合う頂点は異なること。
 template <class T> bool is_convex_ccw(const Polygon<T> &p, bool strict = true) {
     for (Int i = 0; i < p.len(); ++i) {
         Int c = ccw(p.v[i], p.v[(i + 1) % p.len()], p.v[(i + 2) % p.len()]);
@@ -66,7 +74,8 @@ template <class T> bool is_convex_ccw(const Polygon<T> &p, bool strict = true) {
     return true;
 }
 
-// 多角形が凸かどうかを判定、ちょうど 180 度の内角を許容する場合は strict = false を設定
+// 頂点数をNとして計算量 O(N)。多角形が凸かどうかを判定、ちょうど 180 度の内角を許容する場合は strict = false を設定。
+// 隣り合う頂点は異なること。
 template <class T> bool is_convex(const Polygon<T> &p, bool strict = true) {
     if (is_convex_ccw(p, strict))
         return true;
@@ -75,7 +84,8 @@ template <class T> bool is_convex(const Polygon<T> &p, bool strict = true) {
     return is_convex_ccw(reverse, strict);
 }
 
-// 点 p が多角形 poly の辺上にあるかどうかを判定
+// 点 p が多角形 poly の辺上にあるかどうかを判定する。頂点数をNとして計算量 O(N)。
+// 隣り合う頂点は異なること。
 template <class T> bool on_edge(const Polygon<T> &poly, Point<T> p) {
     for (Int i = 0; i < poly.len(); ++i)
         if (ccw(poly.v[i], poly.v[(i + 1) % poly.len()], p) == ON_SEGMENT)
@@ -83,7 +93,8 @@ template <class T> bool on_edge(const Polygon<T> &poly, Point<T> p) {
     return false;
 }
 
-// 自己交差のない多角形 poly 内に点 p が存在するかを判定、辺上にある場合を含めない場合は strict = true を設定
+// 頂点数をNとして計算量 O(N)。自己交差のない多角形 poly 内に点 p が存在するかを判定、辺上にある場合を含めない場合は strict = true を設定。
+// 隣り合う頂点は異なること。
 template <class T> bool contains(const Polygon<T> &poly, Point<T> p, bool strict = false) {
     if (on_edge(poly, p))
         return !strict;
@@ -98,7 +109,8 @@ template <class T> bool contains(const Polygon<T> &poly, Point<T> p, bool strict
     return out;
 }
 
-// 単調鎖法。元実装どおり小入力の順序と、最後に先頭要素を消す出力順を保持。O(N log N)。
+// 単調鎖法で凸包を返す。元実装どおり小入力の順序と、最後に先頭要素を消す出力順を保持。O(N log N)。
+// N>=3の場合は重複点を含まないこと。
 template <class T> Polygon<T> convex_hull(std::span<const Point<T>> v, bool strict = true) {
     Int n = v.size();
     if (n < 3)
@@ -125,6 +137,7 @@ template <class T> Polygon<T> convex_hull(std::span<const Point<T>> v, bool stri
     return {std::move(vi)};
 }
 
+// N個の点の凸包を返す。計算量 O(N log N)。
 template <class T> auto convex_hull(const std::vector<Point<T>> &v, bool strict = true) {
     return convex_hull<T>(std::span<const Point<T>>(v), strict);
 }

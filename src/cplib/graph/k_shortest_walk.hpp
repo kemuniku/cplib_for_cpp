@@ -190,6 +190,7 @@ std::vector<T> k_shortest_walk(const G &graph, Int s, Int t, Int k, T infinity) 
     return result;
 }
 
+// 非負整数重みのsからtへのウォーク長を昇順でk個返す。時間O((V+E)log V+k log k)、領域O(E+V log V+k)。
 template <GraphTypes G>
     requires std::signed_integral<typename G::cost_type>
 auto k_shortest_walk(const G &graph, Int s, Int t, Int k) {

@@ -226,10 +226,12 @@ public:
     }
 };
 
+// n個の二値変数を持つ問題を初期化する。計算量 O(1)。
 template <class Cost = Int> auto initProjectSelection(Int n) {
     return ProjectSelection<Cost>(n);
 }
 
+// 最小費用と割当を返す。内部グラフの頂点数V、辺数Eで O(V²E+V)。
 template <class Cost> auto solve(const ProjectSelection<Cost> &p) {
     return p.solve();
 }

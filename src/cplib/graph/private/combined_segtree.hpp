@@ -13,6 +13,7 @@ template <class T, class Merge = std::function<T(T, T)>> class SegmentTree {
 public:
     std::vector<T> arr;
 
+    // 長さnを単位元で初期化する。演算がO(1)ならO(n)。
     SegmentTree(Int n, Merge op, T e) : identity(e), merge(op), length(n) {
         assert(n >= 0);
         while (lastnode < n)
@@ -22,20 +23,24 @@ public:
             arr[i] = merge(arr[2 * i], arr[2 * i + 1]);
     }
 
+    // 配列から構築する。演算がO(1)ならO(N)。
     SegmentTree(std::span<const T> v, Merge op, T e) : SegmentTree(v.size(), op, e) {
         std::copy(v.begin(), v.end(), arr.begin() + lastnode);
         for (Int i = lastnode - 1; i > 0; --i)
             arr[i] = merge(arr[2 * i], arr[2 * i + 1]);
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return length;
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // 要素xを更新する。演算がO(1)ならO(log N)。
     void update(Int x, const T &value) {
         assert(0 <= x && x < length);
         x += lastnode;
@@ -46,6 +51,7 @@ public:
         }
     }
 
+    // 半開区間[l,r)を集約する。演算がO(1)ならO(log N)。
     T get(Int l, Int r) const {
         assert(0 <= l && l <= r && r <= length);
         l += lastnode;
@@ -62,14 +68,17 @@ public:
         return merge(a, b);
     }
 
+    // 閉区間の要素を集約する。演算がO(1)ならO(log N)。
     template <class L, class R> T get(ClosedSlice<L, R> s) const {
         return get(resolve_index(length, s.a), resolve_index(length, s.b) + 1);
     }
 
+    // 閉区間の要素を集約する。演算がO(1)ならO(log N)。
     template <class L, class R> T operator[](ClosedSlice<L, R> s) const {
         return get(s);
     }
 
+    // 要素iを返す。O(1)。
     T operator[](Int i) const {
         assert(0 <= i && i < length);
         return arr[i + lastnode];
@@ -79,30 +88,36 @@ public:
         SegmentTree *tree;
         Int index;
 
+        // 参照先の値を返す。O(1)。
         operator T() const {
             return std::as_const(*tree)[index];
         }
 
+        // 参照先の値を更新する。O(log(N+1))。
         Reference &operator=(const T &v) {
             tree->update(index, v);
             return *this;
         }
 
+        // 別の参照先の値を読み取り代入する。O(log(N+1))。
         Reference &operator=(const Reference &v) {
             return *this = T(v);
         }
     };
 
+    // 要素iへの読み書き用参照を返す。取得O(1)、更新O(log N)。
     Reference operator[](Int i) {
         assert(0 <= i && i < length);
         return {this, i};
     }
 
     CPLIB_BACKWARDS_INDEX_OVERLOADS
+    // 全要素の集約値を返す。O(1)。
     T get_all() const {
         return arr[1];
     }
 
+    // 全要素を空白区切りの文字列で返す。出力長をLとしてO(N+L)。
     std::string str() const {
         std::ostringstream s;
         for (Int i = 0; i < length; ++i) {
@@ -113,6 +128,7 @@ public:
         return s.str();
     }
 
+    // 区間[l,r)の集約値が単調な条件fを満たす最大のrを返す。演算がO(1)ならO(log N)。
     template <class F> Int max_right(Int l, F f) const {
         assert(0 <= l && l <= length && f(identity));
         if (l == length)
@@ -138,6 +154,7 @@ public:
         return length;
     }
 
+    // 区間[l,r)の集約値が単調な条件fを満たす最小のlを返す。演算がO(1)ならO(log N)。
     template <class F> Int min_left(Int r, F f) const {
         assert(0 <= r && r <= length && f(identity));
         if (r == 0)
@@ -164,51 +181,63 @@ public:
     }
 };
 
+// セグメント木を構築する。演算がO(1)ならO(N)。
 template <class T, class Op> auto initSegmentTree(Int n, Op op, T e) {
     return SegmentTree<T>(n, op, e);
 }
 
+// セグメント木を構築する。演算がO(1)ならO(N)。
 template <class T, class Op> auto initSegmentTree(std::span<const T> v, Op op, T e) {
     return SegmentTree<T>(v, op, e);
 }
 
+// セグメント木を構築する。演算がO(1)ならO(N)。
 template <class T, class Op> auto initSegmentTree(const std::vector<T> &v, Op op, T e) {
     return SegmentTree<T>(v, op, e);
 }
 
+// 配列からセグメント木を構築する。演算がO(1)ならO(N)。
 template <class V, class Op, class T> auto newSegWith(const V &v, Op op, T e) {
     return initSegmentTree(v, op, e);
 }
 
+// 要素数を返す。O(1)。
 template <class T, class M> Int len(const SegmentTree<T, M> &s) {
     return s.len();
 }
 
+// 要素iを更新する。演算がO(1)ならO(log N)。
 template <class T, class M> void update(SegmentTree<T, M> &s, Int i, const T &v) {
     s.update(i, v);
 }
 
+// 指定区間を集約する。演算がO(1)ならO(log N)。
 template <class T, class M> auto get(const SegmentTree<T, M> &s, Int l, Int r) {
     return s.get(l, r);
 }
 
+// 指定区間を集約する。演算がO(1)ならO(log N)。
 template <class T, class M, class L, class R>
 auto get(const SegmentTree<T, M> &s, ClosedSlice<L, R> range) {
     return s.get(range);
 }
 
+// 全要素の集約値を返す。O(1)。
 template <class T, class M> auto get_all(const SegmentTree<T, M> &s) {
     return s.get_all();
 }
 
+// 全要素を文字列で返す。出力長をLとしてO(N+L)。
 template <class T, class M> auto to_string(const SegmentTree<T, M> &s) {
     return s.str();
 }
 
+// 区間集約値が単調な条件fを満たす最大の右端を返す。演算がO(1)ならO(log N)。
 template <class T, class M, class F> Int max_right(const SegmentTree<T, M> &s, Int l, F f) {
     return s.max_right(l, f);
 }
 
+// 区間集約値が単調な条件fを満たす最小の左端を返す。演算がO(1)ならO(log N)。
 template <class T, class M, class F> Int min_left(const SegmentTree<T, M> &s, Int r, F f) {
     return s.min_left(r, f);
 }

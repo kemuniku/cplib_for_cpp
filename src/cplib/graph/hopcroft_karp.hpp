@@ -230,18 +230,22 @@ public:
     }
 };
 
+// 左右の頂点数を指定して二部グラフを構築する。O(left+right)。
 inline auto initHopcroftKarp(Int left, Int right) {
     return HopcroftKarp(left, right);
 }
 
+// 左右の頂点間に辺を追加する。償却O(1)。
 inline void add_edge(HopcroftKarp &g, Int left, Int right) {
     g.add_edge(left, right);
 }
 
+// 最大マッチングのサイズを返す。O((V+E)√V)。
 inline Int matching(HopcroftKarp &g, bool useRelabel = true) {
     return g.matching(useRelabel);
 }
 
+// 現在のマッチングの辺を左頂点順に返す。O(left)。
 inline auto get_matching(const HopcroftKarp &g) {
     return g.get_matching();
 }

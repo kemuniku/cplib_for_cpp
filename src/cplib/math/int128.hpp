@@ -136,6 +136,7 @@ template <class T> constexpr Int128 to_Int128(T x) {
     return static_cast<Int128>(x);
 }
 
+// Int に変換する。計算量 O(1)。
 inline Int to_int(Int128 x) {
     return static_cast<Int>(x);
 }
@@ -145,22 +146,27 @@ inline Int128 parseInt128(const std::string &s) {
     return detail::parse_int128(s.c_str());
 }
 
+// 標準入力から十進整数を読む。入力文字数に比例する。
 inline Int128 read_and_parse_int128() {
     return detail::read_and_parse_int128(0);
 }
 
+// 十進文字列に変換する。計算量は出力桁数に比例する。
 inline std::string to_string(Int128 x) {
     return detail::to_string(x);
 }
 
+// 標準出力に十進整数を出力する。計算量は出力桁数に比例する。
 inline void put(Int128 x) {
     detail::output_int128(x);
 }
 
+// 絶対値を返す。計算量 O(1)。
 inline Int128 abs(Int128 x) {
     return x >= 0 ? x : -x;
 }
 
+// 大小比較し、小・等・大に対して -1・0・1 を返す。計算量 O(1)。
 inline int cmp(Int128 x, Int128 y) {
     return x < y ? -1 : x == y ? 0 : 1;
 }
@@ -178,6 +184,7 @@ inline Int128 pow(Int128 x, Int128 n) {
     return result;
 }
 
+// x の非負整数 n 乗の m による剰余を返す。計算量 O(log(n+1))。
 inline Int128 pow(Int128 x, Int128 n, Int128 m) {
     assert(m != 0);
     if (m == 1)

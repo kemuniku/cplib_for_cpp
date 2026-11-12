@@ -344,8 +344,11 @@ class BigInt {
     static BigIntDivision divmodNewton(const BigInt &, const BigInt &);
 
 public:
+    // 以下 n は対象の10進桁数、二項演算では両入力の最大桁数とする。
+    // 零を構築する。計算量 O(1)。
     BigInt() = default;
 
+    // 固定幅整数を変換する。計算量 O(1)。
     template <std::integral T> BigInt(T x) {
         UInt magnitude;
         if constexpr (std::is_signed_v<T>) {
@@ -364,7 +367,7 @@ public:
         }
     }
 
-    // 符号付き10進文字列を変換し、空文字列や不正な文字にはstd::invalid_argumentを送出する。
+    // 符号付き10進文字列を変換し、空文字列や不正な文字にはstd::invalid_argumentを送出する。O(文字数)。
     explicit BigInt(std::string_view s) {
         if (s.empty())
             throw std::invalid_argument("多倍長整数の文字列が空です");
@@ -393,14 +396,17 @@ public:
         normalize();
     }
 
+    // 零か判定する。計算量 O(1)。
     bool isZero() const {
         return !sign_;
     }
 
+    // 符号を -1, 0, 1 で返す。計算量 O(1)。
     int sgn() const {
         return sign_;
     }
 
+    // 絶対値を返す。計算量 O(n)。
     BigInt abs() const {
         auto out = *this;
         if (out.sign_ < 0)
@@ -408,16 +414,19 @@ public:
         return out;
     }
 
+    // 符号反転した値を返す。計算量 O(n)。
     BigInt operator-() const {
         auto out = *this;
         out.sign_ = -out.sign_;
         return out;
     }
 
+    // 値を複製する。計算量 O(n)。
     BigInt operator+() const {
         return *this;
     }
 
+    // 十進文字列を返す。計算量 O(n)。
     std::string str() const {
         if (!sign_)
             return "0";
@@ -450,18 +459,22 @@ public:
         return out;
     }
 
+    // 大小を比較し -1, 0, 1 を返す。計算量 O(n)。
     friend int cmp(const BigInt &a, const BigInt &b) {
         return a.sign_ != b.sign_ ? (a.sign_ < b.sign_ ? -1 : 1) : a.sign_ * cmpAbs(a, b);
     }
 
+    // 等しいか判定する。計算量 O(n)。
     friend bool operator==(const BigInt &a, const BigInt &b) {
         return a.sign_ == b.sign_ && a.digits_ == b.digits_;
     }
 
+    // 大小を比較する。計算量 O(n)。
     friend std::strong_ordering operator<=>(const BigInt &a, const BigInt &b) {
         return cmp(a, b) <=> 0;
     }
 
+    // 和を返す。計算量 O(n)。
     friend BigInt operator+(const BigInt &a, const BigInt &b) {
         if (!a.sign_)
             return b;
@@ -481,11 +494,12 @@ public:
         return out;
     }
 
+    // 差を返す。計算量 O(n)。
     friend BigInt operator-(const BigInt &a, const BigInt &b) {
         return a + (-b);
     }
 
-    // NTTの係数上限に応じ10^6進/10^5進を選び、範囲外は筆算に戻る。
+    // 積を返す。NTT使用時 O(n log(n+1))、範囲外では筆算 O(n²)。
     friend BigInt operator*(const BigInt &a, const BigInt &b) {
         if (!a.sign_ || !b.sign_)
             return {};
@@ -571,52 +585,67 @@ public:
         return result;
     }
 
+    // 0方向に丸めた商と余りを返す。最悪 O(n² log(n+1))。
     static BigIntDivision divmodTrunc(const BigInt &, const BigInt &);
+    // 床除算の商と余りを返す。最悪 O(n² log(n+1))。
     static BigIntDivision divmod(const BigInt &, const BigInt &);
+    // 0方向に丸めた商を返す。計算量は divmodTrunc と同じ。
     friend BigInt operator/(const BigInt &, const BigInt &);
+    // 床除算の余りを返す。計算量は divmod と同じ。
     friend BigInt operator%(const BigInt &, const BigInt &);
 
+    // 加算した結果を代入する。計算量は対応する二項演算と同じ。
     BigInt &operator+=(const BigInt &b) {
         return *this = *this + b;
     }
 
+    // 減算した結果を代入する。計算量は対応する二項演算と同じ。
     BigInt &operator-=(const BigInt &b) {
         return *this = *this - b;
     }
 
+    // 乗算した結果を代入する。計算量は対応する二項演算と同じ。
     BigInt &operator*=(const BigInt &b) {
         return *this = *this * b;
     }
 
+    // 除算した結果を代入する。計算量は対応する二項演算と同じ。
     BigInt &operator/=(const BigInt &b) {
         return *this = *this / b;
     }
 
+    // 床除算の余りした結果を代入する。計算量は対応する二項演算と同じ。
     BigInt &operator%=(const BigInt &b) {
         return *this = *this % b;
     }
 
+    // ビット積した結果を代入する。計算量は対応する二項演算と同じ。
     BigInt &operator&=(const BigInt &b) {
         return *this = *this & b;
     }
 
+    // ビット和した結果を代入する。計算量は対応する二項演算と同じ。
     BigInt &operator|=(const BigInt &b) {
         return *this = *this | b;
     }
 
+    // 排他的ビット和した結果を代入する。計算量は対応する二項演算と同じ。
     BigInt &operator^=(const BigInt &b) {
         return *this = *this ^ b;
     }
 
+    // 左シフトした結果を代入する。計算量は対応する二項演算と同じ。
     BigInt &operator<<=(Int b) {
         return *this = *this << b;
     }
 
+    // 右シフトした結果を代入する。計算量は対応する二項演算と同じ。
     BigInt &operator>>=(Int b) {
         return *this = *this >> b;
     }
 
     // 非負整数乗を繰り返し二乗法で求め、負の指数にはstd::invalid_argumentを送出する。0^0は1。
+    // 結果の桁数を N として最悪 O((N+1)² log(exponent+1))。
     BigInt pow(Int exponent) const {
         if (exponent < 0)
             throw std::invalid_argument("多倍長整数の指数は非負整数で指定してください");
@@ -631,7 +660,7 @@ public:
         return out;
     }
 
-    // Intに変換し、範囲外ならstd::overflow_errorを送出する。
+    // Intに変換し、範囲外ならstd::overflow_errorを送出する。計算量 O(n)。
     Int toInt() const {
         UInt limit = UInt(std::numeric_limits<Int>::max()) + (sign_ < 0), magnitude = 0;
         for (Int i = Int(digits_.size()) - 1; i >= 0; --i) {
@@ -648,6 +677,7 @@ public:
         return Int(magnitude);
     }
 
+    // 格納桁からハッシュ値を返す。計算量 O(n)。
     std::size_t hash() const {
         std::size_t out = std::hash<int>{}(sign_);
         for (auto d : digits_)
@@ -655,6 +685,7 @@ public:
         return out;
     }
 
+    // 十進文字列として出力する。計算量 O(n)。
     friend std::ostream &operator<<(std::ostream &os, const BigInt &x) {
         return os << x.str();
     }
@@ -861,71 +892,87 @@ inline BigInt operator%(const BigInt &x, const BigInt &y) {
     return BigInt::divmod(x, y).remainder;
 }
 
+// 床除算の商と余りを返す。計算量は BigInt::divmod と同じ。
 inline BigIntDivision divmod(const BigInt &x, const BigInt &y) {
     return BigInt::divmod(x, y);
 }
 
+// 0方向に丸めた商と余りを返す。計算量は BigInt::divmodTrunc と同じ。
 inline BigIntDivision divmodTrunc(const BigInt &x, const BigInt &y) {
     return BigInt::divmodTrunc(x, y);
 }
 
+// 0方向に丸めた商を返す。計算量は x / y と同じ。
 inline BigInt div(const BigInt &x, const BigInt &y) {
     return x / y;
 }
 
+// 0方向に丸めた余りを返す。計算量は BigInt::divmodTrunc と同じ。
 inline BigInt mod(const BigInt &x, const BigInt &y) {
     return BigInt::divmodTrunc(x, y).remainder;
 }
 
+// 床除算の商を返す。計算量は BigInt::divmod と同じ。
 inline BigInt floor_div(const BigInt &x, const BigInt &y) {
     return BigInt::divmod(x, y).quotient;
 }
 
+// 0方向に丸めた商を x に代入する。計算量は x / y と同じ。
 inline BigInt &div_assign(BigInt &x, const BigInt &y) {
     return x = x / y;
 }
 
+// 0方向に丸めた余りを x に代入する。計算量は mod(x, y) と同じ。
 inline BigInt &mod_assign(BigInt &x, const BigInt &y) {
     return x = mod(x, y);
 }
 
+// 十進文字列を変換する。計算量 O(文字数)。
 inline BigInt parseBigInt(std::string_view s) {
     return BigInt(s);
 }
 
+// 指定された値から構築する。計算量は対応する BigInt のコンストラクタと同じ。
 template <class T> BigInt initBigInt(const T &x) {
     return BigInt(x);
 }
 
+// 固定幅整数を変換する。計算量 O(1)。
 template <std::integral T> BigInt toBigInt(T x) {
     return BigInt(x);
 }
 
+// 絶対値を返す。桁数 n に対し O(n)。
 inline BigInt abs(const BigInt &x) {
     return x.abs();
 }
 
+// 符号を返す。計算量 O(1)。
 inline int sgn(const BigInt &x) {
     return x.sgn();
 }
 
+// 零か判定する。計算量 O(1)。
 inline bool isZero(const BigInt &x) {
     return x.isZero();
 }
 
+// Int に変換する。桁数 n に対し O(n)。
 inline Int toInt(const BigInt &x) {
     return x.toInt();
 }
 
+// ハッシュ値を返す。桁数 n に対し O(n)。
 inline std::size_t hash(const BigInt &x) {
     return x.hash();
 }
 
+// 非負整数乗を返す。計算量は x.pow(n) と同じ。
 inline BigInt pow(const BigInt &x, Int n) {
     return x.pow(n);
 }
 
-// 非負の最大公約数を返す。gcd(0, 0) は 0。
+// 非負の最大公約数を返す。gcd(0, 0) は 0。最大桁数 n に対し最悪 O(n³ log(n+1))。
 inline BigInt gcd(const BigInt &x, const BigInt &y) {
     BigInt a = x.abs(), b = y.abs();
     while (!b.isZero()) {
@@ -936,14 +983,14 @@ inline BigInt gcd(const BigInt &x, const BigInt &y) {
     return a;
 }
 
-// 非負の最小公倍数を返す。いずれかが 0 なら 0。
+// 非負の最小公倍数を返す。いずれかが 0 なら 0。最大桁数 n に対し最悪 O(n³ log(n+1))。
 inline BigInt lcm(const BigInt &x, const BigInt &y) {
     if (x.isZero() || y.isZero())
         return {};
     return ((x / gcd(x, y)) * y).abs();
 }
 
-// 10進数の_biリテラルを多倍長整数に変換する。桁区切りの_も使用できる。
+// 10進数の_biリテラルを多倍長整数に変換する。桁区切りの_も使用できる。計算量 O(文字数)。
 inline BigInt operator""_bi(const char *s) {
     std::string out;
     for (; *s; ++s)
@@ -952,6 +999,7 @@ inline BigInt operator""_bi(const char *s) {
     return BigInt(out);
 }
 
+// 文字列リテラルを多倍長整数に変換する。計算量 O(n)。
 inline BigInt operator""_bi(const char *s, std::size_t n) {
     std::string out;
     for (std::size_t i = 0; i < n; ++i)
@@ -963,6 +1011,7 @@ inline BigInt operator""_bi(const char *s, std::size_t n) {
 
 namespace std {
 template <> struct hash<cplib::BigInt> {
+    // 多倍長整数のハッシュ値を返す。桁数 n に対し O(n)。
     size_t operator()(const cplib::BigInt &x) const {
         return x.hash();
     }

@@ -63,10 +63,12 @@ public:
     }
 };
 
+// 階乗表を構築する。計算量は LargeFactorial のコンストラクタと同じ。
 template <Modint T> auto initLargeFactorial(Int maxN = -1, Int blockSize = 1024) {
     return LargeFactorial<T>(maxN, blockSize);
 }
 
+// 表から n! を返す。計算量は table.fact(n) と同じ。
 template <Modint T> T fact(const LargeFactorial<T> &table, Int n) {
     return table.fact(n);
 }

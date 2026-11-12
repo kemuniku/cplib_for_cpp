@@ -4,6 +4,7 @@
 #include <optional>
 
 namespace cplib {
+// 逐次畳み込み。法を p、予定項数を N とすると、NTT使用時の N 回の add の合計は O(N log²(N+1))。
 template <class T> class RelaxedConvolution {
     Int coefficientCount, currentIndex = 0;
     std::vector<T> left, right, product;
@@ -33,26 +34,31 @@ template <class T> class RelaxedConvolution {
 public:
     // 先頭からcount項を逐次計算する畳み込みを初期化する。
     // NTTが利用できる場合、全項の計算量はO(N log^2 N)となる。
+    // 状態を確保する。計算量 O(count)。
     explicit RelaxedConvolution(Int count = 0)
         : coefficientCount(count), left(count), right(count), product(count) {
         assert(count >= 0);
     }
 
+    // 追加済みの項数を返す。計算量 O(1)。
     Int len() const {
         return currentIndex;
     }
 
+    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
         return len();
     }
 
     // 次に確定する係数に既に加算済みの寄与を返す。
+    // 次の係数に既に加算された寄与を返す。計算量 O(1)。
     T pendingCoefficient() const {
         assert(currentIndex < coefficientCount);
         return product[currentIndex];
     }
 
     // 現在までに確定した積の係数を返す。
+    // 確定した係数列を返す。追加済み項数を n として O(n)。
     std::vector<T> coefficients() const {
         return {product.begin(), product.begin() + currentIndex};
     }
@@ -134,10 +140,12 @@ public:
         return product[index];
     }
 
+    // 二つの次の係数を追加する。計算量は add と同じ。
     T append(T a, T b) {
         return add(a, b);
     }
 
+    // 二つの次の係数を追加する。計算量は add と同じ。
     T get(T a, T b) {
         return add(a, b);
     }
@@ -184,16 +192,19 @@ template <class T> std::optional<T> relaxedModSqrt(T a) {
 }
 
 template <class Derived, class T> struct RelaxedSingleAliases {
+    // 次の係数を追加する。計算量は派生型の add と同じ。
     auto append(T x) {
         return static_cast<Derived *>(this)->add(x);
     }
 
+    // 次の係数を追加する。計算量は派生型の add と同じ。
     auto get(T x) {
         return static_cast<Derived *>(this)->add(x);
     }
 };
 }
 
+// 逆元の逐次計算。NTT使用時、予定項数 N の全追加は O(N log²(N+1) + N log p)（pは法）。
 template <class T> class RelaxedInv : public detail::RelaxedSingleAliases<RelaxedInv<T>, T> {
     template <class> friend class RelaxedLog;
     Int coefficientCount, currentIndex = 0;
@@ -203,25 +214,29 @@ template <class T> class RelaxedInv : public detail::RelaxedSingleAliases<Relaxe
 
 public:
     // 乗法逆元の係数を逐次計算する状態を初期化する。
+    // 状態を確保する。計算量 O(count)。
     explicit RelaxedInv(Int count = 0) : coefficientCount(count), convolution(count) {
         assert(count >= 0);
         values.reserve(count);
     }
 
+    // 追加済みの項数を返す。計算量 O(1)。
     Int len() const {
         return currentIndex;
     }
 
+    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
         return len();
     }
 
+    // 確定した係数列を返す。追加済み項数を n として O(n)。
     std::vector<T> coefficients() const {
         return values;
     }
 
     // fの次の係数を追加し、f^(-1)の同じ次数の係数を返す。
-    // fの次の係数を追加し、log(f)の同じ次数の係数を返す。
+    // 1項追加する。全 N 項の合計計算量はクラス説明を参照。
     T add(T coefficient) {
         assert(currentIndex < coefficientCount);
         T result;
@@ -238,6 +253,7 @@ public:
     }
 };
 
+// 指数の逐次計算。NTT使用時、予定項数 N の全追加は O(N log²(N+1) + N log p)（pは法）。
 template <class T> class RelaxedExp : public detail::RelaxedSingleAliases<RelaxedExp<T>, T> {
     Int coefficientCount, currentIndex = 0;
     RelaxedConvolution<T> convolution;
@@ -245,25 +261,30 @@ template <class T> class RelaxedExp : public detail::RelaxedSingleAliases<Relaxe
 
 public:
     // 形式的指数関数の係数を逐次計算する状態を初期化する。
+    // 状態を確保する。計算量 O(count)。
     explicit RelaxedExp(Int count = 0)
         : coefficientCount(count), convolution(std::max(count - 1, Int(0))) {
         assert(count >= 0 && count <= T::umod());
         values.reserve(count);
     }
 
+    // 追加済みの項数を返す。計算量 O(1)。
     Int len() const {
         return currentIndex;
     }
 
+    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
         return len();
     }
 
+    // 確定した係数列を返す。追加済み項数を n として O(n)。
     std::vector<T> coefficients() const {
         return values;
     }
 
     // fの次の係数を追加し、exp(f)の同じ次数の係数を返す。
+    // 1項追加する。全 N 項の合計計算量はクラス説明を参照。
     T add(T coefficient) {
         assert(currentIndex < coefficientCount);
         T result;
@@ -279,6 +300,7 @@ public:
     }
 };
 
+// 対数の逐次計算。NTT使用時、予定項数 N の全追加は O(N log²(N+1) + N log p)（pは法）。
 template <class T> class RelaxedLog : public detail::RelaxedSingleAliases<RelaxedLog<T>, T> {
     Int coefficientCount, currentIndex = 0;
     RelaxedInv<T> inverse;
@@ -287,24 +309,30 @@ template <class T> class RelaxedLog : public detail::RelaxedSingleAliases<Relaxe
 
 public:
     // 形式的対数の係数を逐次計算する状態を初期化する。
+    // 状態を確保する。計算量 O(count)。
     explicit RelaxedLog(Int count = 0)
         : coefficientCount(count), inverse(count), convolution(std::max(count - 1, Int(0))) {
         assert(count >= 0 && count <= T::umod());
         values.reserve(count);
     }
 
+    // 追加済みの項数を返す。計算量 O(1)。
     Int len() const {
         return currentIndex;
     }
 
+    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
         return len();
     }
 
+    // 確定した係数列を返す。追加済み項数を n として O(n)。
     std::vector<T> coefficients() const {
         return values;
     }
 
+    // fの次の係数を追加し、log(f)の同じ次数の係数を返す。
+    // 1項追加する。全 N 項の合計計算量はクラス説明を参照。
     T add(T coefficient) {
         assert(currentIndex < coefficientCount);
         T result = 0;
@@ -323,6 +351,7 @@ public:
     }
 };
 
+// 平方根の逐次計算。NTT使用時、予定項数 N の全追加は O(N log²(N+1) + N log p)（pは法）。 初回には法上の平方根計算も必要。
 template <class T> class RelaxedSqrt : public detail::RelaxedSingleAliases<RelaxedSqrt<T>, T> {
     Int coefficientCount, currentIndex = 0;
     RelaxedConvolution<T> convolution;
@@ -332,19 +361,23 @@ template <class T> class RelaxedSqrt : public detail::RelaxedSingleAliases<Relax
 
 public:
     // 非零の定数項を持つFPSの平方根を逐次計算する状態を初期化する。
+    // 状態を確保する。計算量 O(count)。
     explicit RelaxedSqrt(Int count = 0) : coefficientCount(count), convolution(count) {
         assert(count >= 0);
         values.reserve(count);
     }
 
+    // 追加済みの項数を返す。計算量 O(1)。
     Int len() const {
         return currentIndex;
     }
 
+    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
         return len();
     }
 
+    // 確定した平方根の係数列を返す。失敗時は空。追加済み項数を n として O(n)。
     std::optional<std::vector<T>> coefficients() const {
         if (failed)
             return {};
@@ -352,6 +385,7 @@ public:
     }
 
     // 逐次版は非零定数項のみ対応。根が存在しなければ以後もnullopt。
+    // 1項追加する。全 N 項の合計計算量はクラス説明を参照。
     std::optional<T> add(T coefficient) {
         assert(currentIndex < coefficientCount);
         if (failed) {
@@ -378,6 +412,7 @@ public:
     }
 };
 
+// 非負整数冪の逐次計算。NTT使用時、予定項数 N の全追加は O(N log²(N+1) + N log p)（pは法）。 加えて指数 k の累乗計算 O(log(k+1)) が必要。
 template <class T> class RelaxedPow : public detail::RelaxedSingleAliases<RelaxedPow<T>, T> {
     Int coefficientCount, currentIndex = 0, exponent, order = -1, shift, bodyCount = 0;
     T constantInverse{}, constantPower{};
@@ -387,25 +422,30 @@ template <class T> class RelaxedPow : public detail::RelaxedSingleAliases<Relaxe
 
 public:
     // 非負整数冪の係数を逐次計算する状態を初期化する。
+    // 状態を確保する。計算量 O(count)。
     RelaxedPow(Int count, Int exponent)
         : coefficientCount(count), exponent(exponent), shift(count) {
         assert(count >= 0 && count <= T::umod() && exponent >= 0);
         values.reserve(count);
     }
 
+    // 追加済みの項数を返す。計算量 O(1)。
     Int len() const {
         return currentIndex;
     }
 
+    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
         return len();
     }
 
+    // 確定した係数列を返す。追加済み項数を n として O(n)。
     std::vector<T> coefficients() const {
         return values;
     }
 
     // fの次の係数を追加し、f^kの同じ次数の係数を返す。
+    // 1項追加する。全 N 項の合計計算量はクラス説明を参照。
     T add(T coefficient) {
         assert(currentIndex < coefficientCount);
         Int degree = currentIndex;
@@ -438,155 +478,193 @@ public:
     }
 };
 
+// 指定した項数の逐次計算状態を初期化する。計算量は対応するコンストラクタと同じ。
 template <class T> auto initRelaxedConvolution(Int count) {
     return RelaxedConvolution<T>(count);
 }
 
+// 追加済みの項数を返す。計算量 O(1)。
 template <class T> Int len(const RelaxedConvolution<T> &s) {
     return s.len();
 }
 
+// 確定した係数列を返す。計算量は状態の coefficients と同じ。
 template <class T> auto coefficients(const RelaxedConvolution<T> &s) {
     return s.coefficients();
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto add(RelaxedConvolution<T> &s, T a, T b) {
     return s.add(a, b);
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto append(RelaxedConvolution<T> &s, T a, T b) {
     return s.add(a, b);
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto get(RelaxedConvolution<T> &s, T a, T b) {
     return s.add(a, b);
 }
 
+// 指定した項数の逐次計算状態を初期化する。計算量は対応するコンストラクタと同じ。
 template <class T> auto initRelaxedInv(Int count) {
     return RelaxedInv<T>(count);
 }
 
+// 追加済みの項数を返す。計算量 O(1)。
 template <class T> Int len(const RelaxedInv<T> &s) {
     return s.len();
 }
 
+// 確定した係数列を返す。計算量は状態の coefficients と同じ。
 template <class T> auto coefficients(const RelaxedInv<T> &s) {
     return s.coefficients();
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto add(RelaxedInv<T> &s, T a) {
     return s.add(a);
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto append(RelaxedInv<T> &s, T a) {
     return s.add(a);
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto get(RelaxedInv<T> &s, T a) {
     return s.add(a);
 }
 
+// 指定した項数の逐次計算状態を初期化する。計算量は対応するコンストラクタと同じ。
 template <class T> auto initRelaxedExp(Int count) {
     return RelaxedExp<T>(count);
 }
 
+// 追加済みの項数を返す。計算量 O(1)。
 template <class T> Int len(const RelaxedExp<T> &s) {
     return s.len();
 }
 
+// 確定した係数列を返す。計算量は状態の coefficients と同じ。
 template <class T> auto coefficients(const RelaxedExp<T> &s) {
     return s.coefficients();
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto add(RelaxedExp<T> &s, T a) {
     return s.add(a);
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto append(RelaxedExp<T> &s, T a) {
     return s.add(a);
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto get(RelaxedExp<T> &s, T a) {
     return s.add(a);
 }
 
+// 指定した項数の逐次計算状態を初期化する。計算量は対応するコンストラクタと同じ。
 template <class T> auto initRelaxedLog(Int count) {
     return RelaxedLog<T>(count);
 }
 
+// 追加済みの項数を返す。計算量 O(1)。
 template <class T> Int len(const RelaxedLog<T> &s) {
     return s.len();
 }
 
+// 確定した係数列を返す。計算量は状態の coefficients と同じ。
 template <class T> auto coefficients(const RelaxedLog<T> &s) {
     return s.coefficients();
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto add(RelaxedLog<T> &s, T a) {
     return s.add(a);
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto append(RelaxedLog<T> &s, T a) {
     return s.add(a);
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto get(RelaxedLog<T> &s, T a) {
     return s.add(a);
 }
 
+// 指定した項数の逐次計算状態を初期化する。計算量は対応するコンストラクタと同じ。
 template <class T> auto initRelaxedSqrt(Int count) {
     return RelaxedSqrt<T>(count);
 }
 
+// 追加済みの項数を返す。計算量 O(1)。
 template <class T> Int len(const RelaxedSqrt<T> &s) {
     return s.len();
 }
 
+// 確定した係数列を返す。計算量は状態の coefficients と同じ。
 template <class T> auto coefficients(const RelaxedSqrt<T> &s) {
     return s.coefficients();
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto add(RelaxedSqrt<T> &s, T a) {
     return s.add(a);
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto append(RelaxedSqrt<T> &s, T a) {
     return s.add(a);
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto get(RelaxedSqrt<T> &s, T a) {
     return s.add(a);
 }
 
+// 指定した項数の逐次計算状態を初期化する。計算量は対応するコンストラクタと同じ。
 template <class T> auto initRelaxedPow(Int count, Int exponent) {
     return RelaxedPow<T>(count, exponent);
 }
 
+// 追加済みの項数を返す。計算量 O(1)。
 template <class T> Int len(const RelaxedPow<T> &s) {
     return s.len();
 }
 
+// 確定した係数列を返す。計算量は状態の coefficients と同じ。
 template <class T> auto coefficients(const RelaxedPow<T> &s) {
     return s.coefficients();
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto add(RelaxedPow<T> &s, T a) {
     return s.add(a);
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto append(RelaxedPow<T> &s, T a) {
     return s.add(a);
 }
 
+// 次の係数を追加して結果を返す。計算量は状態の add と同じ。
 template <class T> auto get(RelaxedPow<T> &s, T a) {
     return s.add(a);
 }
 
+// 次の係数に既に加算された寄与を返す。計算量 O(1)。
 template <class T> T pendingCoefficient(const RelaxedConvolution<T> &s) {
     return s.pendingCoefficient();
 }
 
 // Relaxed convolutionにより逆元を低次から逐次計算する。
+// NTT使用時、法を p として計算量 O(n log²(n+1) + n log p)。平方根では法上の平方根、冪では指数の累乗計算を別途要する。
 template <class T> std::vector<T> invRelaxed(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return {};
@@ -597,11 +675,13 @@ template <class T> std::vector<T> invRelaxed(const std::vector<T> &f, Int n) {
     return out;
 }
 
+// f.size() 項まで計算する。計算量は項数を指定する同名関数と同じ。
 template <class T> auto invRelaxed(const std::vector<T> &f) {
     return invRelaxed(f, Int(f.size()));
 }
 
 // Relaxed convolutionにより形式的指数関数を低次から逐次計算する。
+// NTT使用時、法を p として計算量 O(n log²(n+1) + n log p)。平方根では法上の平方根、冪では指数の累乗計算を別途要する。
 template <class T> std::vector<T> expRelaxed(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return {};
@@ -612,11 +692,13 @@ template <class T> std::vector<T> expRelaxed(const std::vector<T> &f, Int n) {
     return out;
 }
 
+// f.size() 項まで計算する。計算量は項数を指定する同名関数と同じ。
 template <class T> auto expRelaxed(const std::vector<T> &f) {
     return expRelaxed(f, Int(f.size()));
 }
 
 // Relaxed convolutionにより形式的対数を低次から逐次計算する。
+// NTT使用時、法を p として計算量 O(n log²(n+1) + n log p)。平方根では法上の平方根、冪では指数の累乗計算を別途要する。
 template <class T> std::vector<T> logRelaxed(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return {};
@@ -627,11 +709,13 @@ template <class T> std::vector<T> logRelaxed(const std::vector<T> &f, Int n) {
     return out;
 }
 
+// f.size() 項まで計算する。計算量は項数を指定する同名関数と同じ。
 template <class T> auto logRelaxed(const std::vector<T> &f) {
     return logRelaxed(f, Int(f.size()));
 }
 
 // Relaxed convolutionにより平方根を低次から逐次計算する。
+// NTT使用時、法を p として計算量 O(n log²(n+1) + n log p)。平方根では法上の平方根、冪では指数の累乗計算を別途要する。
 template <class T> std::optional<std::vector<T>> sqrtRelaxed(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return std::vector<T>{};
@@ -654,11 +738,13 @@ template <class T> std::optional<std::vector<T>> sqrtRelaxed(const std::vector<T
     return out;
 }
 
+// f.size() 項まで計算する。計算量は項数を指定する同名関数と同じ。
 template <class T> auto sqrtRelaxed(const std::vector<T> &f) {
     return sqrtRelaxed(f, Int(f.size()));
 }
 
 // Relaxed convolutionにより非負整数冪を低次から逐次計算する。
+// NTT使用時、法を p として計算量 O(n log²(n+1) + n log p)。平方根では法上の平方根、冪では指数の累乗計算を別途要する。
 template <class T> std::vector<T> powRelaxed(const std::vector<T> &f, Int k, Int n) {
     assert(k >= 0);
     if (n <= 0)
@@ -670,6 +756,7 @@ template <class T> std::vector<T> powRelaxed(const std::vector<T> &f, Int k, Int
     return out;
 }
 
+// f.size() 項まで計算する。計算量は項数を指定する同名関数と同じ。
 template <class T> auto powRelaxed(const std::vector<T> &f, Int k) {
     return powRelaxed(f, k, Int(f.size()));
 }

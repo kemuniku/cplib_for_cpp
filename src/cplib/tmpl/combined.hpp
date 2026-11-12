@@ -321,10 +321,12 @@ using namespace detail::template_support;
 using detail::template_support::print;
 inline constexpr Int INF = INF64;
 
+// 整数を一つ読み取る。計算量は読み取る文字数に比例。
 inline Int ii() {
     return detail::combined_input_native::read_int();
 }
 
+// 整数をn個読み取る。計算量はnと読み取る文字数に比例。
 inline std::vector<Int> lii(Int n) {
     assert(n >= 0);
     std::vector<Int> out(n);
@@ -332,6 +334,7 @@ inline std::vector<Int> lii(Int n) {
     return out;
 }
 
+// 整数をn個読み、32ビット符号なし整数列にする。計算量はnと読み取る文字数に比例。
 inline std::vector<std::uint32_t> lii2(Int n) {
     assert(n >= 0);
     std::vector<std::uint32_t> out(n);
@@ -339,6 +342,7 @@ inline std::vector<std::uint32_t> lii2(Int n) {
     return out;
 }
 
+// 空白を飛ばして次の文字列を読み取る。計算量は読み取る文字数に比例。
 inline std::string si() {
     std::string out;
     int c = detail::combined_input_native::get_char();
@@ -351,6 +355,7 @@ inline std::string si() {
     return out;
 }
 
+// 要素を文字列に変換し区切り文字を挟んで連結する。要素数と出力長に比例する時間に各要素の変換費用を加える。
 template <class T> std::string join(std::span<const T> values, std::string_view separator = "") {
     if (values.empty())
         return {};
@@ -387,11 +392,13 @@ template <class T> std::string join(std::span<const T> values, std::string_view 
     }
 }
 
+// vectorの要素を区切り文字を挟んで連結する。計算量はspan版joinと同じ。
 template <class T, class A>
 std::string join(const std::vector<T, A> &values, std::string_view sep = "") {
     return join<T>(std::span<const T>(values.data(), values.size()), sep);
 }
 
+// arrayの要素を区切り文字を挟んで連結する。計算量はspan版joinと同じ。
 template <class T, std::size_t N>
 std::string join(const std::array<T, N> &values, std::string_view sep = "") {
     return join<T>(std::span<const T>(values), sep);
@@ -401,6 +408,7 @@ struct Separator {
     std::string value;
 };
 
+// print用の区切り文字を指定する。計算量は文字列の移動費用に加え O(1)。
 inline Separator sep(std::string value) {
     return {std::move(value)};
 }
@@ -409,23 +417,28 @@ template <class R> struct Splat {
     const R &values;
 };
 
+// 列をprintに展開するための参照を作る。計算量 O(1)。
 template <class R> Splat<R> splat(const R &r) {
     return {r};
 }
 
+// 指定区切りで値を出力する。計算量は各値の変換と出力する文字数に比例。
 template <class... T> void print(Separator separator, const T &...values) {
     detail::template_support::print(PrintOptions{stdout, std::move(separator.value), "\n", false},
                                     values...);
 }
 
+// 列の要素を空白区切りで出力する。計算量はjoinと文字列の出力費用。
 template <class R> void print(Splat<R> values) {
     detail::template_support::print(cplib::join(values.values, " "));
 }
 
+// 列の要素を指定区切りで出力する。計算量はjoinと文字列の出力費用。
 template <class R> void print(Separator separator, Splat<R> values) {
     detail::template_support::print(cplib::join(values.values, separator.value));
 }
 
+// 真ならYes、偽ならNoを出力する。計算量 O(1) と出力費用。
 inline void yes(bool b = true) {
     detail::template_support::print(b ? "Yes" : "No");
 }

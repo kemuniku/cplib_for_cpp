@@ -2,7 +2,8 @@
 #include <cplib/fps/formal_power_series.hpp>
 
 namespace cplib {
-// [x^(f.size()-1)]f(x)^i g(x), i=0..m。x方向のBostan–Moriを平坦化した巡回積で処理。
+// [x^(f.size()-1)]f(x)^i g(x) (i=0..m) を返す。
+// N=f.size()、M(t)を長さtの畳み込みの計算量として O(N log²(N+1) + M(N+m+1))。
 template <Modint T>
 std::vector<T> powerProjection(const std::vector<T> &f, const std::vector<T> &g, Int m) {
     assert(!f.empty() && m >= 0);
@@ -54,14 +55,17 @@ std::vector<T> powerProjection(const std::vector<T> &f, const std::vector<T> &g,
     return prefix(p * inv(q, m + 1), m + 1);
 }
 
+// g=1として冪射影を求める。計算量は powerProjection(f, g, m) と同じ。
 template <Modint T> auto powerProjection(const std::vector<T> &f, Int m) {
     return powerProjection(f, std::vector<T>{T(1)}, m);
 }
 
+// m=f.size()-1として冪射影を求める。計算量は3引数版と同じ。
 template <Modint T> auto powerProjection(const std::vector<T> &f, const std::vector<T> &g) {
     return powerProjection(f, g, Int(f.size()) - 1);
 }
 
+// g=1、m=f.size()-1として冪射影を求める。計算量は3引数版と同じ。
 template <Modint T> auto powerProjection(const std::vector<T> &f) {
     return powerProjection(f, Int(f.size()) - 1);
 }
@@ -94,14 +98,17 @@ std::vector<T> powerProjectionDiagonal(const std::vector<T> &f, const std::vecto
     return out;
 }
 
+// g=1として対角冪射影を求める。計算量は3引数版と同じ。
 template <Modint T> auto powerProjectionDiagonal(const std::vector<T> &f, Int m) {
     return powerProjectionDiagonal(f, std::vector<T>{T(1)}, m);
 }
 
+// m=f.size()-1として対角冪射影を求める。計算量は3引数版と同じ。
 template <Modint T> auto powerProjectionDiagonal(const std::vector<T> &f, const std::vector<T> &g) {
     return powerProjectionDiagonal(f, g, Int(f.size()) - 1);
 }
 
+// g=1、m=f.size()-1として対角冪射影を求める。計算量は3引数版と同じ。
 template <Modint T> auto powerProjectionDiagonal(const std::vector<T> &f) {
     return powerProjectionDiagonal(f, Int(f.size()) - 1);
 }

@@ -228,7 +228,7 @@ static inline void cplib_matrix_product(const uint32_t *a, const uint32_t *b, ui
 
 namespace cplib {
 // 行優先のn×m行列とm×k行列の積を、1以上2^30未満の奇数pで求める。
-// 入力要素は0以上p未満。AVX2対応CPUが必要。
+// 入力要素は0以上p未満。AVX2対応CPUが必要。保守的な計算量 O((n+1)(m+1)(k+1))。
 inline std::vector<std::uint32_t> matrixProduct(std::span<const std::uint32_t> a,
                                                 std::span<const std::uint32_t> b, Int n, Int m,
                                                 Int k, std::uint32_t p = 998244353) {
@@ -251,6 +251,7 @@ inline std::vector<std::uint32_t> matrixProduct(std::span<const std::uint32_t> a
 
 inline std::vector<std::vector<std::uint32_t>>
 // 二次元配列の行列積を求める。空配列の列数は0とみなす。
+// 計算量は行優先配列を受け取る matrixProduct と同じ。
 matrixProduct(const std::vector<std::vector<std::uint32_t>> &a,
               const std::vector<std::vector<std::uint32_t>> &b, std::uint32_t p = 998244353) {
     Int n = a.size(), m = n ? a[0].size() : 0, k = b.empty() ? 0 : b[0].size();
@@ -272,6 +273,7 @@ matrixProduct(const std::vector<std::vector<std::uint32_t>> &a,
 }
 
 // 既存のmodint行列を公開値へ変換し、AVX2で積を求める。
+// 計算量は行優先配列を受け取る matrixProduct と同じ。
 template <class T>
     requires(MontgomeryModint<T> || BarrettModint<T>)
 cplib::Matrix<T> matrixProduct(const cplib::Matrix<T> &a, const cplib::Matrix<T> &b) {

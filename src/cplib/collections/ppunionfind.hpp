@@ -14,12 +14,14 @@ public:
         : par_or_siz(n, -1), time(n, -1), size_time(n, {-1}), size_value(n, {1}) {
     }
 
+    // 時刻tにおけるxの代表元を返す。O(log n)。
     Int root(Int x, Int t) const {
         while (time[x] != -1 && time[x] <= t)
             x = par_or_siz[x];
         return x;
     }
 
+    // 最新時刻におけるxの代表元を返す。O(log n)。
     Int root(Int x) const {
         return root(x, last);
     }
@@ -42,15 +44,18 @@ public:
         return true;
     }
 
+    // 次の時刻で結合し、その時刻を返す。O(log n)。
     Int unite(Int u, Int v) {
         unite(u, v, last + 1);
         return last;
     }
 
+    // 時刻tにおいて同じ集合か返す。O(log n)。
     bool issame(Int u, Int v, Int t) const {
         return root(u, t) == root(v, t);
     }
 
+    // 最新時刻において同じ集合か返す。O(log n)。
     bool issame(Int u, Int v) const {
         return issame(u, v, last);
     }
@@ -60,6 +65,7 @@ public:
         return par_or_siz.size();
     }
 
+    // 時刻tのxの集合の要素数を返す。O(log n)。
     Int size(Int x, Int t) const {
         assert(t >= -1);
         x = root(x, t);
@@ -67,6 +73,7 @@ public:
                              size_time[x].begin() - 1];
     }
 
+    // 最新時刻のxの集合の要素数を返す。O(log n)。
     Int size(Int x) const {
         return size(x, last);
     }
@@ -97,18 +104,22 @@ public:
     }
 };
 
+// n要素の部分永続Union-Findを生成する。O(n)。
 inline PartialPersistentUnionFind initPartialPersistentUnionFind(Int n) {
     return PartialPersistentUnionFind(n);
 }
 
+// 時刻tのxの集合の要素数を返す。O(log n)。
 inline Int size(const PartialPersistentUnionFind &u, Int x, Int t) {
     return u.size(x, t);
 }
 
+// 最新時刻のxの集合の要素数を返す。O(log n)。
 inline Int size(const PartialPersistentUnionFind &u, Int x) {
     return u.size(x);
 }
 
+// xとyが初めて連結になった時刻を返す。非連結は-2、自身は-1。O(log n)。
 inline Int when_unite(const PartialPersistentUnionFind &u, Int x, Int y) {
     return u.when_unite(x, y);
 }

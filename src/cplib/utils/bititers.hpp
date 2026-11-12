@@ -97,40 +97,40 @@ struct BitRange {
 };
 }
 
-// n bit中 r bitが1であるようなbit列を列挙します。
+// n bit中 r bitが1であるようなbit列を列挙する。生成は O(1)、列挙は1要素 O(1)。
 inline auto bitcomb(Int n, Int r) {
     assert(0 <= r && r <= n && n <= 63);
     return detail::BitRange{detail::BitRange::Combination, 0, UInt(1) << n, (UInt(1) << r) - 1};
 }
 
-// 与えられた集合の部分集合を昇順で列挙します。与えられた集合も含みます。
+// 与えられた集合の部分集合を昇順で列挙する。集合自身も含む。生成は O(1)、列挙は1要素 O(1)。
 inline auto bitsubseteq(Int bits) {
     return detail::BitRange{detail::BitRange::SubsetEq, UInt(bits), 0, 0};
 }
 
-// 非空のbitsの真部分集合を昇順で列挙する。bits==0の場合は0を一件返す。
+// 非空のbitsの真部分集合を昇順で列挙する。bits==0の場合は0を一件返す。生成は O(1)、列挙は1要素 O(1)。
 inline auto bitsubset(Int bits) {
     return detail::BitRange{detail::BitRange::Subset, UInt(bits), 0, 0};
 }
 
-// 与えられた集合の部分集合を降順で列挙します。与えられた集合も含みます。
+// 与えられた集合の部分集合を降順で列挙する。集合自身も含む。生成は O(1)、列挙は1要素 O(1)。
 inline auto bitsubseteq_descending(Int bits) {
     return detail::BitRange{detail::BitRange::SubsetEqDesc, UInt(bits), 0, UInt(bits)};
 }
 
-// 非空のbitsの真部分集合を降順で列挙する。bits==0の場合は0を一件返す。
+// 非空のbitsの真部分集合を降順で列挙する。bits==0の場合は0を一件返す。生成は O(1)、列挙は1要素 O(1)。
 inline auto bitsubset_descending(Int bits) {
     return detail::BitRange{detail::BitRange::SubsetDesc, UInt(bits), 0,
                             (UInt(bits) - 1) & UInt(bits)};
 }
 
-// 与えられた集合を包含する集合(上位集合)を列挙します。与えられた集合も含みます。bit数上限をnとします。
+// n bitの上位集合を列挙する。集合自身も含む。生成は O(1)、列挙は1要素 O(1)。
 inline auto bitsuperseteq(Int bits, Int n) {
     assert(0 <= n && n <= 63);
     return detail::BitRange{detail::BitRange::SupersetEq, UInt(bits), UInt(1) << n, UInt(bits)};
 }
 
-// 与えられた集合を包含する集合(上位集合)を列挙します。与えられた集合は含みません。bit数上限をnとします。
+// n bitの真上位集合を列挙する。生成は O(1)、列挙は1要素 O(1)。
 inline auto bitsuperset(Int bits, Int n) {
     assert(0 <= n && n <= 63);
     UInt first = (UInt(bits) + 1) | UInt(bits);
@@ -138,11 +138,12 @@ inline auto bitsuperset(Int bits, Int n) {
                             first >= (UInt(1) << n)};
 }
 
-// 立っているbitを一つずつ取り出します。
+// 立っているbitを一つずつ取り出す。生成は O(1)、列挙は1要素 O(1)。
 inline auto bitsingleton(Int bits) {
     return detail::BitRange{detail::BitRange::Singleton, UInt(bits), 0, UInt(bits), bits == 0};
 }
 
+// 立っているbitの添字を昇順に列挙する。生成は O(1)、列挙は1要素 O(1)。
 inline auto standingbits(Int bits) {
     UInt first = UInt(bits) & (0 - UInt(bits));
     return detail::BitRange{detail::BitRange::Standing, UInt(bits), 0, first, first == 0};

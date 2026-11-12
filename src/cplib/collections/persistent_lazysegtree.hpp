@@ -5,8 +5,8 @@
 #include <sstream>
 
 namespace cplib {
-// Path copying; operations allocate O(log N) nodes, queries allocate none.
-// Independent arenas are merged by size on copy_range.
+// 更新は経路上のノードを複製し、取得ではノードを複製しない。
+// 独立に構築した版同士のcopy_rangeでは、領域を大きさに応じて統合する。
 template <class S, class F> class PersistentLazySegmentTree {
     struct Node {
         S value;
@@ -81,21 +81,25 @@ public:
         root = build(build, 0, size_);
     }
 
+    // count個の単位元から永続遅延セグメント木を構築する。O(count+1)。
     template <class Op, class Map, class Comp>
     PersistentLazySegmentTree(Int count, Op op, S identity, Map map, Comp comp, F identity_action)
         : PersistentLazySegmentTree(std::vector<S>(checked_count(count), identity), op, identity,
                                     map, comp, identity_action) {
     }
 
+    // countが非負であることを検査して返す。O(1)。
     static std::size_t checked_count(Int count) {
         assert(count >= 0);
         return count;
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return n;
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
@@ -191,44 +195,54 @@ public:
         return dfs(dfs, root, 0, size_);
     }
 
+    // 半開区間[l,r)の積を返す。O(log(N+1))。
     S query(Int l, Int r) const {
         return get(l, r);
     }
 
+    // 全要素の積を返す。O(1)。
     S get_all() const {
         return root->value;
     }
 
+    // 位置pの値を返す。O(log(N+1))。
     S operator[](Int p) const {
         assert(0 <= p && p < n);
         return get(p, p + 1);
     }
 
-    // Assignment is explicit to keep ordinary reads value typed.
+    // 読み取り結果は値型で、書き込みはsetで明示する。
+    // 位置pを更新した版に自身を差し替える。O(log(N+1))。
     void set(Int p, S v) {
         *this = update(p, std::move(v));
     }
 
+    // 末尾から指定した位置を更新した版に自身を差し替える。O(log(N+1))。
     void set(BackwardsIndex p, S v) {
         set(n - p.value, std::move(v));
     }
 
+    // 末尾から指定した位置の値を返す。O(log(N+1))。
     S operator[](BackwardsIndex p) const {
         return (*this)[n - p.value];
     }
 
+    // 閉区間の積を返す。O(log(N+1))。
     template <class L, class R> S get(ClosedSlice<L, R> s) const {
         return get(resolve_index(n, s.a), resolve_index(n, s.b) + 1);
     }
 
+    // 閉区間の積を返す。O(log(N+1))。
     template <class L, class R> S operator[](ClosedSlice<L, R> s) const {
         return get(s);
     }
 
+    // 閉区間に作用させた新しい版を返す。時間・追加領域O(log(N+1))。
     template <class L, class R> auto apply(ClosedSlice<L, R> s, F f) const {
         return apply(resolve_index(n, s.a), resolve_index(n, s.b) + 1, f);
     }
 
+    // 閉区間をsrcからコピーした新しい版を返す。木の操作は時間・追加領域O(log(N+1))。独立領域の統合費用は半開区間版と同じ。
     template <class L, class R>
     auto copy_range(const PersistentLazySegmentTree &src, ClosedSlice<L, R> s) const {
         return copy_range(src, resolve_index(n, s.a), resolve_index(n, s.b) + 1);
@@ -284,6 +298,7 @@ public:
         return dfs(dfs, root, 0, size_, id);
     }
 
+    // 全要素を文字列で返す。演算がO(1)、出力長LとしてO(N+L)。
     std::string str() const {
         std::ostringstream out;
         bool first = true;
@@ -308,20 +323,24 @@ public:
 };
 template <class S, class F> using PLazySegmentTree = PersistentLazySegmentTree<S, F>;
 
+// 初期値または要素数から永続遅延セグメント木を構築する。O(N+1)。
 template <class V, class Op, class S, class Map, class Comp, class F>
 auto initPersistentLazySegmentTree(const V &v, Op op, S e, Map map, Comp comp, F id) {
     return PersistentLazySegmentTree<S, F>(v, op, e, map, comp, id);
 }
 
+// 初期値または要素数から永続遅延セグメント木を構築する。O(N+1)。
 template <class V, class Op, class S, class Map, class Comp, class F>
 auto initLazySegmentTree(const V &v, Op op, S e, Map map, Comp comp, F id) {
     return initPersistentLazySegmentTree(v, op, e, map, comp, id);
 }
 
+// 初期値または要素数から永続遅延セグメント木を構築する。O(N+1)。
 template <class... A> auto newPersistentLazySegWith(A &&...args) {
     return initPersistentLazySegmentTree(std::forward<A>(args)...);
 }
 
+// 初期値または要素数から永続遅延セグメント木を構築する。O(N+1)。
 template <class... A> auto newLazySegWith(A &&...args) {
     return initPersistentLazySegmentTree(std::forward<A>(args)...);
 }

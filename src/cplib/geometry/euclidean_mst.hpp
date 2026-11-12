@@ -4,8 +4,7 @@
 #include <tuple>
 
 namespace cplib {
-// Exact divide-and-conquer Delaunay triangulation followed by Kruskal.
-// Coordinates must be signed integers with absolute value <= 10^9.
+// 分割統治による厳密なDelaunay三角形分割とKruskal法を用いる。
 // 平面上の点のユークリッド最小全域木を、入力の頂点番号の組で返す。O(N log N)時間、O(N)領域。
 // 座標は絶対値10^9以下の符号付き整数。重複点も別頂点として扱い、N <= 1なら空列を返す。
 // 幾何判定は整数で厳密に行い、外接円判定に__int128を使う。
@@ -177,10 +176,12 @@ std::vector<std::pair<Int, Int>> euclidean_mst(std::span<const Point<T>> points)
     return out;
 }
 
+// N点のユークリッド最小全域木を返す。計算量 O(N log N)。座標の制約はspan版と同じ。
 template <class T> auto euclidean_mst(const std::vector<Point<T>> &p) {
     return euclidean_mst<T>(std::span<const Point<T>>(p));
 }
 
+// 座標の組で表すN点のユークリッド最小全域木を返す。計算量 O(N log N)。座標は絶対値10^9以下の符号付き整数。
 template <class T> auto euclidean_mst(std::span<const std::pair<T, T>> p) {
     std::vector<Point<T>> v;
     v.reserve(p.size());
@@ -189,6 +190,7 @@ template <class T> auto euclidean_mst(std::span<const std::pair<T, T>> p) {
     return euclidean_mst(v);
 }
 
+// 座標の組で表すN点のユークリッド最小全域木を返す。計算量 O(N log N)。座標は絶対値10^9以下の符号付き整数。
 template <class T> auto euclidean_mst(const std::vector<std::pair<T, T>> &p) {
     return euclidean_mst<T>(std::span<const std::pair<T, T>>(p));
 }

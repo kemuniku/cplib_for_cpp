@@ -5,6 +5,7 @@
 namespace cplib {
 // サイクル頂点をcycle側だけに保持する、遅延作用付きの独立した実装。
 // STはvalue_type/action_type、calc_e/op/id/compositionと遅延木の操作を提供する。
+// 以下の計算量はSTの構築がO(N)、点・区間操作がO(log(N+1))の場合。
 template <class ST> class FunctionalGraph_with_lazy_op : public FunctionalGraph {
 public:
     using S = typename ST::value_type;
@@ -78,6 +79,7 @@ private:
     }
 
 public:
+    // 関数グラフと頂点値から構築する。O(N)にFactoryによるSTの構築費用を加える。
     template <class Factory>
     FunctionalGraph_with_lazy_op(FunctionalGraph graph, const std::vector<S> &values, Factory make)
         : FunctionalGraph(std::move(graph)), st_hld_(make(std::vector<S>{})),
@@ -113,20 +115,24 @@ public:
         FunctionalGraph_with_lazy_op *owner;
         Int index;
 
+        // 参照先の値を返す。O(log(N+1))。
         operator S() const {
             return owner->get(index);
         }
 
+        // 参照先の値を更新する。O(log(N+1))。
         Reference &operator=(const S &v) {
             owner->set(index, v);
             return *this;
         }
 
+        // 別の参照先の値を読み取り代入する。O(log(N+1))。
         Reference &operator=(const Reference &v) {
             return *this = S(v);
         }
     };
 
+    // 読み書き用参照を返す。参照取得O(1)、読み書きO(log N)。
     Reference operator[](Int x) {
         return {this, x};
     }
@@ -330,6 +336,8 @@ public:
 };
 
 // 関数オブジェクト版。e/idはACLと同じゼロ引数関数。
+// 遅延更新に対応する関数グラフを構築する。演算がO(1)ならO(N+E)。
+// Eはsourceがグラフの場合の辺数、それ以外は0。
 template <class Source, class S, class Op, class E, class Map, class Comp, class Id>
 auto initFunctionalGraph_with_lazy_op(const Source &source, const std::vector<S> &values, Op op,
                                       E e, Map mapping, Comp composition, Id id) {
@@ -342,7 +350,8 @@ auto initFunctionalGraph_with_lazy_op(const Source &source, const std::vector<S>
         return FunctionalGraph_with_lazy_op<ST>(initFunctionalGraph(source), values, make);
 }
 
-// 明示した型はvectorから構築でき、上記のSTインターフェイスを提供する。
+// 遅延更新に対応する関数グラフを構築する。明示したSTはvectorから構築できること。
+// O(N+E)にSTの構築費用を加える。Eはsourceがグラフの場合の辺数、それ以外は0。
 template <class ST, class Source>
 auto initFunctionalGraph_with_lazy_op(const Source &source,
                                       const std::vector<typename ST::value_type> &values) {
@@ -353,48 +362,58 @@ auto initFunctionalGraph_with_lazy_op(const Source &source,
         return FunctionalGraph_with_lazy_op<ST>(initFunctionalGraph(source), values, make);
 }
 
+// 頂点値の集約に対応する関数グラフを構築する。演算がO(1)ならO(N+E)。
+// Eはsourceがグラフの場合の辺数、それ以外は0。
 template <class Source, class S, class Op, class E, class Map, class Comp, class Id>
 auto initFunctionalGraph_with_op(const Source &source, const std::vector<S> &values, Op op, E e,
                                  Map mapping, Comp composition, Id id) {
     return initFunctionalGraph_with_lazy_op(source, values, op, e, mapping, composition, id);
 }
 
+// 頂点xの値を返す。O(log N)。
 template <class ST> auto get(FunctionalGraph_with_lazy_op<ST> &graph, Int x) {
     return graph.get(x);
 }
 
+// 頂点xの値を更新する。O(log N)。
 template <class ST>
 void set(FunctionalGraph_with_lazy_op<ST> &graph, Int x, const typename ST::value_type &v) {
     graph.set(x, v);
 }
 
+// 全始点から到達可能な値の積を返す。可換・冪等な演算がO(1)ならO(N)。
 template <class ST> auto prod_reachable_idempotent_all(FunctionalGraph_with_lazy_op<ST> &graph) {
     return graph.prod_reachable_idempotent_all();
 }
 
+// xからk回移動するまでの積を返す。演算がO(1)ならO(log² N+log(k+1))。
 template <class ST>
 auto prod(FunctionalGraph_with_lazy_op<ST> &graph, Int x, Int k, bool include_start = true) {
     return graph.prod(x, k, include_start);
 }
 
+// xからk回移動するまでの頂点に作用を適用する。演算がO(1)ならO(log² N+log(k+1))。
 template <class ST>
 void apply(FunctionalGraph_with_lazy_op<ST> &graph, Int x, Int k,
            const typename ST::action_type &action, bool include_start = true) {
     graph.apply(x, k, action, include_start);
 }
 
+// 移動回数lからr-1までの累積積を列挙する。演算がO(1)ならO(log² N+log(l+1)+r-l)。
 template <class ST>
 auto prod_range(FunctionalGraph_with_lazy_op<ST> &graph, Int x, Int l, Int r,
                 bool include_start = true) {
     return graph.prod_range(x, l, r, include_start);
 }
 
+// 移動回数lからr-1までの累積積を順に畳み込む。演算がO(1)ならO(log² N+log(l+1)+r-l)。
 template <class ST, class Fold, class U>
 auto prod_range_fold(FunctionalGraph_with_lazy_op<ST> &graph, Int x, Int l, Int r, Fold f, U e,
                      bool include_start = true) {
     return graph.prod_range_fold(x, l, r, f, e, include_start);
 }
 
+// 単調な判定が初めて偽になるまでの移動距離を返す。演算がO(1)ならO(log² N+log(limit+1))。
 template <class ST, class Predicate>
 Int move_while(FunctionalGraph_with_lazy_op<ST> &graph, Predicate f, Int x, Int limit) {
     return graph.move_while(f, x, limit);

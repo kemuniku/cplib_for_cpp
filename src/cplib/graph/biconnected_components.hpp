@@ -12,6 +12,7 @@ struct BiconnectedComponents {
     }
 };
 
+// 頂点vの削除による連結成分数の変化を返す。O(1)。
 inline Int component_count_delta_after_removal(const BiconnectedComponents &bc, Int v) {
     return bc.component_count_delta_after_removal(v);
 }

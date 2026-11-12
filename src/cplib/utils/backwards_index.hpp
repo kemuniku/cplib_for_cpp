@@ -6,18 +6,22 @@ namespace cplib {
 struct BackwardsIndex {
     Int value;
 
+    // 末尾からk番目を表す添字を作る。計算量 O(1)。
     explicit constexpr BackwardsIndex(Int k) : value(k) {
     }
 };
 
+// 末尾からk番目を表す添字を返す。計算量 O(1)。
 constexpr BackwardsIndex from_end(Int k) {
     return BackwardsIndex(k);
 }
 
+// 列長から末尾基準の添字を先頭基準に変換する。計算量 O(1)。
 constexpr Int resolve_index(Int length, BackwardsIndex index) {
     return length - index.value;
 }
 
+// 先頭基準の添字をそのまま返す。計算量 O(1)。
 constexpr Int resolve_index(Int, Int index) {
     return index;
 }
@@ -28,6 +32,7 @@ template <class Left = Int, class Right = Int> struct ClosedSlice {
 };
 template <class Left, class Right> ClosedSlice(Left, Right) -> ClosedSlice<Left, Right>;
 
+// 両端を含む区間の端点を保持する。計算量 O(1)。
 template <class Left, class Right> constexpr auto closed_slice(Left a, Right b) {
     return ClosedSlice<Left, Right>{a, b};
 }

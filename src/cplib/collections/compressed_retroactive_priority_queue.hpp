@@ -55,26 +55,32 @@ public:
         : coords(coordinates(times)), queue(coords.size(), order) {
     }
 
+    // 登録時刻tの操作をpushに変更し、最終状態の差分を返す。O(log N)。
     auto setPush(K t, T v) {
         return convert(queue.setPush(index(t), v));
     }
 
+    // 登録時刻tの操作をpopに変更し、最終状態の差分を返す。O(log N)。
     auto setPop(K t) {
         return convert(queue.setPop(index(t)));
     }
 
+    // 登録時刻tの操作を消し、最終状態の差分を返す。O(log N)。
     auto erase(K t) {
         return convert(queue.erase(index(t)));
     }
 
+    // 最終状態に残る要素数を返す。O(1)。
     Int len() const {
         return queue.len();
     }
 
+    // 最終状態に残る要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // 最終状態に残る要素の総和を返す。O(1)。
     T sum() const {
         return queue.sum();
     }
@@ -84,6 +90,7 @@ public:
         return queue.poppedSum();
     }
 
+    // 最終状態の最優先要素を返す。空なら空のoptional。O(1)。
     auto peek() const {
         return queue.peek();
     }
@@ -110,6 +117,7 @@ public:
     }
 };
 
+// 登録する時刻列からキューを構築する。時刻数NとしてO(N log N)。
 template <class K, class T>
 auto initCompressedRetroactivePriorityQueue(std::span<const K> times, SortOrder order = Ascending) {
     return CompressedRetroactivePriorityQueue<K, T>(times, order);

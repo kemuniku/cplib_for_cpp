@@ -203,6 +203,7 @@ private:
     }
 };
 
+// 値と演算を指定して遅延更新対応の森を構築する。O(N)。
 template <class V, class Op, class S, class Map, class Comp, class F, class Inv, class InvAction>
 auto initLazySubtreeLinkCutTree(V &&values, Op merge, S defaultValue, Map mapping, Comp composition,
                                 F id, Inv inverse, InvAction inverseAction) {
@@ -211,6 +212,7 @@ auto initLazySubtreeLinkCutTree(V &&values, Op merge, S defaultValue, Map mappin
         std::move(composition), std::move(id), std::move(inverse), std::move(inverseAction));
 }
 
+// 値と演算を指定して遅延更新対応の森を構築する。O(N)。
 template <class... A> auto newLazySubtreeLinkCutTreeWith(A &&...args) {
     return initLazySubtreeLinkCutTree(std::forward<A>(args)...);
 }

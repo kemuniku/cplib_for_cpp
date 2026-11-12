@@ -334,15 +334,19 @@ public:
         build(values);
     }
 
+    // 全ノードを複製する。要素数をnとしてO(n)。
     RangeReverseTreap(const RangeReverseTreap &other)
         : root_(clone(other.root_)), length_(other.length_), op_(other.op_),
           identity_(other.identity_), mapping_(other.mapping_), composition_(other.composition_),
           id_(other.id_) {
     }
 
+    // 列をムーブ構築する。O(1)。
     RangeReverseTreap(RangeReverseTreap &&) = default;
+    // 列をムーブ代入する。代入先の要素数をnとしてO(n)。
     RangeReverseTreap &operator=(RangeReverseTreap &&) = default;
 
+    // 列を複製して代入する。両者の要素数の合計をnとしてO(n)。
     RangeReverseTreap &operator=(const RangeReverseTreap &other) {
         if (this != &other) {
             RangeReverseTreap copy(other);
@@ -351,14 +355,17 @@ public:
         return *this;
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return length_;
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // 要素数をnとして期待O(log(n+1))。
     // 半開区間[l, r)を反転します。
     void reverse(Int l, Int r) {
         check_range(l, r);
@@ -368,11 +375,13 @@ public:
         root_ = merge(left, merge(middle, right));
     }
 
+    // 要素数をnとして期待O(log(n+1))。
     // 閉区間segmentを反転します。
     template <class L, class R> void reverse(ClosedSlice<L, R> range) {
         reverse(resolve_index(length_, range.a), resolve_index(length_, range.b) + 1);
     }
 
+    // index番目の値を取得する。要素数をnとして期待O(log(n+1))。
     S get(Int index) {
         assert(0 <= index && index < length_);
         auto node = root_;
@@ -390,6 +399,7 @@ public:
         }
     }
 
+    // index番目の値を設定する。要素数をnとして期待O(log(n+1))。
     void update(Int index, const S &value) {
         assert(0 <= index && index < length_);
         if constexpr (Lazy) {
@@ -425,24 +435,29 @@ public:
         RangeReverseTreap *owner;
         Int index;
 
+        // 対象の値を取得する。要素数をnとして期待O(log(n+1))。
         operator S() const {
             return owner->get(index);
         }
 
+        // 対象の値を設定する。要素数をnとして期待O(log(n+1))。
         Reference &operator=(const S &value) {
             owner->update(index, value);
             return *this;
         }
 
+        // 他の位置の値を読み取り代入する。要素数をnとして期待O(log(n+1))。
         Reference &operator=(const Reference &value) {
             return *this = S(value);
         }
     };
 
+    // i番目を読み書きする参照を返す。O(1)。
     Reference operator[](Int i) {
         return {this, i};
     }
 
+    // 末尾からi番目を読み書きする参照を返す。O(1)。
     Reference operator[](BackwardsIndex i) {
         return (*this)[length_ - i.value];
     }
@@ -463,6 +478,7 @@ public:
         ++length_;
     }
 
+    // index番目の要素を削除する。要素数をnとして期待O(log(n+1))。
     void erase(Int index)
         requires(Aggregate || Lazy)
     {
@@ -488,6 +504,7 @@ public:
         length_ -= r - l;
     }
 
+    // 両端を含む区間を削除する。要素数n、削除数kとして期待O(log(n+1)+k)。
     template <class L, class R>
     void erase(ClosedSlice<L, R> range)
         requires(Aggregate || Lazy)
@@ -495,6 +512,7 @@ public:
         erase(resolve_index(length_, range.a), resolve_index(length_, range.b) + 1);
     }
 
+    // 要素数をnとして期待O(log(n+1))。
     // 半開区間 [l, r) の総積を返す。
     S get(Int l, Int r)
         requires(Aggregate)
@@ -513,6 +531,7 @@ public:
         }
     }
 
+    // 要素数をnとして期待O(log(n+1))。
     // 閉区間segmentの総積を返します。
     template <class L, class R>
     S get(ClosedSlice<L, R> range)
@@ -521,6 +540,7 @@ public:
         return get(resolve_index(length_, range.a), resolve_index(length_, range.b) + 1);
     }
 
+    // 両端を含む区間の総積を返す。要素数をnとして期待O(log(n+1))。
     template <class L, class R>
     S operator[](ClosedSlice<L, R> range)
         requires(Aggregate)
@@ -528,24 +548,28 @@ public:
         return get(range);
     }
 
+    // 全要素の総積を返す。O(1)。
     S get_all() const
         requires(Aggregate)
     {
         return product(root_);
     }
 
+    // 全要素の総積を返す。O(1)。
     S fold() const
         requires(Aggregate)
     {
         return get_all();
     }
 
+    // 半開区間[l,r)の総積を返す。要素数をnとして期待O(log(n+1))。
     S fold(Int l, Int r)
         requires(Aggregate)
     {
         return get(l, r);
     }
 
+    // 両端を含む区間の総積を返す。要素数をnとして期待O(log(n+1))。
     template <class L, class R>
     S fold(ClosedSlice<L, R> range)
         requires(Aggregate)
@@ -553,6 +577,7 @@ public:
         return get(range);
     }
 
+    // 半開区間[l,r)にactionを作用させる。要素数をnとして期待O(log(n+1))。
     void apply(Int l, Int r, const F &action)
         requires(Lazy)
     {
@@ -563,6 +588,7 @@ public:
         root_ = merge(left, merge(middle, right));
     }
 
+    // index番目にactionを作用させる。要素数をnとして期待O(log(n+1))。
     void apply(Int index, const F &action)
         requires(Lazy)
     {
@@ -570,6 +596,7 @@ public:
         apply(index, index + 1, action);
     }
 
+    // 両端を含む区間にactionを作用させる。要素数をnとして期待O(log(n+1))。
     template <class L, class R>
     void apply(ClosedSlice<L, R> range, const F &action)
         requires(Lazy)
@@ -577,6 +604,7 @@ public:
         apply(resolve_index(length_, range.a), resolve_index(length_, range.b) + 1, action);
     }
 
+    // 要素数をnとして期待O(log(n+1))回の演算と述語呼出し。
     // predicate(get(l,r))が真となる最大のrを返します。
     // predicate(identity_)=trueで、区間を伸ばしたとき真から偽への変化が単調であること。
     template <class Pred>
@@ -612,6 +640,7 @@ public:
         }
     }
 
+    // 要素数をnとして期待O(log(n+1))回の演算と述語呼出し。
     // predicate(get(l,r))が真となる最小のlを返します。
     // predicate(identity_)=trueで、区間を伸ばしたとき真から偽への変化が単調であること。
     template <class Pred>
@@ -651,6 +680,7 @@ public:
         RangeReverseTreap *owner;
         std::vector<Ptr> stack;
 
+        // nodeから左端まで遅延を伝播し、走査用スタックに積む。訪問ノード数をkとしてO(k)。
         void descend(Ptr node) {
             while (node) {
                 owner->push(node);
@@ -659,10 +689,12 @@ public:
             }
         }
 
+        // 現在の要素を返す。O(1)。
         S operator*() const {
             return stack.back()->value;
         }
 
+        // 次の要素に進む。期待O(log(n+1))、全要素の走査では合計O(n)。
         Iterator &operator++() {
             auto node = stack.back();
             stack.pop_back();
@@ -670,6 +702,7 @@ public:
             return *this;
         }
 
+        // 同じ位置を指すか比較する。O(1)。
         bool operator==(const Iterator &other) const {
             return owner == other.owner &&
                    (stack.empty() ? other.stack.empty()
@@ -677,20 +710,24 @@ public:
         }
     };
 
+    // 先頭のイテレータを返す。要素数をnとして期待O(log(n+1))。
     Iterator begin() {
         Iterator it{this, {}};
         it.descend(root_);
         return it;
     }
 
+    // 末尾の次のイテレータを返す。O(1)。
     Iterator end() {
         return {this, {}};
     }
 
+    // 列挙用に自身への参照を返す。O(1)。
     RangeReverseTreap &items() {
         return *this;
     }
 
+    // 全要素を配列にして返す。要素数をnとしてO(n)。
     std::vector<S> toSeq() {
         std::vector<S> result;
         result.reserve(length_);
@@ -699,6 +736,7 @@ public:
         return result;
     }
 
+    // 全要素を空白区切りで文字列化する。O(n+出力長)と各要素の文字列化の計算量。
     std::string str() {
         std::ostringstream out;
         bool first = true;
@@ -717,29 +755,35 @@ namespace cplib {
 #define CPLIB_REVERSE_TEMPLATE template <class S, class F, bool A, bool L>
 #define CPLIB_REVERSE_TYPE detail::RangeReverseTreap<S, F, A, L>
 
+// 要素数を返す。O(1)。
 CPLIB_REVERSE_TEMPLATE Int len(const CPLIB_REVERSE_TYPE &tree) {
     return tree.len();
 }
 
+// 半開区間[l,r)を反転する。要素数nとして期待O(log(n+1))。
 CPLIB_REVERSE_TEMPLATE void reverse(CPLIB_REVERSE_TYPE &tree, Int l, Int r) {
     tree.reverse(l, r);
 }
 
+// 両端を含む区間を反転する。要素数nとして期待O(log(n+1))。
 template <class S, class F, bool A, bool L, class I, class J>
 void reverse(CPLIB_REVERSE_TYPE &tree, ClosedSlice<I, J> range) {
     tree.reverse(range);
 }
 
+// i番目の値を返す。要素数nとして期待O(log(n+1))。
 CPLIB_REVERSE_TEMPLATE S get(CPLIB_REVERSE_TYPE &tree, Int i) {
     return tree.get(i);
 }
 
+// 半開区間[l,r)の総積を返す。要素数nとして期待O(log(n+1))。
 CPLIB_REVERSE_TEMPLATE S get(CPLIB_REVERSE_TYPE &tree, Int l, Int r)
     requires(A)
 {
     return tree.get(l, r);
 }
 
+// 両端を含む区間の総積を返す。要素数nとして期待O(log(n+1))。
 template <class S, class F, bool A, bool L, class I, class J>
 S get(CPLIB_REVERSE_TYPE &tree, ClosedSlice<I, J> range)
     requires(A)
@@ -747,28 +791,33 @@ S get(CPLIB_REVERSE_TYPE &tree, ClosedSlice<I, J> range)
     return tree.get(range);
 }
 
+// i番目の値を更新する。要素数nとして期待O(log(n+1))。
 CPLIB_REVERSE_TEMPLATE void update(CPLIB_REVERSE_TYPE &tree, Int i, const S &value) {
     tree.update(i, value);
 }
 
+// i番目の直前に値を挿入する。要素数nとして期待O(log(n+1))。
 CPLIB_REVERSE_TEMPLATE void insert(CPLIB_REVERSE_TYPE &tree, Int i, const S &value)
     requires(A || L)
 {
     tree.insert(i, value);
 }
 
+// i番目を削除する。要素数nとして期待O(log(n+1))。
 CPLIB_REVERSE_TEMPLATE void erase(CPLIB_REVERSE_TYPE &tree, Int i)
     requires(A || L)
 {
     tree.erase(i);
 }
 
+// 半開区間[l,r)を削除する。要素数n、削除数kとして期待O(log(n+1)+k)。
 CPLIB_REVERSE_TEMPLATE void erase(CPLIB_REVERSE_TYPE &tree, Int l, Int r)
     requires(A || L)
 {
     tree.erase(l, r);
 }
 
+// 両端を含む区間を削除する。要素数nとして期待O(log(n+1)+k)、kは削除数。
 template <class S, class F, bool A, bool L, class I, class J>
 void erase(CPLIB_REVERSE_TYPE &tree, ClosedSlice<I, J> range)
     requires(A || L)
@@ -776,36 +825,43 @@ void erase(CPLIB_REVERSE_TYPE &tree, ClosedSlice<I, J> range)
     tree.erase(range);
 }
 
+// 列挙用に自身への参照を返す。O(1)。
 CPLIB_REVERSE_TEMPLATE CPLIB_REVERSE_TYPE &items(CPLIB_REVERSE_TYPE &tree) {
     return tree;
 }
 
+// 全要素を配列にして返す。要素数nとしてO(n)。
 CPLIB_REVERSE_TEMPLATE auto toSeq(CPLIB_REVERSE_TYPE &tree) {
     return tree.toSeq();
 }
 
+// 全要素を文字列化する。O(n+出力長)と各要素の文字列化の計算量。
 CPLIB_REVERSE_TEMPLATE std::string to_string(CPLIB_REVERSE_TYPE &tree) {
     return tree.str();
 }
 
+// 全要素の総積を返す。O(1)。
 CPLIB_REVERSE_TEMPLATE S get_all(const CPLIB_REVERSE_TYPE &tree)
     requires(A)
 {
     return tree.get_all();
 }
 
+// 全要素の総積を返す。O(1)。
 CPLIB_REVERSE_TEMPLATE S fold(const CPLIB_REVERSE_TYPE &tree)
     requires(A)
 {
     return tree.fold();
 }
 
+// 半開区間[l,r)の総積を返す。要素数nとして期待O(log(n+1))。
 CPLIB_REVERSE_TEMPLATE S fold(CPLIB_REVERSE_TYPE &tree, Int l, Int r)
     requires(A)
 {
     return tree.fold(l, r);
 }
 
+// 両端を含む区間の総積を返す。要素数nとして期待O(log(n+1))。
 template <class S, class F, bool A, bool L, class I, class J>
 S fold(CPLIB_REVERSE_TYPE &tree, ClosedSlice<I, J> range)
     requires(A)
@@ -813,18 +869,21 @@ S fold(CPLIB_REVERSE_TYPE &tree, ClosedSlice<I, J> range)
     return tree.fold(range);
 }
 
+// i番目に作用を適用する。要素数nとして期待O(log(n+1))。
 CPLIB_REVERSE_TEMPLATE void apply(CPLIB_REVERSE_TYPE &tree, Int i, const F &f)
     requires(L)
 {
     tree.apply(i, f);
 }
 
+// 半開区間[l,r)に作用を適用する。要素数nとして期待O(log(n+1))。
 CPLIB_REVERSE_TEMPLATE void apply(CPLIB_REVERSE_TYPE &tree, Int l, Int r, const F &f)
     requires(L)
 {
     tree.apply(l, r, f);
 }
 
+// 両端を含む区間に作用を適用する。要素数nとして期待O(log(n+1))。
 template <class S, class F, bool A, bool L, class I, class J>
 void apply(CPLIB_REVERSE_TYPE &tree, ClosedSlice<I, J> range, const F &f)
     requires(L)
@@ -832,6 +891,7 @@ void apply(CPLIB_REVERSE_TYPE &tree, ClosedSlice<I, J> range, const F &f)
     tree.apply(range, f);
 }
 
+// 単調な述語を満たす最大の右端を返す。要素数nとして期待O(log(n+1))回の演算と述語呼出し。
 template <class S, class F, bool A, bool L, class Pred>
 Int max_right(CPLIB_REVERSE_TYPE &tree, Int l, Pred predicate)
     requires(A)
@@ -839,6 +899,7 @@ Int max_right(CPLIB_REVERSE_TYPE &tree, Int l, Pred predicate)
     return tree.max_right(l, predicate);
 }
 
+// 単調な述語を満たす最小の左端を返す。要素数nとして期待O(log(n+1))回の演算と述語呼出し。
 template <class S, class F, bool A, bool L, class Pred>
 Int min_left(CPLIB_REVERSE_TYPE &tree, Int r, Pred predicate)
     requires(A)

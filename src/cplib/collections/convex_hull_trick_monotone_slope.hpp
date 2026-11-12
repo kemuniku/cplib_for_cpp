@@ -31,6 +31,7 @@ public:
     }
 };
 
+// 傾きの単調方向を指定して空の最小値CHTを生成する。O(1)。
 inline ConvexHullTrickMonotoneSlope initConvexHullTrickMonotoneSlope(bool slopeIncreasing = false) {
     return ConvexHullTrickMonotoneSlope(slopeIncreasing);
 }

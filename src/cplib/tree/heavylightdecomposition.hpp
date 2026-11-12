@@ -184,6 +184,7 @@ struct HeavyLightDecomposition {
         return std::span<const Int>(I).subspan(rangeL[v], rangeR[v] - rangeL[v]);
     }
 
+    // 計算量O(log N)。
     // 根をxとしたときに、lca(y,z)を求める。
     Int median(Int x, Int y, Int z) const {
         return lca(x, y) ^ lca(y, z) ^ lca(x, z);
@@ -216,25 +217,30 @@ struct HeavyLightDecomposition {
             const HeavyLightDecomposition *h;
             Int index;
 
+            // 現在の子頂点を返す。O(1)。
             Int operator*() const {
                 return h->I[index];
             }
 
+            // 次の子頂点へ進む。O(1)。
             Iterator &operator++() {
                 Int v = h->I[index];
                 index += h->rangeR[v] - h->rangeL[v];
                 return *this;
             }
 
+            // 二つの反復子が異なる位置を指すか返す。O(1)。
             bool operator!=(const Iterator &b) const {
                 return index != b.index;
             }
         };
 
+        // 子の列挙の開始位置を返す。O(1)。
         Iterator begin() const {
             return {h, first};
         }
 
+        // 子の列挙の終了位置を返す。O(1)。
         Iterator end() const {
             return {h, last};
         }
@@ -416,82 +422,102 @@ auto initAuxiliaryWeightedTree(const HeavyLightDecomposition &h, std::span<const
     return result;
 }
 
+// 頂点数を返す。O(1)。
 inline Int numVertices(const HeavyLightDecomposition &h) {
     return h.numVertices();
 }
 
+// 根からvまでの辺数を返す。O(1)。
 inline Int depth(const HeavyLightDecomposition &h, Int v) {
     return h.depth(v);
 }
 
+// 頂点番号をHLD順の添字へ変換する。O(1)。
 inline Int toSeq(const HeavyLightDecomposition &h, Int v) {
     return h.toSeq(v);
 }
 
+// 頂点番号順の数列をHLD順に並べ替える。O(N)。
 template <class T> auto toSeq(const HeavyLightDecomposition &h, const std::vector<T> &v) {
     return h.toSeq(v);
 }
 
+// HLD順の添字を頂点番号へ変換する。O(1)。
 inline Int toVtx(const HeavyLightDecomposition &h, Int v) {
     return h.toVtx(v);
 }
 
+// vのEuler Tourでの入場位置を返す。O(1)。
 inline Int toSeq2In(const HeavyLightDecomposition &h, Int v) {
     return h.toSeq2In(v);
 }
 
+// vのEuler Tourでの退場位置を返す。O(1)。
 inline Int toSeq2Out(const HeavyLightDecomposition &h, Int v) {
     return h.toSeq2Out(v);
 }
 
+// vの親を返す。根では-1。O(1)。
 inline Int parentOf(const HeavyLightDecomposition &h, Int v) {
     return h.parentOf(v);
 }
 
+// vの属するheavy pathの最も浅い頂点を返す。O(1)。
 inline Int heavyRootOf(const HeavyLightDecomposition &h, Int v) {
     return h.heavyRootOf(v);
 }
 
+// vのheavy edgeの子を返す。存在しない場合は-1。O(1)。
 inline Int heavyChildOf(const HeavyLightDecomposition &h, Int v) {
     return h.heavyChildOf(v);
 }
 
+// uとvの最小共通祖先を返す。O(log N)。
 inline Int lca(const HeavyLightDecomposition &h, Int u, Int v) {
     return h.lca(u, v);
 }
 
+// uとvの間の辺数を返す。O(log N)。
 inline Int dist(const HeavyLightDecomposition &h, Int u, Int v) {
     return h.dist(u, v);
 }
 
+// パスをHLD順の半開区間へ分解する。O(log N)。
 inline auto path(const HeavyLightDecomposition &h, Int u, Int v) {
     return h.path(u, v);
 }
 
+// パスをHLD順の半開区間へ分解する。O(log N)。
 inline auto path(const HeavyLightDecomposition &h, Int u, Int v, bool inc, bool rev) {
     return h.path(u, v, inc, rev);
 }
 
+// uからvへのパスを方向付き半開区間に分解する。O(log N)。
 inline auto pathWithDirection(const HeavyLightDecomposition &h, Int u, Int v) {
     return h.pathWithDirection(u, v);
 }
 
+// vの部分木に対応するHLD順の半開区間を返す。O(1)。
 inline auto subtree(const HeavyLightDecomposition &h, Int v) {
     return h.subtree(v);
 }
 
+// vの部分木の頂点のビューを返す。取得O(1)、列挙O(部分木の頂点数)。
 inline auto subtreeV(const HeavyLightDecomposition &h, Int v) {
     return h.subtreeV(v);
 }
 
+// vの子のビューを返す。取得O(1)、列挙O(子の数)。
 inline auto children(const HeavyLightDecomposition &h, Int v) {
     return h.children(v);
 }
 
+// xを根とするときのyとzの最小共通祖先を返す。O(log N)。
 inline Int median(const HeavyLightDecomposition &h, Int x, Int y, Int z) {
     return h.median(x, y, z);
 }
 
+// uからvへd辺進んだ頂点を返す。範囲外なら-1。O(log N)。
 inline Int la(const HeavyLightDecomposition &h, Int u, Int v, Int d) {
     return h.la(u, v, d);
 }

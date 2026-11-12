@@ -62,12 +62,13 @@ std::vector<T> compose(const std::vector<T> &outer, const std::vector<T> &inner,
     return prefix(detail::compositionRec(prefix(outer, n), denominator, n - 1, 1)[0], n);
 }
 
+// outer.size() 項まで合成する。計算量は compose(outer, inner, outer.size()) と同じ。
 template <Modint T> auto compose(const std::vector<T> &outer, const std::vector<T> &inner) {
     return compose(outer, inner, outer.size());
 }
 
 // Newton法。高次誤差のみを導関数比で補正する。
-// Newton法により f(g(x)) = x (mod x^n) を満たすgを求める。
+// Newton法により f(g(x)) = x (mod x^n) を満たすgを求める。NTT使用時 O(n log²(n+1))。
 template <Modint T> std::vector<T> compositionalInverse(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return {};
@@ -90,6 +91,7 @@ template <Modint T> std::vector<T> compositionalInverse(const std::vector<T> &f,
     return out;
 }
 
+// f.size() 項まで合成逆元を求める。計算量は compositionalInverse(f, f.size()) と同じ。
 template <Modint T> auto compositionalInverse(const std::vector<T> &f) {
     return compositionalInverse(f, f.size());
 }

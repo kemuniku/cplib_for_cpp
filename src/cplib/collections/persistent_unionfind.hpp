@@ -80,20 +80,24 @@ class PersistentUnionFind {
 public:
     Int count = 0;
 
+    // n要素の永続Union-Findを初期化する。O(1)。
     explicit PersistentUnionFind(Int n) : size(n), pool(std::make_shared<Pool>()), count(n) {
         assert(n >= 0 && n <= std::numeric_limits<std::int32_t>::max());
         if (n > 1)
             height = ((std::bit_width(UInt(n - 1)) - 1) / 4) * 4;
     }
 
+    // この版でのxの代表元を返す。O(log²(n+1))。
     Int root(Int x) const {
         return rootAndSize(x).first;
     }
 
+    // この版でxとyが同じ集合か返す。O(log²(n+1))。
     bool issame(Int x, Int y) const {
         return root(x) == root(y);
     }
 
+    // この版でのxの集合の要素数を返す。O(log²(n+1))。
     Int siz(Int x) const {
         return -Int(rootAndSize(x).second);
     }
@@ -113,22 +117,27 @@ public:
     }
 };
 
+// n要素の永続Union-Findを生成する。O(1)。
 inline auto initPersistentUnionFind(Int n) {
     return PersistentUnionFind(n);
 }
 
+// この版でのxの代表元を返す。O(log²(n+1))。
 inline Int root(const PersistentUnionFind &p, Int x) {
     return p.root(x);
 }
 
+// この版でxとyが同じ集合か返す。O(log²(n+1))。
 inline bool issame(const PersistentUnionFind &p, Int x, Int y) {
     return p.issame(x, y);
 }
 
+// この版でのxの集合の要素数を返す。O(log²(n+1))。
 inline Int siz(const PersistentUnionFind &p, Int x) {
     return p.siz(x);
 }
 
+// xとyを結合した新版を返す。O(log²(n+1))時間、追加領域O(log(n+1))。
 inline auto unite(const PersistentUnionFind &p, Int x, Int y) {
     return p.unite(x, y);
 }

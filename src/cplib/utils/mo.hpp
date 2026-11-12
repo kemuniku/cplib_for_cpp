@@ -58,14 +58,17 @@ public:
     }
 };
 
+// 長さNと想定クエリ数から幅Bを選んで初期化する。計算量 O(N/B + 1)。
 inline Mo initMo(Int n, Int q, Int width = -1) {
     return {n, q, width};
 }
 
+// 半開区間をクエリとして登録する。計算量は償却 O(1)。
 inline void insert(Mo &m, Int l, Int r) {
     m.insert(l, r);
 }
 
+// 登録したQ個のクエリを処理する。ソート O(Q log Q)、端点移動 O(N²/B + QB + N) 回。
 template <class... Callbacks> void run(Mo &m, Callbacks &&...callbacks) {
     m.run(std::forward<Callbacks>(callbacks)...);
 }
@@ -84,6 +87,7 @@ class TreeMo {
 public:
     Int width;
 
+    // N頂点の木からオイラーツアーを構築し、想定クエリ数に応じた幅を選ぶ。計算量 O(N)。
     template <class G> TreeMo(const G &g, Int Q, Int root = 0, Int w = 0) {
         Int n;
         if constexpr (GraphTypes<G>)
@@ -172,14 +176,17 @@ public:
     }
 };
 
+// N頂点の木に対するTree Moを初期化する。計算量 O(N)。
 template <class G> auto initTreeMo(const G &g, Int q, Int root = 0, Int width = 0) {
     return TreeMo(g, q, root, width);
 }
 
+// 木上のパスを登録し、登録番号を返す。計算量は償却 O(1)。
 inline Int insert(TreeMo &m, Int u, Int v) {
     return m.insert(u, v);
 }
 
+// Q個のパスクエリを処理する。幅Bでソート O(Q log Q)、端点移動 O(N²/B + QB + N) 回。
 template <class... F> void run(TreeMo &m, F &&...f) {
     m.run(std::forward<F>(f)...);
 }

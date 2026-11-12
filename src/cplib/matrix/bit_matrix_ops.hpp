@@ -73,10 +73,12 @@ struct MatrixBitReference {
     UInt *word;
     UInt mask;
 
+    // 参照先のビットを読み出す。計算量 O(1)。
     operator bool() const {
         return (*word & mask) != 0;
     }
 
+    // 参照先のビットを書き換える。計算量 O(1)。
     MatrixBitReference &operator=(bool value) {
         if (value)
             *word |= mask;
@@ -85,10 +87,12 @@ struct MatrixBitReference {
         return *this;
     }
 
+    // 整数の最下位ビットを書き込む。計算量 O(1)。
     template <std::integral T> MatrixBitReference &operator=(T value) {
         return *this = bool(value & 1);
     }
 
+    // 参照先のビットをコピーする。計算量 O(1)。
     MatrixBitReference &operator=(const MatrixBitReference &other) {
         return *this = bool(other);
     }

@@ -112,18 +112,22 @@ public:
     }
 };
 
+// 任意の法の組合せ表を作る。計算量は CombinationArbitraryMod のコンストラクタと同じ。
 inline auto initCombinationArbitraryMod(Int n, Int modulus) {
     return CombinationArbitraryMod(n, modulus);
 }
 
+// 二項係数を返す。計算量は c.ncr(n, r) と同じ。
 inline Int ncr(const CombinationArbitraryMod &c, Int n, Int r) {
     return c.ncr(n, r);
 }
 
+// 順列数を返す。計算量は c.npr(n, r) と同じ。
 inline Int npr(const CombinationArbitraryMod &c, Int n, Int r) {
     return c.npr(n, r);
 }
 
+// 重複組合せ数を返す。計算量は c.nhr(n, r) と同じ。
 inline Int nhr(const CombinationArbitraryMod &c, Int n, Int r) {
     return c.nhr(n, r);
 }

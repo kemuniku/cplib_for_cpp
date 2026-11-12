@@ -18,22 +18,33 @@ class FuseVariable {
     int variable_;
 
 public:
+    // ブロック内の変数を参照するハンドルを構築する。O(1)。
     FuseVariable(FuseBlock *owner, int variable) : owner_(owner), variable_(variable) {
     }
 
+    // 現在の式を参照するハンドルに変換する。O(1)。
     operator FuseExpr() const;
+    // 変数の代入式を登録する。O(1)。
     FuseVariable &operator=(FuseExpr value);
 
+    // 別の変数の現在の式を代入式として登録する。O(1)。
     FuseVariable &operator=(const FuseVariable &value) {
         return *this = static_cast<FuseExpr>(value);
     }
 
+    // ANDによる更新式を登録する。償却O(1)。
     FuseVariable &operator&=(FuseExpr value);
+    // ORによる更新式を登録する。償却O(1)。
     FuseVariable &operator|=(FuseExpr value);
+    // XORによる更新式を登録する。償却O(1)。
     FuseVariable &operator^=(FuseExpr value);
+    // 加算による更新式を登録する。償却O(1)。
     FuseVariable &operator+=(FuseExpr value);
+    // 左シフトの更新式を登録する。償却O(1)。
     FuseVariable &operator<<=(Int shift);
+    // 右シフトの更新式を登録する。償却O(1)。
     FuseVariable &operator>>=(Int shift);
+    // 最下位ビットを指定値にする更新式を登録する。償却O(1)。
     void low(bool value);
 };
 
@@ -294,10 +305,12 @@ class FuseBlock {
                                                    const std::vector<const UInt *> &sources);
 
 public:
+    // 書き込み可能な変数を登録する。既存変数数vとしてO(v)、節点の追加は償却O(1)。
     FuseVariable var(SimdBitSet<512> &value) {
         return {this, variable(value)};
     }
 
+    // 入力列の現在の式を取得または登録する。既存変数・節点数をmとして償却O(m+1)。
     FuseExpr read(const SimdBitSet<512> &value) {
         for (auto v : variables_)
             if (v.target == &value)
@@ -308,6 +321,7 @@ public:
         return {this, push(Node{input, -1, -1, -1, 0, false, &value})};
     }
 
+    // 2項演算の式節点を追加する。償却O(1)。
     FuseExpr binary(char op, FuseExpr a, FuseExpr b) {
         check(a);
         check(b);
@@ -315,11 +329,13 @@ public:
         return {this, push(Node{kind, a.id, b.id})};
     }
 
+    // ビット反転の式節点を追加する。償却O(1)。
     FuseExpr negate(FuseExpr a) {
         check(a);
         return {this, push(Node{bit_not, a.id})};
     }
 
+    // 指定方向にkビットシフトする式節点を追加する。償却O(1)。
     FuseExpr shift(FuseExpr a, Int k, bool left) {
         check(a);
         if (k < 0)
@@ -329,11 +345,13 @@ public:
         return {this, push(Node{left ? shift_left : shift_right, a.id, -1, -1, k})};
     }
 
+    // 最下位ビットを指定値にする式節点を追加する。償却O(1)。
     FuseExpr low(FuseExpr a, bool value) {
         check(a);
         return {this, push(Node{low_bit, a.id, -1, -1, 0, value})};
     }
 
+    // dstへの代入式を登録する。既存変数数vとしてO(v)、節点の追加は償却O(1)。
     void assign(SimdBitSet<512> &dst, FuseExpr value) {
         check(value);
         int v = variable(dst);
@@ -341,11 +359,13 @@ public:
         variables_[v].written = true;
     }
 
+    // 評価後の最上位ビットの出力先を登録する。償却O(1)。
     void lastBit(bool &dst, FuseExpr value) {
         check(value);
         captures_.push_back({&dst, value.id});
     }
 
+    // 式節点と登録操作の合計をm、ビット数をnとしてO(m³+m(1+n/64))。通常経路の追加領域O(m)。
     // m節点、nビットに対してO(m ceil(n/64))、通常経路の追加領域O(m)。
     // シフトした入力が出力と同一の場合だけ、その入力を一度複製する。
     void run(bool single = false) {
@@ -456,30 +476,37 @@ inline FuseVariable &FuseVariable::operator=(FuseExpr value) {
     return *this;
 }
 
+// 2式のANDを表す節点を追加する。償却O(1)。
 inline FuseExpr operator&(FuseExpr a, FuseExpr b) {
     return a.owner->binary('&', a, b);
 }
 
+// 2式のORを表す節点を追加する。償却O(1)。
 inline FuseExpr operator|(FuseExpr a, FuseExpr b) {
     return a.owner->binary('|', a, b);
 }
 
+// 2式のXORを表す節点を追加する。償却O(1)。
 inline FuseExpr operator^(FuseExpr a, FuseExpr b) {
     return a.owner->binary('^', a, b);
 }
 
+// 2式の加算を表す節点を追加する。償却O(1)。
 inline FuseExpr operator+(FuseExpr a, FuseExpr b) {
     return a.owner->binary('+', a, b);
 }
 
+// 反転を表す節点を追加する。償却O(1)。
 inline FuseExpr operator~(FuseExpr a) {
     return a.owner->negate(a);
 }
 
+// 左シフトを表す節点を追加する。償却O(1)。
 inline FuseExpr operator<<(FuseExpr a, Int k) {
     return a.owner->shift(a, k, true);
 }
 
+// 右シフトを表す節点を追加する。償却O(1)。
 inline FuseExpr operator>>(FuseExpr a, Int k) {
     return a.owner->shift(a, k, false);
 }

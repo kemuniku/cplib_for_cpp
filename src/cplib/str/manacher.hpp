@@ -46,6 +46,7 @@ std::vector<std::pair<Int, Int>> get_palindromes(const Range &s, T partition) {
     return result;
 }
 
+// 文字列の各中心における最大回文区間を返す。区切り文字は入力に含まれないこと。計算量 O(N)。
 inline auto get_palindromes(const std::string &s, char partition = '$') {
     return get_palindromes<std::string, char>(s, partition);
 }

@@ -73,35 +73,43 @@ public:
         return {std::min(d, other) + base, std::max(d, other) + base};
     }
 
+    // xが閉路上にあるか返す。O(1)。
     bool incycle(Int x) const {
         return roots[x] == x;
     }
 
+    // xが属する木部分の根を返す。O(1)。
     Int root(Int x) const {
         return roots[x];
     }
 
+    // xとyが同じ木部分に属するか返す。O(1)。
     bool same_tree(Int x, Int y) const {
         return roots[x] == roots[y];
     }
 };
 
+// 各連結成分を閉路と木部分に分解する。O(V+E)。
 inline auto initNamoriGraph(const UnWeightedUnDirectedGraph &g) {
     return NamoriGraph(g);
 }
 
+// 二頂点間の単純経路の長さを返す。O(log V)。
 inline auto dist(const NamoriGraph &g, Int u, Int v) {
     return g.dist(u, v);
 }
 
+// xが閉路上にあるか返す。O(1)。
 inline bool incycle(const NamoriGraph &g, Int x) {
     return g.incycle(x);
 }
 
+// xが属する木部分の根を返す。O(1)。
 inline Int root(const NamoriGraph &g, Int x) {
     return g.root(x);
 }
 
+// 同じ木部分に属するか返す。O(1)。
 inline bool same_tree(const NamoriGraph &g, Int x, Int y) {
     return g.same_tree(x, y);
 }

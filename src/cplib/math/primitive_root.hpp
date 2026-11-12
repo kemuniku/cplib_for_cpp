@@ -3,7 +3,8 @@
 #include <cplib/math/powmod.hpp>
 
 namespace cplib {
-// 素数法の原始根を乱択で探す。元実装と同じ素因数判定を用いる。
+// 素数法の原始根を乱択で探す。素因数分解後、1回の試行は異なる素因数の数を k として O(k log p)。
+// 試行回数の期待値は (p-1)/φ(p-1)。素因数分解の計算量は primefactor を参照。
 inline Int primitive_root(Int p) {
     assert(isprime(p));
     auto pf = primefactor(p - 1);

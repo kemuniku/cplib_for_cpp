@@ -40,12 +40,15 @@ class WordsizeTree {
     }
 
 public:
+    // 固定容量2^24の空集合を作る。固定サイズの領域を初期化するためO(1)。
     WordsizeTree() = default;
 
+    // 真の位置を集合に登録する。入力長NとしてO(N+1)。
     explicit WordsizeTree(const std::vector<bool> &v) {
         build(v);
     }
 
+    // 真の位置を集合に登録する。入力長NとしてO(N+1)。
     explicit WordsizeTree(std::span<const bool> v) {
         build(v);
     }
@@ -55,6 +58,7 @@ public:
         return count_;
     }
 
+    // xを集合に追加する。O(1)。
     void incl(Int x) {
         assert(0 <= x && x < capacity);
         if (!(*this)[x])
@@ -68,11 +72,13 @@ public:
         a0_ |= UInt(1) << x;
     }
 
+    // xが集合に含まれるか返す。O(1)。
     bool operator[](Int x) const {
         assert(0 <= x && x < capacity);
         return (a3_[x >> 6] >> (x & 63)) & 1;
     }
 
+    // xを集合から削除する。O(1)。
     void excl(Int x) {
         assert(0 <= x && x < capacity);
         if (!(*this)[x])
@@ -161,14 +167,17 @@ public:
     }
 };
 
+// 固定容量2^24の空集合を作る。固定サイズの領域を初期化するためO(1)。
 inline WordsizeTree initWordsizeTree() {
     return {};
 }
 
+// 真の位置を集合に登録する。入力長NとしてO(N+1)。
 inline WordsizeTree initWordsizeTree(const std::vector<bool> &v) {
     return WordsizeTree(v);
 }
 
+// 真の位置を集合に登録する。入力長NとしてO(N+1)。
 inline WordsizeTree initWordsizeTree(std::span<const bool> v) {
     return WordsizeTree(v);
 }

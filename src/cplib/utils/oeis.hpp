@@ -138,6 +138,7 @@ auto searchOEIS(const std::vector<T> &values, Fetch &&fetch) {
 }
 
 // 二次元整数配列を行方向と反対角線方向で検索する。
+// 行数H、最大幅W、要素数Nとして、通信・JSON解析を除き O(H(H+W)+N)。
 template <std::integral T, class Fetch>
 auto searchOEIS(const std::vector<std::vector<T>> &matrix, Fetch &&fetch) {
     std::vector<T> rowMajor, diagonal;
@@ -161,6 +162,7 @@ auto searchOEIS(const std::vector<std::vector<T>> &matrix, Fetch &&fetch) {
 }
 
 // 有理数列を既約分数に直し、分子列と分母列を別々に検索する。
+// N項、分子・分母の絶対値の最大をMとして、通信・JSON解析を除き O(N log(M+2))。
 template <std::integral T, class Fetch>
 auto searchOEIS(const std::vector<Fraction<T>> &values, Fetch &&fetch) {
     std::vector<T> num, den;
@@ -179,12 +181,13 @@ auto searchOEIS(const std::vector<Fraction<T>> &values, Fetch &&fetch) {
     return out;
 }
 
+// 通信クライアントを使い数列や配列をOEISで検索する。計算量は対応するfetch指定版と通信・JSON解析の費用。
 template <class R> auto searchOEIS(const R &values) {
     detail::oeis::Client client;
     return searchOEIS(values, client);
 }
 
-// OEIS検索結果を項目情報が分かる文字列にする。
+// OEIS検索結果を項目情報が分かる文字列にする。計算量は各フィールドの文字数に比例。
 inline std::string to_string(const OEISResult &item) {
     static constexpr const char *names[] = {"整数列", "2次元配列（行方向の連結）",
                                             "2次元配列（反対角線方向）", "有理数列（分子）",
@@ -213,7 +216,7 @@ inline std::string to_string(const OEISResult &item) {
     return out;
 }
 
-// OEIS検索結果の列を見やすい複数行の文字列にする。
+// OEIS検索結果の列を見やすい複数行の文字列にする。計算量は結果の文字数の合計と件数に比例。
 inline std::string to_string(const std::vector<OEISResult> &items) {
     if (items.empty())
         return "OEIS検索結果はありませんでした。";
@@ -223,6 +226,7 @@ inline std::string to_string(const std::vector<OEISResult> &items) {
     return out;
 }
 
+// 検索結果を出力する。計算量は文字列への変換と出力に要する時間に比例。
 inline std::ostream &operator<<(std::ostream &out, const OEISResult &item) {
     return out << to_string(item);
 }

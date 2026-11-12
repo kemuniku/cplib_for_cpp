@@ -19,6 +19,7 @@ template <class T> class FunctionalGraph_with_op : public FunctionalGraph {
     }
 
 public:
+    // 関数グラフと頂点の値・演算から構築する。演算がO(1)ならO(N)。
     template <class Op>
     FunctionalGraph_with_op(FunctionalGraph graph, const std::vector<T> &values, Op op, T e)
         : FunctionalGraph(std::move(graph)), op_(op), e_(e), st_hld_(0, op, e),
@@ -36,12 +37,14 @@ public:
         st_cycle_ = SegmentTree<T>(cyc, op, e);
     }
 
+    // 頂点xの値を更新する。演算がO(1)ならO(log N)。
     void set(Int x, const T &value) {
         st_hld_.update(index(x), value);
         if (incycle(x))
             st_cycle_.update(offsets_[cycle_number[x]] + cycle_idx[x], value);
     }
 
+    // 頂点xの値を返す。O(1)。
     T get(Int x) const {
         return value(x);
     }
@@ -50,24 +53,29 @@ public:
         FunctionalGraph_with_op *owner;
         Int index;
 
+        // 参照先の値を返す。O(1)。
         operator T() const {
             return owner->get(index);
         }
 
+        // 参照先の値を更新する。O(log(N+1))。
         Reference &operator=(const T &v) {
             owner->set(index, v);
             return *this;
         }
 
+        // 別の参照先の値を読み取り代入する。O(log(N+1))。
         Reference &operator=(const Reference &v) {
             return *this = T(v);
         }
     };
 
+    // 読み書き用参照を返す。参照取得O(1)、読み取りO(1)、更新O(log N)。
     Reference operator[](Int x) {
         return {this, x};
     }
 
+    // 頂点xの値を返す。O(1)。
     T operator[](Int x) const {
         return value(x);
     }
@@ -238,6 +246,8 @@ public:
     }
 };
 
+// 頂点値の集約に対応する関数グラフを構築する。演算がO(1)ならO(N+E)。
+// Eはsourceがグラフの場合の辺数、それ以外は0。
 template <class Source, class T, class Op>
 auto initFunctionalGraph_with_op(const Source &source, const std::vector<T> &values, Op op, T e) {
     if constexpr (std::is_same_v<Source, FunctionalGraph>)
@@ -246,31 +256,37 @@ auto initFunctionalGraph_with_op(const Source &source, const std::vector<T> &val
         return FunctionalGraph_with_op<T>(initFunctionalGraph(source), values, op, e);
 }
 
+// 頂点xの値を更新する。O(log N)。
 template <class T> void set(FunctionalGraph_with_op<T> &f, Int x, const T &value) {
     f.set(x, value);
 }
 
+// 全始点から到達可能な値の積を返す。可換・冪等な演算がO(1)ならO(N)。
 template <class T> auto prod_reachable_idempotent_all(const FunctionalGraph_with_op<T> &f) {
     return f.prod_reachable_idempotent_all();
 }
 
+// xからk回移動するまでの積を返す。演算がO(1)ならO(log² N+log(k+1))。
 template <class T>
 T prod(const FunctionalGraph_with_op<T> &f, Int x, Int k, bool include_start = true) {
     return f.prod(x, k, include_start);
 }
 
+// 移動回数lからr-1までの累積積を列挙する。演算がO(1)ならO(log² N+log(l+1)+r-l)。
 template <class T>
 auto prod_range(const FunctionalGraph_with_op<T> &f, Int x, Int l, Int r,
                 bool include_start = true) {
     return f.prod_range(x, l, r, include_start);
 }
 
+// 移動回数lからr-1までの累積積を順に畳み込む。演算がO(1)ならO(log² N+log(l+1)+r-l)。
 template <class T, class F, class U>
 U prod_range_fold(const FunctionalGraph_with_op<T> &graph, Int x, Int l, Int r, F f, U e,
                   bool include_start = true) {
     return graph.prod_range_fold(x, l, r, f, e, include_start);
 }
 
+// 単調な判定が初めて偽になるまでの移動距離を返す。演算がO(1)ならO(log² N+log(limit+1))。
 template <class T, class F>
 Int move_while(const FunctionalGraph_with_op<T> &graph, F f, Int x, Int limit) {
     return graph.move_while(f, x, limit);

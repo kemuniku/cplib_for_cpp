@@ -4,18 +4,24 @@
 
 namespace cplib {
 // 固定長版は連続したarray<H*W,T>を保持し、寸法を型に含める。
+// 要素演算をO(1)として、要素ごとの算術・ビット演算と比較は O(HW+1)。
+// 行列積 H×W と W×C は O(HWC+HC+1)。寸法・要素取得と非constの行ビュー取得は O(1)。
+// constの行取得、行の配列への変換・行への代入は O(W+1)。
 template <Int H, Int W, class T> class StaticMatrix {
     static_assert(H >= 0 && W >= 0);
     std::array<T, H * W> arr_{};
 
 public:
     using value_type = T;
+    // 零初期化した行列を作る。計算量 O(HW+1)。
     StaticMatrix() = default;
 
+    // 指定値で行列を初期化する。計算量 O(HW+1)。
     explicit StaticMatrix(T value) {
         arr_.fill(value);
     }
 
+    // 配列をコピーして行列を作る。計算量 O(HW+1)。
     explicit StaticMatrix(const std::array<std::array<T, W>, H> &rows) {
         for (Int i = 0; i < H; ++i)
             for (Int j = 0; j < W; ++j)
@@ -535,6 +541,7 @@ public:
         return matrix;
     }
 
+    // 正方単位行列を作る。計算量 O(H²+1)。
     static StaticMatrix identity(Int n = H, T one = T(1), T zero = T(0)) {
         assert(H == W && n == H);
         StaticMatrix out(zero);
@@ -543,6 +550,7 @@ public:
         return out;
     }
 
+    // H次正方行列を非負のk乗にする。計算量 O(H³ log(k+1)+H²+1)。
     StaticMatrix pow(Int exponent) const
         requires(H == W)
     {
@@ -556,6 +564,7 @@ public:
         return result;
     }
 
+    // 全要素の和を返す。計算量 O(HW+1)。
     T sum() const {
         T result = T(0);
         for (T x : arr_)
@@ -563,6 +572,7 @@ public:
         return result;
     }
 
+    // 文字列に変換する。要素の出力時間の合計と O(HW+H+1) が必要。
     std::string str() const {
         std::ostringstream out;
         for (Int i = 0; i < H; ++i) {
@@ -580,6 +590,7 @@ public:
         return out.str();
     }
 
+    // ハッシュを返す。要素のハッシュを O(1) として O(HW+1)。
     std::size_t hash() const {
         std::size_t seed = H * W;
         for (T value : arr_)
@@ -605,6 +616,7 @@ public:
     }
 
     // 左上height行width列でAx=bの特殊解と核の基底を返す。解なしはstd::nullopt。
+    // height=h、width=wとして計算量 O((h+1)(w+1)²)。
     template <class B> auto solveLinearSystem(const B &b, Int height = H, Int width = W) const {
         return fieldSolve(matrixRows(*this, height, width), width, b);
     }
@@ -634,69 +646,85 @@ public:
     }
 };
 
+// 指定値でH行W列を初期化する。計算量 O(HW+1)。
 template <Int H, Int W, class T> auto initMatrix(T value) {
     return StaticMatrix<H, W, T>(value);
 }
 
+// 配列をコピーしてH行W列の行列を作る。計算量 O(HW+1)。
 template <std::size_t H, std::size_t W, class T>
 auto initMatrix(const std::array<std::array<T, W>, H> &rows) {
     return StaticMatrix<H, W, T>(rows);
 }
 
+// 配列をコピーしてH行W列の行列を作る。計算量 O(HW+1)。
 template <std::size_t H, std::size_t W, class T>
 auto toMatrix(const std::array<std::array<T, W>, H> &rows) {
     return initMatrix(rows);
 }
 
+// H次の単位行列を返す。計算量 O(H²+1)。
 template <Int H, Int W, class T> auto identity_matrix(Int n = H, T one = T(1), T zero = T(0)) {
     return StaticMatrix<H, W, T>::identity(n, one, zero);
 }
 
+// 行数を返す。計算量 O(1)。
 template <Int H, Int W, class T> Int h(const StaticMatrix<H, W, T> &m) {
     return m.h();
 }
 
+// 列数を返す。計算量 O(1)。
 template <Int H, Int W, class T> Int w(const StaticMatrix<H, W, T> &m) {
     return m.w();
 }
 
+// 要素のハッシュを O(1) として行列のハッシュを O(HW+1) で求める。
 template <Int H, Int W, class T> auto hash(const StaticMatrix<H, W, T> &m) {
     return m.hash();
 }
 
+// H次正方行列を非負のk乗にする。計算量 O(H³ log(k+1)+H²+1)。
 template <Int H, Int W, class T> auto pow(const StaticMatrix<H, W, T> &m, Int n) {
     return m.pow(n);
 }
 
+// 全要素の和を返す。計算量 O(HW+1)。
 template <Int H, Int W, class T> T sum(const StaticMatrix<H, W, T> &m) {
     return m.sum();
 }
 
+// 左上h行w列の階数を返す。計算量 O(hw min(h,w)+h+w+1)。
 template <Int H, Int W, class T>
 Int rank(const StaticMatrix<H, W, T> &m, Int height = H, Int width = W) {
     return m.rank(height, width);
 }
 
+// 左上n次正方行列の行列式を返す。計算量 O(n³+n+1)。
 template <Int H, Int W, class T> T determinant(const StaticMatrix<H, W, T> &m, Int n = H) {
     return m.determinant(n);
 }
 
+// 左上n次の対称な偶数次行列のhafnianを返す。計算量 O(n² 2^(n/2)+1)。
 template <Int H, Int W, class T> T hafnian(const StaticMatrix<H, W, T> &m, Int n = H) {
     return m.hafnian(n);
 }
 
+// 左上n次正方行列の逆行列を返す。計算量 O(n³+HW+1)。
 template <Int H, Int W, class T> auto inverse(const StaticMatrix<H, W, T> &m, Int n = H) {
     return m.inverse(n);
 }
 
+// 左上n次正方行列の余因子行列を返す。計算量 O(n³+HW+1)。
 template <Int H, Int W, class T> auto adjugate(const StaticMatrix<H, W, T> &m, Int n = H) {
     return m.adjugate(n);
 }
 
+// 行列を文字列に変換する。要素の出力時間の合計と O(HW+H+1) が必要。
 template <Int H, Int W, class T> auto to_string(const StaticMatrix<H, W, T> &m) {
     return m.str();
 }
 
+// 左上h行w列を用いたAx=bの特殊解と核の基底を返す。計算量 O((h+1)(w+1)²)。
 template <Int H, Int W, class T, class B>
 auto solveLinearSystem(const StaticMatrix<H, W, T> &m, const B &b, Int height = H, Int width = W) {
     return m.solveLinearSystem(b, height, width);
@@ -705,6 +733,7 @@ auto solveLinearSystem(const StaticMatrix<H, W, T> &m, const B &b, Int height = 
 
 namespace std {
 template <cplib::Int H, cplib::Int W, class T> struct hash<cplib::StaticMatrix<H, W, T>> {
+    // 要素のハッシュを O(1) として行列のハッシュを O(HW+1) で求める。
     size_t operator()(const cplib::StaticMatrix<H, W, T> &m) const {
         return m.hash();
     }

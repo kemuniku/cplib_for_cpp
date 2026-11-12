@@ -207,15 +207,19 @@ public:
             root = makeNode(0, n, id);
     }
 
+    // 木を複製する。保持区間数をKとしてO(K)。
     DynamicLazySegmentTree(const DynamicLazySegmentTree &p)
         : root(clone(p.root)), length(p.length), nodes(p.nodes), merge(p.merge),
           identity(p.identity), mapping(p.mapping), composition(p.composition), id(p.id),
           initial(p.initial) {
     }
 
+    // 木をムーブ構築する。O(1)。
     DynamicLazySegmentTree(DynamicLazySegmentTree &&) = default;
+    // 木をムーブ代入する。代入先の保持区間数をKとしてO(K)。
     DynamicLazySegmentTree &operator=(DynamicLazySegmentTree &&) = default;
 
+    // 木を複製して代入する。両者の保持区間数の合計をKとしてO(K)。
     DynamicLazySegmentTree &operator=(const DynamicLazySegmentTree &p) {
         if (this != &p) {
             DynamicLazySegmentTree copy(p);
@@ -241,6 +245,7 @@ public:
         return l == r ? identity : getNode(root, l, r);
     }
 
+    // p番目の値を更新する。保持区間数をKとしてO(log(K+2))。
     void update(Int p, S value) {
         assert(0 <= p && p < length);
         root = splitAt(root, p);
@@ -248,14 +253,17 @@ public:
         setNode(root, p, value);
     }
 
+    // 両端を含む区間の積を返す。保持区間数をKとしてO(log(K+2))。
     template <class L, class R> S get(ClosedSlice<L, R> s) {
         return get(resolve_index(length, s.a), resolve_index(length, s.b) + 1);
     }
 
+    // 両端を含む区間にfを作用させる。保持区間数をKとしてO(log(K+2))。
     template <class L, class R> void apply(ClosedSlice<L, R> s, F f) {
         apply(resolve_index(length, s.a), resolve_index(length, s.b) + 1, f);
     }
 
+    // 両端を含む区間の積を返す。保持区間数をKとしてO(log(K+2))。
     template <class L, class R> S operator[](ClosedSlice<L, R> s) {
         return get(s);
     }
@@ -264,33 +272,40 @@ public:
         DynamicLazySegmentTree *tree;
         Int index;
 
+        // 対象の値を取得する。保持区間数をKとしてO(log(K+2))。
         operator S() const {
             return tree->get(index, index + 1);
         }
 
+        // 対象の値を設定する。保持区間数をKとしてO(log(K+2))。
         Reference &operator=(S value) {
             tree->update(index, value);
             return *this;
         }
 
+        // 他の位置の値を読み取り代入する。保持区間数をKとしてO(log(K+2))。
         Reference &operator=(const Reference &r) {
             return *this = S(r);
         }
     };
 
+    // p番目を読み書きする参照を返す。O(1)。
     Reference operator[](Int p) {
         assert(0 <= p && p < length);
         return {this, p};
     }
 
+    // 末尾からp番目を読み書きする参照を返す。O(1)。
     Reference operator[](BackwardsIndex p) {
         return (*this)[length - p.value];
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return length;
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
@@ -300,50 +315,61 @@ public:
         return nodes;
     }
 
+    // 全区間の積を返す。O(1)。
     S get_all() const {
         return root ? root->product : identity;
     }
 };
 
+// 長さと演算・作用・初期区間の積を指定して構築する。各コールバックがO(1)ならO(1)。
 template <class S, class F, class Op, class Map, class Comp, class Initial>
 auto initDynamicLazySegmentTree(Int n, Op op, S e, Map map, Comp comp, F id, Initial initial) {
     return DynamicLazySegmentTree<S, F>(n, op, e, map, comp, id, initial);
 }
 
+// 長さと演算・作用・初期区間の積を指定して構築する。各コールバックがO(1)ならO(1)。
 template <class... Args> auto newDynamicLazySegWith(Args &&...args) {
     return initDynamicLazySegmentTree(std::forward<Args>(args)...);
 }
 
+// 要素数を返す。O(1)。
 template <class S, class F> Int len(const DynamicLazySegmentTree<S, F> &t) {
     return t.len();
 }
 
+// 保持する区間数を返す。O(1)。
 template <class S, class F> Int node_count(const DynamicLazySegmentTree<S, F> &t) {
     return t.node_count();
 }
 
+// 全区間の積を返す。O(1)。
 template <class S, class F> S get_all(const DynamicLazySegmentTree<S, F> &t) {
     return t.get_all();
 }
 
+// 半開区間[l,r)の積を返す。保持区間数をKとしてO(log(K+2))。
 template <class S, class F> S get(DynamicLazySegmentTree<S, F> &t, Int l, Int r) {
     return t.get(l, r);
 }
 
+// 両端を含む区間の積を返す。保持区間数をKとしてO(log(K+2))。
 template <class S, class F, class L, class R>
 S get(DynamicLazySegmentTree<S, F> &t, ClosedSlice<L, R> s) {
     return t.get(s);
 }
 
+// 半開区間[l,r)にfを作用させる。保持区間数をKとしてO(log(K+2))。
 template <class S, class F> void apply(DynamicLazySegmentTree<S, F> &t, Int l, Int r, F f) {
     t.apply(l, r, f);
 }
 
+// 両端を含む区間にfを作用させる。保持区間数をKとしてO(log(K+2))。
 template <class S, class F, class L, class R>
 void apply(DynamicLazySegmentTree<S, F> &t, ClosedSlice<L, R> s, F f) {
     t.apply(s, f);
 }
 
+// p番目の値を設定する。保持区間数をKとしてO(log(K+2))。
 template <class S, class F> void update(DynamicLazySegmentTree<S, F> &t, Int p, S value) {
     t.update(p, value);
 }

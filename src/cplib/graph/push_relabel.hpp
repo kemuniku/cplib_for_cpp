@@ -10,6 +10,7 @@ template <class Cap = Int> class PushRelabel : public detail::FlowGraph<Cap> {
     using Base::positions;
 
 public:
+    // n頂点の流量グラフを構築する。O(n)。
     explicit PushRelabel(Int n) : Base(n) {
     }
 
@@ -198,27 +199,33 @@ public:
     }
 };
 
+// n頂点の流量グラフを構築する。O(n)。
 template <class Cap = Int> auto initPushRelabel(Int n, Cap = Cap(0)) {
     return PushRelabel<Cap>(n);
 }
 
+// 有向辺を追加し、辺番号を返す。償却O(1)。
 template <class Cap> Int add_edge(PushRelabel<Cap> &g, Int s, Int t, Cap c) {
     return g.add_edge(s, t, c);
 }
 
+// 辺番号iに対応する辺の情報を返す。O(1)。
 template <class Cap> auto get_edge(const PushRelabel<Cap> &g, Int i) {
     return g.get_edge(i);
 }
 
+// 全辺の情報を追加順に返す。O(E)。
 template <class Cap> auto get_edges(const PushRelabel<Cap> &g) {
     return g.get_edges();
 }
 
+// 流量を追加する。多重辺を含む一般の場合O(VE+V²√E)、辺がない場合O(V)。
 template <class Cap>
 Cap flow(PushRelabel<Cap> &g, Int s, Int t, Cap limit = std::numeric_limits<Cap>::max()) {
     return g.flow(s, t, limit);
 }
 
+// 残余グラフでsから到達可能な頂点を返す。O(V+E)。
 template <class Cap> auto min_cut(const PushRelabel<Cap> &g, Int s) {
     return g.min_cut(s);
 }

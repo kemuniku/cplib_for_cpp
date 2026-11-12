@@ -4,7 +4,7 @@
 #include <cplib/graph/maxflow.hpp>
 
 namespace cplib {
-// 二部グラフの単位容量最大流によるDAGの最小パス被覆。
+// 二部グラフの単位容量最大流によるDAGの最小パス被覆。O((V+E)√V)。
 template <class G>
     requires(DirectedGraph<G> && UnWeightedGraph<G>)
 Int dag_minimum_path_cover(const G &g) {

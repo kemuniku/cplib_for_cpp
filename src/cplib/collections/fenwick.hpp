@@ -19,6 +19,7 @@ public:
         assert(n >= 0);
     }
 
+    // 配列から構築する。要素の演算がO(1)ならO(n)。
     explicit FenwickTree(std::span<const T> values) : FenwickTree(values.size()) {
         for (Int i = 1; i <= size_; ++i)
             data[slot(i)] = values[i - 1];
@@ -29,10 +30,12 @@ public:
         }
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return size_;
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
@@ -70,10 +73,12 @@ public:
         return result - left;
     }
 
+    // p番目の値を返す。O(log(n+1))。
     T operator[](Int p) const {
         return get(p, p + 1);
     }
 
+    // p番目の値を設定する。O(log(n+1))。
     void set(Int p, const T &value) {
         add(p, value - get(p, p + 1));
     }
@@ -82,64 +87,78 @@ public:
         FenwickTree *tree;
         Int p;
 
+        // 指す位置の値を取得する。O(log(n+1))。
         operator T() const {
             return tree->get(p, p + 1);
         }
 
+        // 指す位置の値を設定する。O(log(n+1))。
         Reference &operator=(const T &value) {
             tree->set(p, value);
             return *this;
         }
 
+        // 別の位置の値を読み取り代入する。O(log(n+1))。
         Reference &operator=(const Reference &other) {
             return *this = T(other);
         }
 
+        // 指す位置にdeltaを加算する。O(log(n+1))。
         Reference &operator+=(const T &delta) {
             tree->add(p, delta);
             return *this;
         }
 
+        // 指す位置からdeltaを減算する。O(log(n+1))。
         Reference &operator-=(const T &delta) {
             tree->add(p, -delta);
             return *this;
         }
     };
 
+    // p番目の要素を読み書きする参照を返す。O(1)。
     Reference operator[](Int p) {
         return {this, p};
     }
 
     CPLIB_BACKWARDS_INDEX_OVERLOADS
+    // 両端を含む区間の和を返す。O(log(n+1))。
     template <class L, class R> T operator[](ClosedSlice<L, R> segment) const {
         return get(resolve_index(len(), segment.a), resolve_index(len(), segment.b) + 1);
     }
 };
 
+// 長さnの零配列から構築する。O(n)。
 template <class T> FenwickTree<T> initFenwickTree(Int n) {
     return FenwickTree<T>(n);
 }
 
+// 配列から構築する。要素演算がO(1)ならO(n)。
 template <class T> FenwickTree<T> initFenwickTree(std::span<const T> a) {
     return FenwickTree<T>(a);
 }
 
+// 配列から構築する。要素演算がO(1)ならO(n)。
 template <class T> FenwickTree<T> initFenwickTree(const std::vector<T> &a) {
     return FenwickTree<T>(a);
 }
 
+// 要素数を返す。O(1)。
 template <class T> Int len(const FenwickTree<T> &f) {
     return f.len();
 }
 
+// p番目に加算する。O(log(n+1))。
 template <class T> void add(FenwickTree<T> &f, Int p, const T &delta) {
     f.add(p, delta);
 }
 
+// [0,r)の和を返す。O(log(n+1))。
 template <class T> T prefix(const FenwickTree<T> &f, Int r) {
     return f.prefix(r);
 }
 
+// [l,r)の和を返す。O(log(n+1))。
 template <class T> T get(const FenwickTree<T> &f, Int l, Int r) {
     return f.get(l, r);
 }

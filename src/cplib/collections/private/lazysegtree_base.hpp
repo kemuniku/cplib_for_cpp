@@ -120,18 +120,22 @@ public:
     using value_type = S;
     using action_type = F;
 
+    // モノイドの単位元を返す。O(1)と値のコピーに要する時間。
     S calc_e() const {
         return identity;
     }
 
+    // 作用の単位元を返す。O(1)と値のコピーに要する時間。
     F calc_id() const {
         return id;
     }
 
+    // 指定したモノイド演算を呼び出す。計算量はその演算に依存する。
     S calc_op(const S &a, const S &b) const {
         return merge(a, b);
     }
 
+    // 指定した作用の合成を呼び出す。計算量は合成に依存する。
     F calc_composition(const F &a, const F &b) const {
         return composition(a, b);
     }
@@ -143,6 +147,7 @@ public:
         return std::vector<S>(arr.begin() + lastnode, arr.begin() + lastnode + length);
     }
 
+    // [l,r)の葉をoutputに追加する。O(r-l+log(n+1))回の作用・合成。
     // 区間の葉を一括走査し、点取得の繰り返しによるlog N倍を避ける。
     void append_range(Int l, Int r, std::vector<S> &output) {
         assert(0 <= l && l <= r && r <= length);
@@ -165,6 +170,7 @@ public:
     std::vector<S> arr;
     std::vector<F> lazy;
 
+    // 長さnの単位元列から構築する。O(n+1)時間・領域。
     LazySegmentTree(Int n, Merge op, S e, Mapping map, Composition comp, F id_)
         : identity(e), id(id_), merge(op), mapping(map), composition(comp), length(n) {
         assert(n >= 0);
@@ -180,6 +186,7 @@ public:
             lazy.assign(lastnode, id);
     }
 
+    // 配列から構築する。要素数をnとしてO(n+1)回の演算。
     LazySegmentTree(std::span<const S> v, Merge op, S e, Mapping map, Composition comp, F id_)
         : LazySegmentTree(v.size(), op, e, map, comp, id_) {
         std::copy(v.begin(), v.end(), arr.begin() + lastnode);
@@ -187,14 +194,17 @@ public:
             pull(i);
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return length;
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // p番目の値を更新する。O(log(n+1))回の演算・作用・合成。
     void update(Int p, const S &value) {
         assert(0 <= p && p < length);
         p += lastnode;
@@ -204,12 +214,14 @@ public:
             pull(p >> i);
     }
 
+    // p番目の値を返す。O(log(n+1))回の作用・合成。
     S get(Int p) {
         assert(0 <= p && p < length);
         all_push(p + lastnode);
         return arr[p + lastnode];
     }
 
+    // O(log(n+1))回の演算・作用・合成。
     // 半開区間[l,r)の積を返します。
     S get(Int l, Int r) {
         assert(0 <= l && l <= r && r <= length);
@@ -230,14 +242,17 @@ public:
         return merge(a, b);
     }
 
+    // 全要素の積を返す。O(1)。
     S get_all() const {
         return arr[1];
     }
 
+    // 両端を含む区間の積を返す。O(log(n+1))回の演算・作用・合成。
     template <class L, class R> S get(ClosedSlice<L, R> s) {
         return get(resolve_index(length, s.a), resolve_index(length, s.b) + 1);
     }
 
+    // 両端を含む区間の積を返す。O(log(n+1))回の演算・作用・合成。
     template <class L, class R> S operator[](ClosedSlice<L, R> s) {
         return get(s);
     }
@@ -246,29 +261,35 @@ public:
         LazySegmentTree *tree;
         Int index;
 
+        // 対象の値を取得する。O(log(n+1))回の作用・合成。
         operator S() const {
             return tree->get(index);
         }
 
+        // 対象の値を更新する。O(log(n+1))回の演算・作用・合成。
         Reference &operator=(const S &v) {
             tree->update(index, v);
             return *this;
         }
 
+        // 他の位置の値を読み取り代入する。O(log(n+1))回の演算・作用・合成。
         Reference &operator=(const Reference &v) {
             return *this = S(v);
         }
     };
 
+    // p番目を読み書きする参照を返す。O(1)。
     Reference operator[](Int p) {
         assert(0 <= p && p < length);
         return {this, p};
     }
 
+    // 末尾からp番目を読み書きする参照を返す。O(1)。
     Reference operator[](BackwardsIndex p) {
         return (*this)[length - p.value];
     }
 
+    // 全要素を空白区切りで文字列化する。O(n log(n+1))回の作用・合成と出力処理。
     std::string str() {
         std::ostringstream s;
         for (Int i = 0; i < length; ++i) {
@@ -279,6 +300,7 @@ public:
         return s.str();
     }
 
+    // O(log(n+1))回の演算・作用・合成。
     // 半開区間[l,r)にfを作用させます。
     void apply(Int l, Int r, const F &f) {
         assert(0 <= l && l <= r && r <= length);
@@ -299,6 +321,7 @@ public:
         pullBoundaries(l, r);
     }
 
+    // 両端を含む区間にfを作用させる。O(log(n+1))回の演算・作用・合成。
     template <class L, class R> void apply(ClosedSlice<L, R> s, const F &f) {
         apply(resolve_index(length, s.a), resolve_index(length, s.b) + 1, f);
     }
@@ -362,11 +385,13 @@ public:
     }
 };
 
+// 初期列と演算・作用を指定して構築する。要素数をnとしてO(n+1)回の演算。
 template <class S, class F, class V, class Op, class Map, class Comp>
 auto initLazySegmentTree(const V &v, Op op, S e, Map map, Comp comp, F id) {
     return LazySegmentTree<S, F>(v, op, e, map, comp, id);
 }
 
+// 初期列と演算・作用を指定して構築する。要素数をnとしてO(n+1)回の演算。
 template <class V, class Op, class S, class Map, class Comp, class F>
 auto newLazySegWith(const V &v, Op op, S e, Map map, Comp comp, F id) {
     return initLazySegmentTree(v, op, e, map, comp, id);
@@ -375,45 +400,55 @@ auto newLazySegWith(const V &v, Op op, S e, Map map, Comp comp, F id) {
 #define CPLIB_LAZY_TEMPLATE template <class S, class F, class M, class A, class C, bool B>
 #define CPLIB_LAZY_TYPE LazySegmentTree<S, F, M, A, C, B>
 
+// 要素数を返す。O(1)。
 CPLIB_LAZY_TEMPLATE Int len(const CPLIB_LAZY_TYPE &s) {
     return s.len();
 }
 
+// p番目の値を更新する。O(log(n+1))回の演算・作用・合成。
 CPLIB_LAZY_TEMPLATE void update(CPLIB_LAZY_TYPE &s, Int p, const S &v) {
     s.update(p, v);
 }
 
+// 半開区間[l,r)の積を返す。O(log(n+1))回の演算・作用・合成。
 CPLIB_LAZY_TEMPLATE auto get(CPLIB_LAZY_TYPE &s, Int l, Int r) {
     return s.get(l, r);
 }
 
+// 全要素の積を返す。O(1)。
 CPLIB_LAZY_TEMPLATE auto get_all(const CPLIB_LAZY_TYPE &s) {
     return s.get_all();
 }
 
+// 半開区間[l,r)にfを作用させる。O(log(n+1))回の演算・作用・合成。
 CPLIB_LAZY_TEMPLATE void apply(CPLIB_LAZY_TYPE &s, Int l, Int r, const F &f) {
     s.apply(l, r, f);
 }
 
+// 全要素を空白区切りで文字列化する。O(n log(n+1))回の作用・合成と出力処理。
 CPLIB_LAZY_TEMPLATE auto to_string(CPLIB_LAZY_TYPE &s) {
     return s.str();
 }
 
+// 両端を含む区間の積を返す。O(log(n+1))回の演算・作用・合成。
 template <class S, class F, class M, class A, class C, bool B, class L, class R>
 auto get(CPLIB_LAZY_TYPE &s, ClosedSlice<L, R> r) {
     return s.get(r);
 }
 
+// 両端を含む区間にfを作用させる。O(log(n+1))回の演算・作用・合成。
 template <class S, class F, class M, class A, class C, bool B, class L, class R>
 void apply(CPLIB_LAZY_TYPE &s, ClosedSlice<L, R> r, const F &f) {
     s.apply(r, f);
 }
 
+// f(積[l,r))が真となる最大のrを返す。単調な述語に対しO(log(n+1))回の演算・作用・合成と述語呼出し。
 template <class S, class F, class M, class A, class C, bool B, class P>
 auto max_right(CPLIB_LAZY_TYPE &s, Int l, P p) {
     return s.max_right(l, p);
 }
 
+// f(積[l,r))が真となる最小のlを返す。単調な述語に対しO(log(n+1))回の演算・作用・合成と述語呼出し。
 template <class S, class F, class M, class A, class C, bool B, class P>
 auto min_left(CPLIB_LAZY_TYPE &s, Int r, P p) {
     return s.min_left(r, p);

@@ -165,7 +165,7 @@ class WaveletMatrix {
     }
 
 public:
-    // 非負整数列をO(NH)で構築。ワード単位のビット設定、分岐を省く振分け、
+    // 非負整数列をO(N(H+1)+H)で構築。Nは要素数、Hはビット数。ワード単位のビット設定、分岐を省く振分け、
     // 64要素以下の下位層を直接走査する短縮経路を元実装どおり保持する。
     explicit WaveletMatrix(std::span<const Int> input = {}, Int height = -1, bool sums = false)
         : H(height), N(input.size()), with_sum(sums) {
@@ -222,16 +222,18 @@ public:
         }
     }
 
+    // 格納する要素数を返す。O(1)。
     Int size() const {
         return N;
     }
 
+    // 高さhの区間[l,r)をビット0と1の子区間に変換する。O(1)。
     WaveletChildren get_child(Int h, Int l, Int r) const {
         Int c0 = dat[h].zero_count, lr = dat[h].bits.rank(l), rr = dat[h].bits.rank(r);
         return {l - lr, r - rr, lr + c0, rr + c0};
     }
 
-    // 照会はO(H)。H=0も元の空・全零列の意味を維持。
+    // 照会はO(H+1)。H=0も元の空・全零列の意味を維持。
     // 半開区間[l,r)内で小さい順にk番目の値をO(H)で返す。0 <= k < r-lとし、kは0-indexed。Hは格納値のビット数。
     Int kth_smallest(Int l, Int r, Int k) const {
         UInt out = 0;
@@ -250,15 +252,18 @@ public:
         return std::bit_cast<Int>(out);
     }
 
+    // 半開区間[l,r)内で大きい順にk番目の値を返す。kは0始まり。O(H+1)。
     Int kth_largest(Int l, Int r, Int k) const {
         assert(0 <= k && k < r - l);
         return kth_smallest(l, r, r - l - 1 - k);
     }
 
+    // 半開区間[l,r)内でx未満の要素数を返す。O(H+1)。
     Int range_lowerbound(Int l, Int r, Int x) const {
         return bound<false, false>(l, r, x).count;
     }
 
+    // 半開区間[l,r)内でx以下の要素数を返す。O(H+1)。
     Int range_upperbound(Int l, Int r, Int x) const {
         return bound<false, true>(l, r, x).count;
     }
@@ -286,6 +291,7 @@ public:
         return low >= high ? 0 : range_lowerbound(l, r, high) - range_lowerbound(l, r, low);
     }
 
+    // 半開区間[l,r)内でxに等しい要素数を返す。O(H+1)。
     Int count(Int l, Int r, Int x) const {
         if (x < 0 || (H < 64 && (UInt(x) >> H) != 0))
             return 0;
@@ -335,10 +341,12 @@ public:
         return out + k * std::bit_cast<Int>(value);
     }
 
+    // 半開区間[l,r)内のx以下の値の総和を返す。sums=trueで構築する。O(H+1)。
     Int sum_upperbound(Int l, Int r, Int x) const {
         return bound<true, true>(l, r, x).sum;
     }
 
+    // 半開区間[l,r)内のx未満の値の総和を返す。sums=trueで構築する。O(H+1)。
     Int sum_lowerbound(Int l, Int r, Int x) const {
         validateSum(l, r);
         return x <= 0 ? 0 : sum_upperbound(l, r, x - 1);
@@ -353,19 +361,23 @@ public:
         return low >= high ? 0 : sum_lowerbound(l, r, high) - sum_lowerbound(l, r, low);
     }
 
+    // 半開区間[l,r)内の小さい方からk個の総和と個数を返す。sums=trueで構築する。O(H+1)。
     WaveletSumCount sum_smallest_with_count(Int l, Int r, Int k) const {
         return {sum_smallest(l, r, k), k};
     }
 
+    // 半開区間[l,r)内のx以下の値の総和と個数を返す。sums=trueで構築する。O(H+1)。
     WaveletSumCount sum_upperbound_with_count(Int l, Int r, Int x) const {
         return bound<true, true>(l, r, x);
     }
 
+    // 半開区間[l,r)内のx未満の値の総和と個数を返す。sums=trueで構築する。O(H+1)。
     WaveletSumCount sum_lowerbound_with_count(Int l, Int r, Int x) const {
         validateSum(l, r);
         return x <= 0 ? WaveletSumCount{} : sum_upperbound_with_count(l, r, x - 1);
     }
 
+    // 半開区間[l,r)内で値が[low,high)に入る要素の総和と個数を返す。sums=trueで構築する。O(H+1)。
     WaveletSumCount range_sum_with_count(Int l, Int r, Int low, Int high) const {
         validateSum(l, r);
         if (low >= high)
@@ -377,74 +389,92 @@ public:
     }
 };
 
+// 非負整数列から構築する。Nを要素数、Hをビット数としてO(N(H+1)+H)。
 inline auto initWaveletMatrix(std::span<const Int> v, Int H = -1, bool with_sum = false) {
     return WaveletMatrix(v, H, with_sum);
 }
 
+// 高さhの区間をビット0と1の子区間に変換する。O(1)。
 inline auto get_child(const WaveletMatrix &w, Int h, Int l, Int r) {
     return w.get_child(h, l, r);
 }
 
+// 半開区間内で小さい順にk番目の値を返す。kは0始まり。O(H+1)。
 inline auto kth_smallest(const WaveletMatrix &w, Int l, Int r, Int k) {
     return w.kth_smallest(l, r, k);
 }
 
+// 半開区間内で大きい順にk番目の値を返す。kは0始まり。O(H+1)。
 inline auto kth_largest(const WaveletMatrix &w, Int l, Int r, Int k) {
     return w.kth_largest(l, r, k);
 }
 
+// 半開区間内のx未満の要素数を返す。O(H+1)。
 inline auto range_lowerbound(const WaveletMatrix &w, Int l, Int r, Int x) {
     return w.range_lowerbound(l, r, x);
 }
 
+// 半開区間内のx以下の要素数を返す。O(H+1)。
 inline auto range_upperbound(const WaveletMatrix &w, Int l, Int r, Int x) {
     return w.range_upperbound(l, r, x);
 }
 
+// 半開区間内のx未満の最大値を返す。存在しなければ空。O(H+1)。
 inline auto prev_value(const WaveletMatrix &w, Int l, Int r, Int x) {
     return w.prev_value(l, r, x);
 }
 
+// 半開区間内のx以上の最小値を返す。存在しなければ空。O(H+1)。
 inline auto next_value(const WaveletMatrix &w, Int l, Int r, Int x) {
     return w.next_value(l, r, x);
 }
 
+// 半開区間内でxに等しい要素数を返す。O(H+1)。
 inline auto count(const WaveletMatrix &w, Int l, Int r, Int x) {
     return w.count(l, r, x);
 }
 
+// 半開区間内の小さい方からk個の総和を返す。sums=trueで構築する。O(H+1)。
 inline auto sum_smallest(const WaveletMatrix &w, Int l, Int r, Int k) {
     return w.sum_smallest(l, r, k);
 }
 
+// 半開区間内のx以下の値の総和を返す。sums=trueで構築する。O(H+1)。
 inline auto sum_upperbound(const WaveletMatrix &w, Int l, Int r, Int x) {
     return w.sum_upperbound(l, r, x);
 }
 
+// 半開区間内のx未満の値の総和を返す。sums=trueで構築する。O(H+1)。
 inline auto sum_lowerbound(const WaveletMatrix &w, Int l, Int r, Int x) {
     return w.sum_lowerbound(l, r, x);
 }
 
+// 半開区間内の小さい方からk個の総和と個数を返す。sums=trueで構築する。O(H+1)。
 inline auto sum_smallest_with_count(const WaveletMatrix &w, Int l, Int r, Int k) {
     return w.sum_smallest_with_count(l, r, k);
 }
 
+// 半開区間内のx以下の値の総和と個数を返す。sums=trueで構築する。O(H+1)。
 inline auto sum_upperbound_with_count(const WaveletMatrix &w, Int l, Int r, Int x) {
     return w.sum_upperbound_with_count(l, r, x);
 }
 
+// 半開区間内のx未満の値の総和と個数を返す。sums=trueで構築する。O(H+1)。
 inline auto sum_lowerbound_with_count(const WaveletMatrix &w, Int l, Int r, Int x) {
     return w.sum_lowerbound_with_count(l, r, x);
 }
 
+// 半開区間内で値が[low,high)に入る要素数を返す。O(H+1)。
 inline auto range_freq(const WaveletMatrix &w, Int l, Int r, Int low, Int high) {
     return w.range_freq(l, r, low, high);
 }
 
+// 半開区間内で値が[low,high)に入る要素の総和を返す。sums=trueで構築する。O(H+1)。
 inline auto range_sum(const WaveletMatrix &w, Int l, Int r, Int low, Int high) {
     return w.range_sum(l, r, low, high);
 }
 
+// 半開区間内で値が[low,high)に入る要素の総和と個数を返す。sums=trueで構築する。O(H+1)。
 inline auto range_sum_with_count(const WaveletMatrix &w, Int l, Int r, Int low, Int high) {
     return w.range_sum_with_count(l, r, low, high);
 }

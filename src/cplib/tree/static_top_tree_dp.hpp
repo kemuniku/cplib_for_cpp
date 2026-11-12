@@ -27,6 +27,7 @@ template <class Forward> class StaticTopTreeDP {
 public:
     StaticTopTree tree;
 
+    // 葉の値と結合演算からDPを構築する。演算がO(1)ならO(N)。
     StaticTopTreeDP(StaticTopTree t, std::span<const Forward> values, Operation compress,
                     Operation rake)
         : state_(std::make_shared<State>(
@@ -52,15 +53,18 @@ public:
     }
 };
 
+// Static Top Tree上のDPを構築する。演算がO(1)ならO(N)。
 template <class T, class C, class R>
 auto initStaticTopTreeDP(StaticTopTree tree, const std::vector<T> &values, C compress, R rake) {
     return StaticTopTreeDP<T>(std::move(tree), values, std::move(compress), std::move(rake));
 }
 
+// 頂点と親辺を表す値を更新する。演算がO(1)ならO(log N)。
 template <class T> void set(StaticTopTreeDP<T> &dp, Int v, T value) {
     dp.set(v, std::move(value));
 }
 
+// 構築時の根に対する集約値を返す。値のコピーがO(1)ならO(1)。
 template <class T> T getAll(const StaticTopTreeDP<T> &dp) {
     return dp.getAll();
 }

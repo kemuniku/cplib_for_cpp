@@ -6,6 +6,7 @@ template <class T> class QSWAG : public detail::SwagBase<T> {
     using Base = detail::SwagBase<T>;
 
 public:
+    // モノイド演算と単位元を指定して空の列を構築する。O(1)。
     template <class Op> QSWAG(Op op, T e) : Base(op, e) {
     }
 
@@ -25,6 +26,7 @@ public:
         return this->poptop();
     }
 
+    // 全要素を文字列化する。要素数をnとしてO(n)と各要素の文字列化の計算量。
     std::string to_string() const {
         auto t = this->top;
         std::reverse(t.begin(), t.end());
@@ -32,26 +34,32 @@ public:
     }
 };
 
+// モノイド演算と単位元を指定して空の列を生成する。O(1)。
 template <class Op, class T> QSWAG<T> initSWAG(Op op, T e) {
     return QSWAG<T>(op, e);
 }
 
+// 末尾に追加する。償却O(1)回のモノイド演算。
 template <class T> void push(QSWAG<T> &s, const T &x) {
     s.push(x);
 }
 
+// 先頭から取り出す。償却O(1)回のモノイド演算。
 template <class T> T pop(QSWAG<T> &s) {
     return s.pop();
 }
 
+// 全要素の総積を返す。モノイド演算を1回行う。
 template <class T> T fold(const QSWAG<T> &s) {
     return s.fold();
 }
 
+// 要素数を返す。O(1)。
 template <class T> Int len(const QSWAG<T> &s) {
     return s.len();
 }
 
+// 全要素を文字列化する。要素数をnとしてO(n)と各要素の文字列化の計算量。
 template <class T> std::string to_string(const QSWAG<T> &s) {
     return s.to_string();
 }

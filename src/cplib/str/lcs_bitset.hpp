@@ -132,7 +132,8 @@ template <class A, class B> Int LCS(const A &a, const B &b) {
 
 // Hirschberg法。ハッシュ可能な基本型は期待O(nm/64+(n+m)log(n+m))、領域O(n+m)。
 // 最長共通部分列を一つ復元する。複数解がある場合の選び方は通常版と異なることがある。
-// ハッシュ・比較をO(1)とする。空入力はO(1)。
+// n=max(|a|,|b|)、m=min(|a|,|b|)。ハッシュ・比較をO(1)とする。空入力はO(1)。
+// ハッシュを用いない要素型では保守的に O((nm+n+m)log(n+m+1))。
 template <class A, class B> auto restoreLCS(const A &a, const B &b) {
     std::vector<typename A::value_type> output;
     detail::restore(detail::View<A>{&a, 0, a.size()}, detail::View<B>{&b, 0, b.size()}, output);

@@ -195,8 +195,10 @@ template <Int N> class BitSet {
     }();
 
 public:
+    // 長さNの全ビット0の列を構築する。O(1+N/64)。
     BitSet() = default;
 
+    // 真偽値配列から構築する。O(1+N/64+values.size())。
     explicit BitSet(std::span<const bool> values) {
         if (Int(values.size()) > N)
             throw std::invalid_argument("initial value is longer than BitSet size");
@@ -205,6 +207,7 @@ public:
                                                                      values.size(), Words);
     }
 
+    // 真偽値配列から構築する。O(1+N/64+values.size())。
     explicit BitSet(const std::vector<bool> &values) {
         if (Int(values.size()) > N)
             throw std::invalid_argument("initial value is longer than BitSet size");
@@ -213,6 +216,7 @@ public:
                 bits_[i >> 6] |= UInt(1) << (i & 63);
     }
 
+    // 指定した添字だけ1の列を生成する。添字数kとしてO(1+N/64+k)。
     static BitSet fromIndexes(std::span<const Int> indexes) {
         BitSet out;
         for (Int i : indexes) {
@@ -222,19 +226,23 @@ public:
         return out;
     }
 
+    // ビット数Nを返す。O(1)。
     static constexpr Int len() {
         return N;
     }
 
+    // ビット数Nを返す。O(1)。
     static constexpr Int size() {
         return len();
     }
 
+    // i番目のビットを返す。O(1)。
     bool operator[](Int i) const {
         check(i);
         return (bits_[i >> 6] >> (i & 63)) & 1;
     }
 
+    // i番目のビットを設定する。O(1)。
     void set(Int i, bool value) {
         check(i);
         if (value)
@@ -247,34 +255,41 @@ public:
         BitSet *owner;
         Int i;
 
+        // 対象のビットを返す。O(1)。
         operator bool() const {
             return std::as_const(*owner)[i];
         }
 
+        // 対象のビットを設定する。O(1)。
         Reference &operator=(bool value) {
             owner->set(i, value);
             return *this;
         }
 
+        // 値が0または1なら対象のビットを設定する。O(1)。
         Reference &operator=(Int value) {
             if (value == 0 || value == 1)
                 owner->set(i, value == 1);
             return *this;
         }
 
+        // 値が0または1なら対象のビットを設定する。O(1)。
         Reference &operator=(int value) {
             return *this = Int(value);
         }
 
+        // 別のビットを読み取って代入する。O(1)。
         Reference &operator=(const Reference &value) {
             return *this = bool(value);
         }
     };
 
+    // i番目を読み書きする参照を返す。O(1)。
     Reference operator[](Int i) {
         return {this, i};
     }
 
+    // bとのANDで更新する。O(1+N/64)。
     BitSet &operator&=(const BitSet &b) {
         if constexpr (N > 0)
             detail::combined_collections_native::cplib_bs_and(bits_.data(), bits_.data(),
@@ -282,6 +297,7 @@ public:
         return *this;
     }
 
+    // bとのORで更新する。O(1+N/64)。
     BitSet &operator|=(const BitSet &b) {
         if constexpr (N > 0)
             detail::combined_collections_native::cplib_bs_or(bits_.data(), bits_.data(),
@@ -289,6 +305,7 @@ public:
         return *this;
     }
 
+    // bとのXORで更新する。O(1+N/64)。
     BitSet &operator^=(const BitSet &b) {
         if constexpr (N > 0)
             detail::combined_collections_native::cplib_bs_xor(bits_.data(), bits_.data(),
@@ -296,6 +313,7 @@ public:
         return *this;
     }
 
+    // aとbのANDを返す。O(1+N/64)。
     friend BitSet operator&(const BitSet &a, const BitSet &b) {
         BitSet out;
         if constexpr (N > 0)
@@ -304,6 +322,7 @@ public:
         return out;
     }
 
+    // aとbのORを返す。O(1+N/64)。
     friend BitSet operator|(const BitSet &a, const BitSet &b) {
         BitSet out;
         if constexpr (N > 0)
@@ -312,6 +331,7 @@ public:
         return out;
     }
 
+    // aとbのXORを返す。O(1+N/64)。
     friend BitSet operator^(const BitSet &a, const BitSet &b) {
         BitSet out;
         if constexpr (N > 0)
@@ -320,6 +340,7 @@ public:
         return out;
     }
 
+    // 添字の大きい方向にcountビットずらした列を返す。O(1+N/64)。
     BitSet operator<<(Int count) const {
         if (count < 0)
             throw std::invalid_argument("shift count must be non-negative");
@@ -333,6 +354,7 @@ public:
         return out;
     }
 
+    // 添字の小さい方向にcountビットずらした列を返す。O(1+N/64)。
     BitSet operator>>(Int count) const {
         if (count < 0)
             throw std::invalid_argument("shift count must be non-negative");
@@ -344,6 +366,7 @@ public:
         return out;
     }
 
+    // 全ビットを反転した列を返す。O(1+N/64)。
     BitSet operator~() const {
         BitSet out;
         if constexpr (N > 0) {
@@ -354,6 +377,7 @@ public:
         return out;
     }
 
+    // 1のビット数を返す。O(1+N/64)。
     Int popcount() const {
         if constexpr (N > 0)
             return detail::combined_collections_native::cplib_bs_popcount(bits_.data(),
@@ -362,6 +386,7 @@ public:
             return 0;
     }
 
+    // bとのANDの1のビット数を返す。O(1+N/64)。
     Int andpopcount(const BitSet &b) const {
         if constexpr (N > 0)
             return detail::combined_collections_native::cplib_bs_andpopcount(bits_.data(),
@@ -370,6 +395,7 @@ public:
             return 0;
     }
 
+    // bとのORの1のビット数を返す。O(1+N/64)。
     Int orpopcount(const BitSet &b) const {
         if constexpr (N > 0)
             return detail::combined_collections_native::cplib_bs_orpopcount(bits_.data(),
@@ -378,6 +404,7 @@ public:
             return 0;
     }
 
+    // bとのXORの1のビット数を返す。O(1+N/64)。
     Int xorpopcount(const BitSet &b) const {
         if constexpr (N > 0)
             return detail::combined_collections_native::cplib_bs_xorpopcount(bits_.data(),
@@ -391,6 +418,7 @@ public:
         Int word;
         UInt remaining;
 
+        // 次の1があるワードまで進む。最悪O(1+N/64)、全列挙でO(1+N/64+1の個数)。
         void skip() {
             while (!remaining && word < Words) {
                 ++word;
@@ -399,35 +427,42 @@ public:
             }
         }
 
+        // 現在の1のビットの添字を返す。O(1)。
         Int operator*() const {
             return word * 64 + std::countr_zero(remaining);
         }
 
+        // 次の1へ進む。最悪O(1+N/64)、全列挙でO(1+N/64+1の個数)。
         Iterator &operator++() {
             remaining &= remaining - 1;
             skip();
             return *this;
         }
 
+        // 異なる位置を指すか比較する。O(1)。
         bool operator!=(const Iterator &b) const {
             return word != b.word || remaining != b.remaining;
         }
     };
 
+    // 最初の1を指すイテレータを返す。最悪O(1+N/64)。
     Iterator begin() const {
         Iterator out{this, 0, Words ? bits_[0] : 0};
         out.skip();
         return out;
     }
 
+    // 列挙終了を表すイテレータを返す。O(1)。
     Iterator end() const {
         return {this, Words, 0};
     }
 
+    // 1の添字を列挙するため自身への参照を返す。取得O(1)、全列挙はO(1+N/64+1の個数)。
     const BitSet &items() const {
         return *this;
     }
 
+    // 最小の1の添字を返す。存在しなければ-1。O(1+N/64)。
     Int lowestBit() const {
         for (Int i = 0; i < Words; ++i)
             if (bits_[i])
@@ -435,6 +470,7 @@ public:
         return -1;
     }
 
+    // 添字の大きい順にビットを文字列化する。O(N+1)。
     std::string str() const {
         std::string out(N, '\0');
         Int finish = N;
@@ -456,38 +492,47 @@ public:
     }
 };
 
+// 長さNの全ビット0の列を生成する。O(1+N/64)。
 template <Int N> auto initBitSet() {
     return BitSet<N>();
 }
 
+// 真偽値配列から構築する。O(1+N/64+values.size())。
 template <Int N, class R> auto initBitSet(const R &values) {
     return BitSet<N>(values);
 }
 
+// 指定した添字のみ1の列を構築する。添字数kとしてO(1+N/64+k)。
 template <Int N> auto initBitSetFromIndexes(std::span<const Int> indexes) {
     return BitSet<N>::fromIndexes(indexes);
 }
 
+// ビット数を返す。O(1)。
 template <Int N> Int len(const BitSet<N> &a) {
     return a.len();
 }
 
+// 1のビット数を返す。O(1+N/64)。
 template <Int N> Int popcount(const BitSet<N> &a) {
     return a.popcount();
 }
 
+// aとbのANDの1のビット数を返す。O(1+N/64)。
 template <Int N> Int andpopcount(const BitSet<N> &a, const BitSet<N> &b) {
     return a.andpopcount(b);
 }
 
+// aとbのORの1のビット数を返す。O(1+N/64)。
 template <Int N> Int orpopcount(const BitSet<N> &a, const BitSet<N> &b) {
     return a.orpopcount(b);
 }
 
+// aとbのXORの1のビット数を返す。O(1+N/64)。
 template <Int N> Int xorpopcount(const BitSet<N> &a, const BitSet<N> &b) {
     return a.xorpopcount(b);
 }
 
+// 最小の1の添字を返す。存在しなければ-1。O(1+N/64)。
 template <Int N> Int lowestBit(const BitSet<N> &a) {
     return a.lowestBit();
 }

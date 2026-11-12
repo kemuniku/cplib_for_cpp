@@ -13,6 +13,7 @@ template <class K> struct AvlTreeNode {
     Int h = 1, len = 1;
     K key;
 
+    // keyを指定して孤立したノードを構築する。O(1)とkeyのムーブに要する時間。
     explicit AvlTreeNode(K value) : key(std::move(value)) {
     }
 };
@@ -107,20 +108,24 @@ template <class K> auto avl_search(AvlNodePtr<K> n, const K &key, bool strict) {
 }
 }
 
+// ノードnから親をたどって根を返す。木の高さをhとしてO(h)。
 template <class K> AvlNodePtr<K> rootOf(AvlNodePtr<K> n) {
     while (auto p = n->p)
         n = p;
     return n;
 }
 
+// key未満の最大ノードとkey以上の最小ノードの組を返す。木の高さをhとしてO(h)。
 template <class K> auto lower_bound_node(AvlNodePtr<K> n, const K &key) {
     return detail::avl_search(n, key, false);
 }
 
+// key以下の最大ノードとkeyより大きい最小ノードの組を返す。木の高さをhとしてO(h)。
 template <class K> auto upper_bound_node(AvlNodePtr<K> n, const K &key) {
     return detail::avl_search(n, key, true);
 }
 
+// 探索済みの前後ノードを使ってxを挿入し、新しい根を返す。要素数をnとしてO(log(n+1))。
 template <class K>
 AvlNodePtr<K> insertAfterLowerBound(AvlNodePtr<K> n, AvlNodePtr<K> x, AvlNodePtr<K> l,
                                     AvlNodePtr<K> r) {
@@ -134,11 +139,13 @@ AvlNodePtr<K> insertAfterLowerBound(AvlNodePtr<K> n, AvlNodePtr<K> x, AvlNodePtr
     return detail::avl_to_root(r);
 }
 
+// 根nのAVL木にノードxを挿入し、新しい根を返す。要素数をnとしてO(log(n+1))。
 template <class K> AvlNodePtr<K> insert(AvlNodePtr<K> n, AvlNodePtr<K> x) {
     auto [l, r] = lower_bound_node(n, x->key);
     return insertAfterLowerBound(n, x, l, r);
 }
 
+// ノードxを削除し、新しい根を返す。nxtにはxの次ノードを渡す。要素数をnとしてO(log(n+1))。
 template <class K> AvlNodePtr<K> erase(AvlNodePtr<K>, AvlNodePtr<K> x, AvlNodePtr<K> nxt) {
     auto xp = x->p;
     AvlNodePtr<K> result = nullptr;
@@ -186,6 +193,7 @@ template <class K> AvlNodePtr<K> erase(AvlNodePtr<K>, AvlNodePtr<K> x, AvlNodePt
     return result;
 }
 
+// 昇順で次のノードを返す。木の高さをhとしてO(h)。
 template <class K> AvlNodePtr<K> next(AvlNodePtr<K> n) {
     if (n->r) {
         n = n->r;
@@ -201,6 +209,7 @@ template <class K> AvlNodePtr<K> next(AvlNodePtr<K> n) {
     return {};
 }
 
+// 昇順で前のノードを返す。木の高さをhとしてO(h)。
 template <class K> AvlNodePtr<K> prev(AvlNodePtr<K> n) {
     if (n->l) {
         n = n->l;
@@ -216,6 +225,7 @@ template <class K> AvlNodePtr<K> prev(AvlNodePtr<K> n) {
     return {};
 }
 
+// 部分木nの昇順でidx番目のノードを返す。木の高さをhとしてO(h)。
 template <class K> AvlNodePtr<K> get(AvlNodePtr<K> n, Int idx) {
     assert(idx >= 0);
     if (!n || idx >= n->len)
@@ -232,6 +242,7 @@ template <class K> AvlNodePtr<K> get(AvlNodePtr<K> n, Int idx) {
     }
 }
 
+// ノードnの木全体での昇順順位を返す。木の高さをhとしてO(h)。
 template <class K> Int index(AvlNodePtr<K> n) {
     if (!n)
         return 0;
@@ -284,8 +295,10 @@ template <class T, bool Multi> class BasicAvlSortedSet {
 
 public:
     AvlNodePtr<T> root = nullptr;
+    // 空の集合を構築する。O(1)。
     BasicAvlSortedSet() = default;
 
+    // 配列の要素を挿入して構築する。長さをnとしてO(n log(n+1))。
     explicit BasicAvlSortedSet(std::vector<T> v) {
         std::sort(v.begin(), v.end());
         if constexpr (!Multi)
@@ -293,9 +306,11 @@ public:
         root = buildBalanced(v, 0, v.size());
     }
 
+    // 全要素を複製する。要素数をnとしてO(n)。
     BasicAvlSortedSet(const BasicAvlSortedSet &other) : root(clone(other.root)) {
     }
 
+    // 集合を複製して代入する。代入元の要素数をn、代入先の確保済みノード数をMとしてO(n+M)。
     BasicAvlSortedSet &operator=(const BasicAvlSortedSet &other) {
         if (this != &other) {
             nodes_.clear();
@@ -304,10 +319,12 @@ public:
         return *this;
     }
 
+    // 集合をムーブ構築する。O(1)。
     BasicAvlSortedSet(BasicAvlSortedSet &&other) noexcept
         : nodes_(std::move(other.nodes_)), root(std::exchange(other.root, nullptr)) {
     }
 
+    // 集合をムーブ代入する。代入先の確保済みノード数をMとしてO(M)。
     BasicAvlSortedSet &operator=(BasicAvlSortedSet &&other) noexcept {
         if (this != &other) {
             nodes_ = std::move(other.nodes_);
@@ -316,57 +333,70 @@ public:
         return *this;
     }
 
+    // 要素数を返す。O(1)。
     Int len() const {
         return root ? root->len : 0;
     }
 
+    // 要素数を返す。O(1)。
     Int size() const {
         return len();
     }
 
+    // x未満の要素数を返す。O(log(n+1))。
     Int lowerBound(const T &x) const {
         auto n = lower_bound_node(root, x).second;
         return n ? cplib::index(n) : len();
     }
 
+    // x以下の要素数を返す。O(log(n+1))。
     Int upperBound(const T &x) const {
         auto n = upper_bound_node(root, x).second;
         return n ? cplib::index(n) : len();
     }
 
+    // x未満の要素数を返す。O(log(n+1))。
     Int index(const T &x) const {
         return lowerBound(x);
     }
 
+    // x以下の要素数を返す。O(log(n+1))。
     Int index_right(const T &x) const {
         return upperBound(x);
     }
 
+    // xの個数を返す。O(log(n+1))。
     Int count(const T &x) const {
         return upperBound(x) - lowerBound(x);
     }
 
+    // x未満の最大値を返す。存在しなければ空。O(log(n+1))。
     auto lt(const T &x) const {
         return value(lower_bound_node(root, x).first);
     }
 
+    // x以下の最大値を返す。存在しなければ空。O(log(n+1))。
     auto le(const T &x) const {
         return value(upper_bound_node(root, x).first);
     }
 
+    // xより大きい最小値を返す。存在しなければ空。O(log(n+1))。
     auto gt(const T &x) const {
         return value(upper_bound_node(root, x).second);
     }
 
+    // x以上の最小値を返す。存在しなければ空。O(log(n+1))。
     auto ge(const T &x) const {
         return value(lower_bound_node(root, x).second);
     }
 
+    // xが存在するか返す。O(log(n+1))。
     bool contains(const T &x) const {
         auto n = lower_bound_node(root, x).second;
         return n && n->key == x;
     }
 
+    // xを追加する。重複を許さない集合で既存ならfalse。O(log(n+1))。
     bool incl(const T &x) {
         auto [l, r] = lower_bound_node(root, x);
         if constexpr (!Multi) {
@@ -377,6 +407,7 @@ public:
         return true;
     }
 
+    // xを一つ削除し、削除できたか返す。O(log(n+1))。
     bool excl(const T &x) {
         auto n = lower_bound_node(root, x).second;
         if (!n || !(n->key == x))
@@ -385,15 +416,18 @@ public:
         return true;
     }
 
+    // 昇順でi番目の要素を返す。O(log(n+1))。
     T operator[](Int i) const {
         assert(i >= 0 && i < len());
         return get(root, i)->key;
     }
 
+    // 昇順の末尾からi番目の要素を返す。O(log(n+1))。
     T operator[](BackwardsIndex i) const {
         return (*this)[len() - i.value];
     }
 
+    // 昇順でi番目の要素を削除して返す。負のiは末尾から数える。O(log(n+1))。
     T pop(Int i = -1) {
         if (i < 0)
             i += len();
@@ -407,18 +441,22 @@ public:
     struct Iterator {
         AvlNodePtr<T> node = nullptr;
 
+        // 指している要素への参照を返す。O(1)。
         const T &operator*() const {
             return node->key;
         }
 
+        // 次の要素へ進む。最悪O(log(n+1))、全列挙では合計O(n)。
         Iterator &operator++() {
             node = cplib::next(node);
             return *this;
         }
 
+        // 同じ位置を指すか比較する。O(1)。
         bool operator==(const Iterator &) const = default;
     };
 
+    // 先頭を指すイテレータを返す。O(log(n+1))。
     Iterator begin() const {
         auto n = root;
         if (n)
@@ -427,14 +465,17 @@ public:
         return {n};
     }
 
+    // 末尾の次を指すイテレータを返す。O(1)。
     Iterator end() const {
         return {};
     }
 
+    // 列挙用に自身への参照を返す。O(1)。
     const BasicAvlSortedSet &items() const {
         return *this;
     }
 
+    // 要素を昇順に空白区切りで文字列化する。O(n+出力長)と各要素の文字列化の計算量。
     std::string to_string() const {
         std::ostringstream out;
         bool first = true;
@@ -452,10 +493,12 @@ template <class T> using AVLSortedMultiSet = AvlSortedMultiSet<T>;
 template <class T> using AvlSortedSet = BasicAvlSortedSet<T, false>;
 template <class T> using AVLSortedSet = AvlSortedSet<T>;
 
+// 配列から重複を許す集合を構築する。長さをnとしてO(n log(n+1))。
 template <class T> auto initAvlSortedMultiSet(const std::vector<T> &v = {}) {
     return AvlSortedMultiSet<T>(v);
 }
 
+// 配列から重複を許さない集合を構築する。長さをnとしてO(n log(n+1))。
 template <class T> auto initAvlSortedSet(const std::vector<T> &v = {}) {
     return AvlSortedSet<T>(v);
 }
