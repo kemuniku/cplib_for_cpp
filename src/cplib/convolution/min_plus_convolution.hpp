@@ -39,7 +39,7 @@ std::vector<T> convexArbitrary(const std::vector<T> &a, const std::vector<T> &b)
     if (a.empty() || b.empty())
         return {};
     Int n = a.size(), m = b.size(), h = n + m - 1;
-    std::vector<T> out(h);
+    std::vector<T> output_value(h);
     if constexpr (UseSmawk)
         if (n <= 256 / m) {
             for (Int k = 0; k < h; ++k) {
@@ -47,9 +47,9 @@ std::vector<T> convexArbitrary(const std::vector<T> &a, const std::vector<T> &b)
                 T value = a[lo] + b[k - lo];
                 for (Int i = lo + 1; i <= hi; ++i)
                     value = std::min(value, a[i] + b[k - i]);
-                out[k] = value;
+                output_value[k] = value;
             }
-            return out;
+            return output_value;
         }
     auto better = [&](Int row, Int oldCol, Int newCol) {
         if (newCol > row)
@@ -68,8 +68,8 @@ std::vector<T> convexArbitrary(const std::vector<T> &a, const std::vector<T> &b)
     else
         indices = monotoneMinima(h, m, better);
     for (Int k = 0; k < h; ++k)
-        out[k] = a[k - indices[k]] + b[indices[k]];
-    return out;
+        output_value[k] = a[k - indices[k]] + b[indices[k]];
+    return output_value;
 }
 
 template <class T>
@@ -154,17 +154,17 @@ std::vector<T> minPlusConvolutionConvexConvex(const std::vector<T> &a, const std
     detail::checkConvolutionShape<true>(b);
     if (a.empty() || b.empty())
         return {};
-    std::vector<T> out(a.size() + b.size() - 1);
+    std::vector<T> output_value(a.size() + b.size() - 1);
     std::size_t i = 0, j = 0;
-    out[0] = a[0] + b[0];
-    for (std::size_t k = 1; k < out.size(); ++k) {
+    output_value[0] = a[0] + b[0];
+    for (std::size_t k = 1; k < output_value.size(); ++k) {
         if (j + 1 == b.size() || (i + 1 < a.size() && a[i + 1] + b[j] < a[i] + b[j + 1]))
             ++i;
         else
             ++j;
-        out[k] = a[i] + b[j];
+        output_value[k] = a[i] + b[j];
     }
-    return out;
+    return output_value;
 }
 
 // 2種類の探索を独立に提供。MonotoneMinima版O((N+M)log(N+M))、SMAWK版O(N+M)。
@@ -189,12 +189,12 @@ std::vector<T> minPlusConvolutionConcaveConcave(const std::vector<T> &a, const s
     if (a.empty() || b.empty())
         return {};
     Int n = a.size(), m = b.size();
-    std::vector<T> out(n + m - 1);
-    for (Int k = 0; k < Int(out.size()); ++k) {
+    std::vector<T> output_value(n + m - 1);
+    for (Int k = 0; k < Int(output_value.size()); ++k) {
         Int lo = std::max(Int(0), k - m + 1), hi = std::min(k, n - 1);
-        out[k] = std::min(a[lo] + b[k - lo], a[hi] + b[k - hi]);
+        output_value[k] = std::min(a[lo] + b[k - lo], a[hi] + b[k - hi]);
     }
-    return out;
+    return output_value;
 }
 
 // 凹列 a と任意の列 b の min-plus 畳み込みを求める。
@@ -206,15 +206,15 @@ std::vector<T> minPlusConvolutionConcaveArbitrary(const std::vector<T> &a,
     if (a.empty() || b.empty())
         return {};
     Int n = a.size(), m = b.size(), h = n + m - 1;
-    std::vector<T> out(h);
+    std::vector<T> output_value(h);
     for (Int k = 0; k < h; ++k) {
         Int j = std::min(k, m - 1);
-        out[k] = a[k - j] + b[j];
+        output_value[k] = a[k - j] + b[j];
     }
     if (n == 1 || m == 1)
-        return out;
+        return output_value;
     std::vector<Int> columns(m + 2 * h), indices(h);
-    detail::concaveDivide(a, b, 0, h, 0, m, out, columns, indices);
-    return out;
+    detail::concaveDivide(a, b, 0, h, 0, m, output_value, columns, indices);
+    return output_value;
 }
 }

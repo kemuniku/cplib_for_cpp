@@ -311,7 +311,7 @@ public:
     }
 
     // 入力列の現在の式を取得または登録する。既存変数・節点数をmとして償却O(m+1)。
-    FuseExpr read(const SimdBitSet<512> &value) {
+    FuseExpr readValues(const SimdBitSet<512> &value) {
         for (auto v : variables_)
             if (v.target == &value)
                 return {this, v.id};
@@ -415,8 +415,8 @@ public:
             auto node = ins.node;
             if (node.kind == input) {
                 if (bits < 0)
-                    bits = node.source->len();
-                else if (bits != node.source->len())
+                    bits = node.source->size();
+                else if (bits != node.source->size())
                     supported = false;
             }
             if (node.kind == add)
@@ -429,7 +429,7 @@ public:
                 supported = false;
         }
         for (auto v : variables_)
-            if (v.written && v.target->len() != bits)
+            if (v.written && v.target->size() != bits)
                 supported = false;
         if (!supported) {
             eager();

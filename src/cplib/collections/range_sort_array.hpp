@@ -23,7 +23,7 @@ public:
 
     // 末尾から指定した位置のキーを返す。キー上限をUとしてO(log(N+1)+log(U+1))。
     Int operator[](BackwardsIndex i) const {
-        return get(len() - i.value);
+        return get(size() - i.value);
     }
 
     // 位置iのキーを変更する。他のキーとの重複は禁止。キー上限Uとして期待O(log(N+1)+log(U+1))。
@@ -38,20 +38,20 @@ public:
 
     // 末尾から指定した位置のキーを変更する。他のキーとの重複は禁止。キー上限Uとして期待O(log(N+1)+log(U+1))。
     void set(BackwardsIndex i, Int key) {
-        update(len() - i.value, key);
+        update(size() - i.value, key);
     }
 
     using Base::sort;
 
     // 閉区間をキー順に並べ替える。キー上限Uとして償却O(log(N+1)+log(U+1))。
     template <class L, class R> void sort(ClosedSlice<L, R> s, SortOrder order = Ascending) {
-        sort(resolve_index(len(), s.a), resolve_index(len(), s.b) + 1, order);
+        sort(resolve_index(size(), s.a), resolve_index(size(), s.b) + 1, order);
     }
 
     // 現在のキー列を配列で返す。O(N)。
     std::vector<Int> toSeq() const {
         std::vector<Int> out;
-        out.reserve(len());
+        out.reserve(size());
         for (Int k : items())
             out.push_back(k);
         return out;

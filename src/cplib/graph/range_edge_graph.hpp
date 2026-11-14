@@ -87,13 +87,8 @@ public:
     }
 
     // 補助頂点を含む現在の頂点数を返す。O(1)。
-    Int len() const {
-        return G.len;
-    }
-
-    // 補助頂点を含む現在の頂点数を返す。O(1)。
     Int size() const {
-        return len();
+        return G.len;
     }
 
     // 元の頂点数を返す。O(1)。
@@ -165,11 +160,6 @@ template <class T> const auto &graph(const Range_Edge_Graph<T> &g) {
 
 template <class T> auto &graph(Range_Edge_Graph<T> &g) {
     return g.graph();
-}
-
-// 補助頂点を含む現在の頂点数を返す。O(1)。
-template <class T> Int len(const Range_Edge_Graph<T> &g) {
-    return g.len();
 }
 
 // 元の頂点数を返す。O(1)。

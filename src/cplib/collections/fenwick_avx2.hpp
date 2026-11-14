@@ -33,13 +33,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return size_;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return size_;
     }
 
     // p番目の値にdeltaを加算する。O(log₁₆(n+1))。
@@ -112,11 +107,6 @@ inline auto initFenwickTreeAvx2(Int n) {
 // 配列から構築する。長さをnとしてO(n)。
 inline auto initFenwickTreeAvx2(std::span<const Int> v) {
     return FenwickTreeAvx2(v);
-}
-
-// 要素数を返す。O(1)。
-inline Int len(const FenwickTreeAvx2 &t) {
-    return t.len();
 }
 
 // p番目に加算する。O(log₁₆(n+1))。

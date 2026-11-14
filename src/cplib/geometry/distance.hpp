@@ -9,15 +9,15 @@ template <class T> T norm(Point<T> a, Point<T> b) {
 
 // 点 p と直線 l のユークリッド距離の2乗。計算量 O(1)。整数座標では整数除算で切り捨てる。
 template <class T> T norm(Point<T> p, const Line<T> &l) {
-    T area = cross(vector(l), p - l.s);
-    return area * area / norm(vector(l));
+    T area = cross(toVector(l), p - l.s);
+    return area * area / norm(toVector(l));
 }
 
 // 点 p と線分 s のユークリッド距離の2乗。計算量 O(1)。整数座標では直線への距離に整数除算を用いる。
 template <class T> T norm(Point<T> p, const Segment<T> &s) {
-    if (geometry_lt(dot(vector(s), p - s.s), 0))
+    if (geometry_lt(dot(toVector(s), p - s.s), 0))
         return norm(p - s.s);
-    if (geometry_lt(dot(-vector(s), p - s.t), 0))
+    if (geometry_lt(dot(-toVector(s), p - s.t), 0))
         return norm(p - s.t);
     return norm(p, toLine(s));
 }

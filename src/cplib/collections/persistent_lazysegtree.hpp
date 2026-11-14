@@ -95,13 +95,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return n;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return n;
     }
 
     // pをvalueに置き換えた新しい版を、時間・追加領域O(log N)で返します。

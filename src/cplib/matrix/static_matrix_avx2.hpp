@@ -2,7 +2,7 @@
 #include <cplib/matrix/matrix_avx2_common.hpp>
 #include <array>
 
-namespace cplib {
+namespace cplib::avx2_static_matrix {
 namespace impl = ::cplib::detail::matrix_avx2;
 
 template <Int H, Int W, impl::Element T> class StaticMatrix {
@@ -82,9 +82,9 @@ public:
     // 指定行をコピーする。O(W)。
     std::array<T, W> operator[](Int i) const {
         assert(i >= 0 && i < H);
-        std::array<T, W> out{};
-        std::copy_n(values_.begin() + i * W, W, out.begin());
-        return out;
+        std::array<T, W> output_value{};
+        std::copy_n(values_.begin() + i * W, W, output_value.begin());
+        return output_value;
     }
 
     struct Row {
@@ -138,37 +138,37 @@ public:
     // 行列を文字列で返す。計算量は行数と出力文字数に比例。
     std::string str() const {
         check();
-        std::string out;
+        std::string output_value;
         for (Int i = 0; i < H; ++i) {
             if (i)
-                out += '\n';
+                output_value += '\n';
             if constexpr (W > 0)
-                out += matrixJoinValues(impl::raw(values_.data() + i * W), W, impl::modulus<T>(),
+                output_value += matrixJoinValues(impl::raw(values_.data() + i * W), W, impl::modulus<T>(),
                                         MontgomeryModint<T>, " ");
         }
-        return out;
+        return output_value;
     }
 
     // 行列積を返す。保守的な計算量 O((H+1)(W+1)(K+1))。
     template <Int K> StaticMatrix<H, K, T> operator*(const StaticMatrix<W, K, T> &b) const {
         check();
         b.check();
-        StaticMatrix<H, K, T> out(T(0));
+        StaticMatrix<H, K, T> output_value(T(0));
         if constexpr (H <= 4 && W <= 4 && K <= 4) {
             for (Int i = 0; i < H; ++i)
                 for (Int j = 0; j < K; ++j)
                     for (Int k = 0; k < W; ++k)
-                        out(i, j) += (*this)(i, k) * b(k, j);
+                        output_value(i, j) += (*this)(i, k) * b(k, j);
         } else if constexpr (H > 0 && W > 0 && K > 0) {
             if constexpr (MontgomeryModint<T>)
                 matrixProductMontgomeryKernel(
                     impl::raw(values_.data()), impl::raw(b.values_.data()),
-                    impl::raw(out.values_.data()), H, W, K, impl::modulus<T>());
+                    impl::raw(output_value.values_.data()), H, W, K, impl::modulus<T>());
             else
                 matrixProductKernel(impl::raw(values_.data()), impl::raw(b.values_.data()),
-                                    impl::raw(out.values_.data()), H, W, K, impl::modulus<T>());
+                                    impl::raw(output_value.values_.data()), H, W, K, impl::modulus<T>());
         }
-        return out;
+        return output_value;
     }
 
     // 右から行列を掛ける。計算量は行列積と同じ。
@@ -257,10 +257,10 @@ public:
     static StaticMatrix identity(Int n = H) {
         static_assert(H == W);
         assert(n == H);
-        StaticMatrix out(T(0));
+        StaticMatrix output_value(T(0));
         for (Int i = 0; i < H; ++i)
-            out(i, i) = 1;
-        return out;
+            output_value(i, i) = 1;
+        return output_value;
     }
 
     // 正方行列の非負整数乗を返す。行列積を O(log(exponent+1)) 回行う。
@@ -268,24 +268,24 @@ public:
         static_assert(H == W);
         assert(exponent >= 0);
         check();
-        StaticMatrix out = identity(), base = *this;
+        StaticMatrix output_value = identity(), base = *this;
         while (exponent) {
             if (exponent & 1)
-                out *= base;
+                output_value *= base;
             exponent >>= 1;
             if (exponent)
                 base *= base;
         }
-        return out;
+        return output_value;
     }
 
     // 全要素の和を返す。計算量 O(HW)。
     T sum() const {
         check();
-        T out = 0;
+        T output_value = 0;
         for (auto x : values_)
-            out += x;
-        return out;
+            output_value += x;
+        return output_value;
     }
 
     // 左上height×widthの階数をAVX2で求める。O(H*W+h*w*min(h,w))。
@@ -324,21 +324,21 @@ public:
         auto r = reduce<std::min(H, W)>(n, n, true, nullptr, true);
         if (r->rank != n)
             return std::nullopt;
-        StaticMatrix out(T(0));
-        fieldInverseAdjugateKernel(r->values.data(), impl::raw(out.values_.data()), n, r->rank,
+        StaticMatrix output_value(T(0));
+        fieldInverseAdjugateKernel(r->values.data(), impl::raw(output_value.values_.data()), n, r->rank,
                                    r->pivots.data(), r->determinant, impl::modulus<T>(),
                                    MontgomeryModint<T>, false, W);
-        return out;
+        return output_value;
     }
 
     // 左上n×nの余因子行列をAVX2で求める。範囲外は零。O(H*W+n^3)。
     StaticMatrix adjugate(Int n = H) const {
         auto r = reduce<std::min(H, W)>(n, n, true, nullptr, true);
-        StaticMatrix out(T(0));
-        fieldInverseAdjugateKernel(r->values.data(), impl::raw(out.values_.data()), n, r->rank,
+        StaticMatrix output_value(T(0));
+        fieldInverseAdjugateKernel(r->values.data(), impl::raw(output_value.values_.data()), n, r->rank,
                                    r->pivots.data(), r->determinant, impl::modulus<T>(),
                                    MontgomeryModint<T>, true, W);
-        return out;
+        return output_value;
     }
 };
 

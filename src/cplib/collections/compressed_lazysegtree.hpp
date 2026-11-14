@@ -164,13 +164,8 @@ public:
     }
 
     // 保持する点または隣接座標間区間の数を返す。O(1)。
-    Int len() const {
-        return intervals ? std::max<Int>(0, Int(coords.size()) - 1) : Int(coords.size());
-    }
-
-    // 保持する点または隣接座標間区間の数を返す。O(1)。
     Int size() const {
-        return len();
+        return intervals ? std::max<Int>(0, Int(coords.size()) - 1) : Int(coords.size());
     }
 
     // 圧縮順の全値を文字列で返す。出力長LとしてO(N log(N+1)+L)。
@@ -294,11 +289,6 @@ auto newCompressedLazySegWith(const Coords &coords, Op op, S e, Map map, Comp co
     };
     result.setCompressedLazyOperations(get, apply, update, point);
     return result;
-}
-
-// 保持する点または区間の数を返す。O(1)。
-template <class K, class S, class F> Int len(const CompressedLazySegmentTree<K, S, F> &t) {
-    return t.len();
 }
 
 // 指定区間の積を返す。O(log(N+1))。

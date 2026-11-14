@@ -1,7 +1,7 @@
 #pragma once
 #include <cplib/graph/private/combined_hld.hpp>
 
-namespace cplib {
+namespace cplib::legacy_graph {
 // 入次数削除でサイクルを抽出し、仮想根に繋いだHLDと逆像の索引をO(N)で構築。
 class FunctionalGraph {
     std::vector<std::vector<Int>> depth_tin_;
@@ -222,7 +222,7 @@ inline Int count_kth(const FunctionalGraph &f, Int x, Int k) {
 
 #include <cplib/graph/private/combined_segtree.hpp>
 
-namespace cplib {
+namespace cplib::legacy_graph {
 // HLDの逆順とサイクル順を別々のセグメント木に保持し、非可換な積の順序を保つ。
 class FunctionalGraph_with_op : public FunctionalGraph {
     std::function<Int(Int, Int)> op_;
@@ -432,7 +432,7 @@ auto initFunctionalGraph_with_op(const Source &source, const std::vector<Int> &v
 }
 
 // 頂点xの値を更新する。演算がO(1)ならO(log N)。
-inline void set(FunctionalGraph_with_op &f, Int x, Int value) {
+inline void setValue(FunctionalGraph_with_op &f, Int x, Int value) {
     f.set(x, value);
 }
 

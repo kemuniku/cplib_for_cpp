@@ -81,10 +81,10 @@ template <class G> std::vector<Int> dominator_tree(const G &g, Int root) {
     for (Int w = 1; w < m; ++w)
         if (idom[w] != semi[w])
             idom[w] = idom[idom[w]];
-    std::vector<Int> out(n, -1);
-    out[root] = root;
+    std::vector<Int> output_value(n, -1);
+    output_value[root] = root;
     for (Int w = 1; w < m; ++w)
-        out[vertex[w]] = vertex[idom[w]];
-    return out;
+        output_value[vertex[w]] = vertex[idom[w]];
+    return output_value;
 }
 }

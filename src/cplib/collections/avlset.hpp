@@ -51,25 +51,20 @@ public:
     BasicAvlSortedSet &operator=(BasicAvlSortedSet &&) = default;
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return root ? root->len : 0;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return root ? root->len : 0;
     }
 
     // x未満の要素数を返す。O(log(n+1))。
     Int lowerBound(const T &x) const {
         auto n = lower_bound_node(root, x).second;
-        return n ? cplib::index(n) : len();
+        return n ? cplib::index(n) : size();
     }
 
     // x以下の要素数を返す。O(log(n+1))。
     Int upperBound(const T &x) const {
         auto n = upper_bound_node(root, x).second;
-        return n ? cplib::index(n) : len();
+        return n ? cplib::index(n) : size();
     }
 
     // x未満の要素数を返す。O(log(n+1))。
@@ -134,20 +129,20 @@ public:
 
     // 昇順でi番目の要素を返す。O(log(n+1))。
     T operator[](Int i) const {
-        assert(i >= 0 && i < len());
+        assert(i >= 0 && i < size());
         return get(root, i)->key;
     }
 
     // 昇順の末尾からi番目の要素を返す。O(log(n+1))。
     T operator[](BackwardsIndex i) const {
-        return (*this)[len() - i.value];
+        return (*this)[size() - i.value];
     }
 
     // 昇順でi番目の要素を削除して返す。負のiは末尾から数える。O(log(n+1))。
     T pop(Int i = -1) {
         if (i < 0)
-            i += len();
-        assert(i >= 0 && i < len());
+            i += size();
+        assert(i >= 0 && i < size());
         auto n = get(root, i);
         T out = n->key;
         root = cplib::erase(root, n, cplib::next(n));

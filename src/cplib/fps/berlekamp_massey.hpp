@@ -35,9 +35,9 @@ template <Modint T> std::vector<T> berlekampMassey(const std::vector<T> &a) {
         } else
             ++shift;
     }
-    std::vector<T> out(order);
+    std::vector<T> output_value(order);
     for (Int i = 0; i < order; ++i)
-        out[i] = -connection[i + 1];
-    return out;
+        output_value[i] = -connection[i + 1];
+    return output_value;
 }
 }

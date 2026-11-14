@@ -50,13 +50,8 @@ public:
     std::vector<Node> values = std::vector<Node>(4);
 
     // 登録済みの要素数を返す。O(1)。
-    Int len() const {
-        return length_;
-    }
-
-    // 登録済みの要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return length_;
     }
 
     // xを追加する。一様なハッシュを仮定して期待償却O(1)。容量Cで再構築を含む最悪O(C²)。

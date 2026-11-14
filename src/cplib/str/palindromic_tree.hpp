@@ -81,10 +81,6 @@ struct PalindromicTreeNode {
     Int size() const {
         return length;
     }
-    // 既存コード用に回文の長さを返す。計算量 O(1)。
-    Int len() const {
-        return size();
-    }
     // 再集計後は総出現数、それ以外は最長回文接尾辞としての出現数を返す。計算量 O(1)。
     Int count() const {
         return *updated ? total_count : terminal_count;
@@ -262,9 +258,6 @@ inline void update_count(PalindromicTree &tree) {
     tree.update_count();
 }
 // 既存コード用に回文長を返す。計算量 O(1)。
-inline Int len(const PalindromicTreeNode &node) {
-    return node.size();
-}
 // 節点の出現数を返す。計算量 O(1)。
 inline Int count(const PalindromicTreeNode &node) {
     return node.count();

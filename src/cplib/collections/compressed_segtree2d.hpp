@@ -230,13 +230,8 @@ public:
     }
 
     // 重複除去後の登録点数を返す。O(1)。
-    Int len() const {
-        return count;
-    }
-
-    // 重複除去後の登録点数を返す。O(1)。
     Int size() const {
-        return len();
+        return count;
     }
 
     // 点更新と矩形取得に直接演算版を設定する。関数オブジェクトのコピー費用を除きO(1)。
@@ -267,11 +262,6 @@ auto newCompressedSeg2DWith(const Points &points, Op op, T e) {
     auto result = initCompressedSegmentTree2D(points, op, e);
     result.specialize(op);
     return result;
-}
-
-// 登録点数を返す。O(1)。
-template <class K, class T> Int len(const CompressedSegmentTree2D<K, T> &s) {
-    return s.len();
 }
 
 // 全登録点の積を返す。O(1)。

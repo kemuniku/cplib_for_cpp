@@ -97,17 +97,17 @@ public:
 
     // 行列を文字列に変換する。O(HW+H)。
     std::string str() const {
-        std::string out;
+        std::string output_value;
         for (Int i = 0; i < h(); ++i) {
             if (i)
-                out += '\n';
+                output_value += '\n';
             for (Int j = 0; j < w(); ++j) {
                 if (j)
-                    out += ' ';
-                out += (*this)(i, j) ? '1' : '0';
+                    output_value += ' ';
+                output_value += (*this)(i, j) ? '1' : '0';
             }
         }
-        return out;
+        return output_value;
     }
 
     // 指定行に文字列のビットを設定する。列数Wとして O(W+1)。
@@ -123,10 +123,10 @@ public:
     // 指定行の先頭width列を文字列で返す。O(width+1)。
     std::string rowBits(Int i, Int width) const {
         assert(0 <= i && i < h() && 0 <= width && width <= w());
-        std::string out(width, '0');
+        std::string output_value(width, '0');
         for (Int j = 0; j < width; ++j)
-            out[j] = char('0' + ((word(i, j >> 6) >> (j & 63)) & 1));
-        return out;
+            output_value[j] = char('0' + ((word(i, j >> 6) >> (j & 63)) & 1));
+        return output_value;
     }
 
     // 指定行を文字列で返す。列数Wとして O(W+1)。
@@ -136,27 +136,27 @@ public:
 
     // n次の単位行列を作る。O(n ceil(n/64)+n+1)。
     static MatrixMod2 identity(Int n) {
-        MatrixMod2 out(n, n);
+        MatrixMod2 output_value(n, n);
         for (Int i = 0; i < n; ++i)
-            out(i, i) = true;
-        return out;
+            output_value(i, i) = true;
+        return output_value;
     }
 
     // 転置行列を返す。O(HW+H+W)。
     MatrixMod2 transposed() const {
-        MatrixMod2 out(w(), h());
+        MatrixMod2 output_value(w(), h());
         for (Int i = 0; i < h(); ++i)
             for (Int j = 0; j < w(); ++j)
                 if ((*this)(i, j))
-                    out(j, i) = true;
-        return out;
+                    output_value(j, i) = true;
+        return output_value;
     }
 
     // 小さい場合は転置とpopcount、大きい場合は8列ずつのFour Russians法。
     // H×WとW×Cの行列積を返す。O((H+1)(W+1)(C+1))。
     MatrixMod2 operator*(const MatrixMod2 &b) const {
         assert(w() == b.h());
-        MatrixMod2 out(h(), b.w());
+        MatrixMod2 output_value(h(), b.w());
         if (h() < 40 || w() < 64) {
             auto bt = b.transposed();
             for (Int i = 0; i < h(); ++i)
@@ -165,12 +165,12 @@ public:
                     for (Int k = 0; k < stride_; ++k)
                         parity ^= std::popcount(word(i, k) & bt.word(j, k)) & 1;
                     if (parity)
-                        out(i, j) = true;
+                        output_value(i, j) = true;
                 }
         } else {
             Int count = b.stride_;
             if (!count)
-                return out;
+                return output_value;
             std::vector<UInt> table(256 * count);
             for (Int start = 0; start < w(); start += 8) {
                 Int bits = std::min<Int>(8, w() - start);
@@ -184,11 +184,11 @@ public:
                 for (Int i = 0; i < h(); ++i) {
                     Int index = (word(i, start >> 6) >> (start & 63)) & mask;
                     for (Int k = 0; k < count; ++k)
-                        out.word(i, k) ^= table[index * count + k];
+                        output_value.word(i, k) ^= table[index * count + k];
                 }
             }
         }
-        return out;
+        return output_value;
     }
 
     MatrixMod2 &operator*=(const MatrixMod2 &b) {
@@ -199,14 +199,14 @@ public:
     // n次正方行列を非負のk乗にする。O((n+1)³ log(k+2))。
     MatrixMod2 pow(Int exponent) const {
         assert(h() == w() && exponent >= 0);
-        auto out = identity(h()), base = *this;
+        auto output_value = identity(h()), base = *this;
         for (; exponent; exponent >>= 1) {
             if (exponent & 1)
-                out *= base;
+                output_value *= base;
             if (exponent > 1)
                 base *= base;
         }
-        return out;
+        return output_value;
     }
 
     // 階数をO(h*w+h*min(h,w)*ceil(w/64))で求める。元の行列は変更しない。空行列はO(1)。
@@ -275,11 +275,11 @@ public:
                         row[k] ^= p[k];
             }
         }
-        MatrixMod2 out(n, n);
+        MatrixMod2 output_value(n, n);
         for (Int i = 0; i < n; ++i)
             std::copy_n(data.begin() + i * stride + stride_, stride_,
-                        out.words_.begin() + i * stride_);
-        return out;
+                        output_value.words_.begin() + i * stride_);
+        return output_value;
     }
 
     // ビット演算でAx=bの特殊解と核の基底を返す。O(h*min(h,w)*(w/64+1)+w^2)。

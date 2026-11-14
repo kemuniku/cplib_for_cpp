@@ -2,7 +2,7 @@
 #include <cplib/convolution/ntt.hpp>
 #include <cplib/convolution/private/convolution_common.hpp>
 
-namespace cplib {
+namespace cplib::legacy_convolution {
 using mint754974721 = StaticMontgomeryModint<754974721>;
 using mint167772161 = StaticMontgomeryModint<167772161>;
 using mint469762049 = StaticMontgomeryModint<469762049>;
@@ -36,11 +36,11 @@ std::vector<T> convolution(std::vector<T> f, std::vector<T> g) {
 inline auto convolution_ll(const std::vector<Int> &f, const std::vector<Int> &g) {
     auto run = [&]<class M>() {
         std::vector<M> a(f.begin(), f.end()), b(g.begin(), g.end());
-        auto c = cplib::convolution(std::move(a), std::move(b));
-        std::vector<std::uint32_t> out(c.size());
+        auto c = ::cplib::legacy_convolution::convolution(std::move(a), std::move(b));
+        std::vector<std::uint32_t> output_value(c.size());
         for (std::size_t i = 0; i < c.size(); ++i)
-            out[i] = c[i].val();
-        return out;
+            output_value[i] = c[i].val();
+        return output_value;
     };
     auto c1 = run.template operator()<mint754974721>();
     auto c2 = run.template operator()<mint167772161>();

@@ -76,13 +76,8 @@ public:
     }
 
     // ビット数をO(1)で返す。
-    Int len() const {
-        return size_;
-    }
-
-    // ビット数を返す。O(1)。
     Int size() const {
-        return len();
+        return size_;
     }
 
     // 格納された64ビット整数列への読み取り専用ビューを返す。O(1)。
@@ -148,28 +143,28 @@ public:
     // 同じ長さのビット列とのANDを返す。長さnとしてO(1+n/64)。
     ScalarBitSet operator&(const ScalarBitSet &y) const {
         same(y);
-        auto out = empty();
+        auto output_value = empty();
         for (std::size_t i = 0; i < bits_.size(); ++i)
-            out.bits_[i] = bits_[i] & y.bits_[i];
-        return out;
+            output_value.bits_[i] = bits_[i] & y.bits_[i];
+        return output_value;
     }
 
     // 同じ長さのビット列とのORを返す。長さnとしてO(1+n/64)。
     ScalarBitSet operator|(const ScalarBitSet &y) const {
         same(y);
-        auto out = empty();
+        auto output_value = empty();
         for (std::size_t i = 0; i < bits_.size(); ++i)
-            out.bits_[i] = bits_[i] | y.bits_[i];
-        return out;
+            output_value.bits_[i] = bits_[i] | y.bits_[i];
+        return output_value;
     }
 
     // 同じ長さのビット列とのXORを返す。長さnとしてO(1+n/64)。
     ScalarBitSet operator^(const ScalarBitSet &y) const {
         same(y);
-        auto out = empty();
+        auto output_value = empty();
         for (std::size_t i = 0; i < bits_.size(); ++i)
-            out.bits_[i] = bits_[i] ^ y.bits_[i];
-        return out;
+            output_value.bits_[i] = bits_[i] ^ y.bits_[i];
+        return output_value;
     }
 
     // 同じ長さのビット列とのANDで更新する。長さnとしてO(1+n/64)。
@@ -200,31 +195,31 @@ public:
     ScalarBitSet operator>>(Int x) const {
         if (x < 0)
             throw std::invalid_argument("shift count must be non-negative");
-        auto out = empty();
+        auto output_value = empty();
         if (x >= size_)
-            return out;
+            return output_value;
         Int w = x >> 6, b = x & 63;
         if constexpr (Size < 0) {
             for (Int dst = 0; dst < Int(bits_.size()) - w; ++dst) {
                 Int src = dst + w;
-                out.bits_[dst] = bits_[src] >> b;
+                output_value.bits_[dst] = bits_[src] >> b;
                 if (b && src + 1 < Int(bits_.size()))
-                    out.bits_[dst] |= bits_[src + 1] << (64 - b);
+                    output_value.bits_[dst] |= bits_[src + 1] << (64 - b);
             }
         } else {
             for (Int i = 0; i < Int(bits_.size()); ++i)
                 if (i + w < Int(bits_.size()))
-                    out.bits_[i] = bits_[i + w];
+                    output_value.bits_[i] = bits_[i + w];
             UInt tmp = 0;
             if (b)
                 for (Int i = bits_.size(); i-- > 0;) {
-                    UInt mask = out.bits_[i] & ((UInt(1) << b) - 1);
-                    out.bits_[i] >>= b;
-                    out.bits_[i] |= tmp << (64 - b);
+                    UInt mask = output_value.bits_[i] & ((UInt(1) << b) - 1);
+                    output_value.bits_[i] >>= b;
+                    output_value.bits_[i] |= tmp << (64 - b);
                     tmp = mask;
                 }
         }
-        return out;
+        return output_value;
     }
 
     // 長さnとしてO(1+n/64)。
@@ -232,50 +227,50 @@ public:
     ScalarBitSet operator<<(Int x) const {
         if (x < 0)
             throw std::invalid_argument("shift count must be non-negative");
-        auto out = empty();
+        auto output_value = empty();
         if (x >= size_)
-            return out;
+            return output_value;
         Int w = x >> 6, b = x & 63;
         if constexpr (Size < 0) {
             for (Int dst = bits_.size(); dst-- > w;) {
                 Int src = dst - w;
-                out.bits_[dst] = bits_[src] << b;
+                output_value.bits_[dst] = bits_[src] << b;
                 if (b && src > 0)
-                    out.bits_[dst] |= bits_[src - 1] >> (64 - b);
+                    output_value.bits_[dst] |= bits_[src - 1] >> (64 - b);
             }
         } else {
             for (Int i = 0; i < Int(bits_.size()); ++i)
                 if (i - w >= 0)
-                    out.bits_[i] = bits_[i - w];
+                    output_value.bits_[i] = bits_[i - w];
             UInt tmp = 0;
             if (b)
                 for (Int i = 0; i < Int(bits_.size()); ++i) {
-                    UInt mask = out.bits_[i];
-                    out.bits_[i] <<= b;
-                    out.bits_[i] |= tmp >> (64 - b);
+                    UInt mask = output_value.bits_[i];
+                    output_value.bits_[i] <<= b;
+                    output_value.bits_[i] |= tmp >> (64 - b);
                     tmp = mask;
                 }
         }
-        out.trim();
-        return out;
+        output_value.trim();
+        return output_value;
     }
 
     // 全ビットを反転した列を返す。長さnとしてO(1+n/64)。
     ScalarBitSet operator~() const {
-        auto out = empty();
+        auto output_value = empty();
         if constexpr (Size < 0) {
             for (std::size_t i = 0; i < bits_.size(); ++i)
-                out.bits_[i] = ~bits_[i];
-            out.trim();
+                output_value.bits_[i] = ~bits_[i];
+            output_value.trim();
         } else if constexpr (Size > 0) {
             for (std::size_t i = 0; i + 1 < bits_.size(); ++i)
-                out.bits_[i] = ~bits_[i];
+                output_value.bits_[i] = ~bits_[i];
             if constexpr (Size % 64 == 0)
-                out.bits_.back() = ~bits_.back();
+                output_value.bits_.back() = ~bits_.back();
             else
-                out.bits_.back() = bits_.back() ^ ((UInt(1) << (Size % 64)) - 1);
+                output_value.bits_.back() = bits_.back() ^ ((UInt(1) << (Size % 64)) - 1);
         }
-        return out;
+        return output_value;
     }
 
     // 1のビット数を返す。長さnとしてO(1+n/64)。
@@ -289,28 +284,28 @@ public:
     // yとのANDの1の個数を返す。長さnとしてO(1+n/64)。
     Int andpopcount(const ScalarBitSet &y) const {
         same(y);
-        Int out = 0;
+        Int output_value = 0;
         for (std::size_t i = 0; i < bits_.size(); ++i)
-            out += std::popcount(bits_[i] & y.bits_[i]);
-        return out;
+            output_value += std::popcount(bits_[i] & y.bits_[i]);
+        return output_value;
     }
 
     // yとのORの1の個数を返す。長さnとしてO(1+n/64)。
     Int orpopcount(const ScalarBitSet &y) const {
         same(y);
-        Int out = 0;
+        Int output_value = 0;
         for (std::size_t i = 0; i < bits_.size(); ++i)
-            out += std::popcount(bits_[i] | y.bits_[i]);
-        return out;
+            output_value += std::popcount(bits_[i] | y.bits_[i]);
+        return output_value;
     }
 
     // yとのXORの1の個数を返す。長さnとしてO(1+n/64)。
     Int xorpopcount(const ScalarBitSet &y) const {
         same(y);
-        Int out = 0;
+        Int output_value = 0;
         for (std::size_t i = 0; i < bits_.size(); ++i)
-            out += std::popcount(bits_[i] ^ y.bits_[i]);
-        return out;
+            output_value += std::popcount(bits_[i] ^ y.bits_[i]);
+        return output_value;
     }
 
     // 1のビットの最小添字を返す。存在しなければ-1。長さnとしてO(1+n/64)。
@@ -353,13 +348,17 @@ public:
 
     // 有効な全ビットが1かを返します。0を見つけたら終了し、長さ0ではtrueを返します。
     // 最悪時間O(1 + N / 64)、追加メモリO(1)。
-    bool all() const {
+    bool allOnes() const {
         Int full = size_ >> 6;
         for (Int i = 0; i < full; ++i)
             if (bits_[i] != ~UInt(0))
                 return false;
         Int rem = size_ & 63;
         return !rem || (bits_[full] & ((UInt(1) << rem) - 1)) == ((UInt(1) << rem) - 1);
+    }
+
+    bool (all)() const {
+        return allOnes();
     }
 
     // 有効なビットに1があるかを返します。1を見つけたら終了し、長さ0ではfalseを返します。
@@ -375,11 +374,11 @@ public:
 
     // 大きい添字から順に0と1の文字列を返す。長さnとしてO(n)。
     std::string to_string() const {
-        std::string out(size_, '0');
+        std::string output_value(size_, '0');
         for (Int i = 0; i < size_; ++i)
             if ((*this)[i])
-                out[size_ - 1 - i] = '1';
-        return out;
+                output_value[size_ - 1 - i] = '1';
+        return output_value;
     }
 
     struct Iterator {
@@ -430,11 +429,6 @@ public:
     }
 };
 
-// ビット数を返す。長さnとしてO(1)。
-template <Int N> Int len(const ScalarBitSet<N> &s) {
-    return s.len();
-}
-
 // 1のビット数を返す。長さnとしてO(1+n/64)。
 template <Int N> Int popcount(const ScalarBitSet<N> &s) {
     return s.popcount();
@@ -446,8 +440,12 @@ template <Int N> Int lowestBit(const ScalarBitSet<N> &s) {
 }
 
 // 全ビットが1かを返す。長さnとしてO(1+n/64)。
-template <Int N> bool all(const ScalarBitSet<N> &s) {
-    return s.all();
+template <Int N> bool allOnes(const ScalarBitSet<N> &s) {
+    return s.allOnes();
+}
+
+template <Int N> bool (all)(const ScalarBitSet<N> &s) {
+    return s.allOnes();
 }
 
 // 1のビットがあるかを返す。長さnとしてO(1+n/64)。

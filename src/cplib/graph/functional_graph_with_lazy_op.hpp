@@ -377,7 +377,7 @@ template <class ST> auto get(FunctionalGraph_with_lazy_op<ST> &graph, Int x) {
 
 // 頂点xの値を更新する。O(log N)。
 template <class ST>
-void set(FunctionalGraph_with_lazy_op<ST> &graph, Int x, const typename ST::value_type &v) {
+void setValue(FunctionalGraph_with_lazy_op<ST> &graph, Int x, const typename ST::value_type &v) {
     graph.set(x, v);
 }
 

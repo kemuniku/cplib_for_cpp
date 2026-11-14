@@ -150,13 +150,8 @@ public:
     }
 
     // 重複除去後の登録点数を返す。O(1)。
-    Int len() const {
-        return pointYs.size();
-    }
-
-    // 重複除去後の登録点数を返す。O(1)。
     Int size() const {
-        return len();
+        return pointYs.size();
     }
 
     // 登録点(x,y)にdeltaをO(log² N)で加算します。未登録点は更新できません。
@@ -305,11 +300,6 @@ template <class K, class T> auto initCompressedFenwick2D(std::span<const std::tu
 template <class K, class T>
 auto initCompressedFenwick2D(const std::vector<std::tuple<K, K, T>> &p) {
     return CompressedFenwick2D<K, T>(p);
-}
-
-// 登録点数を返す。O(1)。
-template <class K, class T> Int len(const CompressedFenwick2D<K, T> &t) {
-    return t.len();
 }
 
 // 登録点に値を加算する。O(log²(N+1))。

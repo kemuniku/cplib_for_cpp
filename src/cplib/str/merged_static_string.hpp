@@ -25,13 +25,8 @@ template <class T> struct MergedStaticString {
     }
 
     // 結合した区間の全長を返す。結合数Nとして O(N+1)。
-    Int len() const {
-        return detail::merged_length(*this);
-    }
-
-    // 結合数Nとして全長を O(N+1) で返す。
     Int size() const {
-        return len();
+        return detail::merged_length(*this);
     }
 
     // i番目の要素を返す。結合数Nとして O(N+1)。
@@ -41,12 +36,12 @@ template <class T> struct MergedStaticString {
 
     // 末尾基準の添字で要素を返す。結合数Nとして O(N+1)。
     T operator[](BackwardsIndex i) const {
-        return (*this)[len() - i.value];
+        return (*this)[size() - i.value];
     }
 
     // 両端を含む区間のビューを返す。結合数Nとして O(N+1)。
     template <class A, class B> MergedStaticString operator[](ClosedSlice<A, B> slice) const {
-        Int a = resolve_index(len(), slice.a), b = resolve_index(len(), slice.b), tmp = 0;
+        Int a = resolve_index(size(), slice.a), b = resolve_index(size(), slice.b), tmp = 0;
         MergedStaticString out;
         for (std::size_t i = 0; i < L.size(); ++i) {
             Int next = tmp + R[i] - L[i];
@@ -85,7 +80,7 @@ auto initMergedStaticString(const StaticString<T> &s,
     MergedStaticString<T> out;
     out.base = s.base;
     for (auto [l, r] : ranges) {
-        assert(0 <= l && l <= r && r <= s.len());
+        assert(0 <= l && l <= r && r <= s.size());
         out.addRange(s.base, s.l + l, s.l + r);
     }
     return out;
@@ -119,18 +114,13 @@ template <class T> int cmp(const MergedStaticString<T> &s, const MergedStaticStr
 
 // 同じ基底の結合列の等値を判定する。結合数の和をNとして O(N+1)。
 template <class T> bool operator==(const MergedStaticString<T> &s, const MergedStaticString<T> &t) {
-    return s.len() == t.len() && lcp(s, t) == s.len();
+    return s.size() == t.size() && lcp(s, t) == s.size();
 }
 
 // 同じ基底の結合列を辞書順に比較する。結合数の和をNとして O(N+1)。
 template <class T>
 auto operator<=>(const MergedStaticString<T> &s, const MergedStaticString<T> &t) {
     return cmp(s, t) <=> 0;
-}
-
-// 結合数Nとして全長を O(N+1) で返す。
-template <class T> Int len(const MergedStaticString<T> &s) {
-    return s.len();
 }
 
 // 文字列に変換する。結合数N、全長Lとして O(N+L+1) と要素の出力費用が必要。

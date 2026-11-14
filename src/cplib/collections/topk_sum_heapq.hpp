@@ -27,7 +27,7 @@ public:
     // xを追加する。内部ヒープの大きさをHとして償却O(log(H+1))。
     void incl(Int x) {
         sm += x;
-        if (G.len() < k) {
+        if (G.size() < k) {
             topk += x;
             G.push(x);
         } else if (k == 0)
@@ -50,7 +50,7 @@ public:
         else if (G[0] <= x) {
             topk -= x;
             G.erase(x);
-            if (L.len() > 0) {
+            if (L.size() > 0) {
                 Int tmp = -L.pop();
                 G.push(tmp);
                 topk += tmp;

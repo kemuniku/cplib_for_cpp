@@ -72,7 +72,7 @@ public:
 
     // 末尾からk番目の要素を返す。ビット幅Hに対しO(H+1)。
     Int operator[](BackwardsIndex k) const {
-        return get_kth(len() - k.value);
+        return get_kth(size() - k.value);
     }
 };
 
@@ -119,11 +119,6 @@ inline Int upperBound(const BinaryTrie &t, Int x, Int mask = 0) {
 // maskとのXORがx未満の要素数を返す。O(H+1)。
 inline Int lowerBound(const BinaryTrie &t, Int x, Int mask = 0) {
     return t.lowerBound(x, mask);
-}
-
-// 重複を含む要素数を返す。O(1)。
-inline Int len(const BinaryTrie &t) {
-    return t.len();
 }
 
 // 値と多重度の組を文字列化する。確保済みノード数をM、出力長をLとしてO(M+L)。

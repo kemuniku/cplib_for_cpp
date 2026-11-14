@@ -17,7 +17,7 @@ template <class Function> void fuse(Function &&body) {
 template <class Function, class... Inputs>
 void fuse(SimdBitSet<512> &dst, Function &&expression, const Inputs &...inputs) {
     FuseBlock block;
-    block.assign(dst, std::invoke(std::forward<Function>(expression), block.read(inputs)...));
+    block.assign(dst, std::invoke(std::forward<Function>(expression), block.readValues(inputs)...));
     block.run(true);
 }
 }

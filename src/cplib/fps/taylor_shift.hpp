@@ -22,9 +22,9 @@ template <Modint T> std::vector<T> taylorShift(const std::vector<T> &f, std::typ
         cpow *= c;
     }
     auto product = left * right;
-    std::vector<T> out(n);
+    std::vector<T> output_value(n);
     for (Int i = 0; i < n; ++i)
-        out[i] = product[n - 1 - i] * factInv[i];
-    return out;
+        output_value[i] = product[n - 1 - i] * factInv[i];
+    return output_value;
 }
 }

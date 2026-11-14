@@ -2,7 +2,7 @@
 #include <cplib/graph/private/combined_graph.hpp>
 #include <unordered_set>
 
-namespace cplib {
+namespace cplib::legacy_graph {
 struct HeavyLightDecomposition {
     Int N = 0;
     std::vector<Int> P, PP, PD, D, I, rangeL, rangeR;

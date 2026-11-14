@@ -44,13 +44,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return count_;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return count_;
     }
 
     // xが含まれるかを返します。範囲外はfalseです。O(1)。
@@ -169,9 +164,9 @@ public:
         return {};
     }
 
-    // 範囲や挿入順によらず要素が等しいかを返す。O(a.len() + 1)。
+    // 範囲や挿入順によらず要素が等しいかを返す。O(a.size() + 1)。
     friend bool operator==(const IntSet &a, const IntSet &b) {
-        if (a.len() != b.len())
+        if (a.size() != b.size())
             return false;
         for (Int x : a)
             if (!b.contains(x))

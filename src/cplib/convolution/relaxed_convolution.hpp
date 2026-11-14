@@ -41,13 +41,8 @@ public:
     }
 
     // 追加済みの項数を返す。計算量 O(1)。
-    Int len() const {
-        return currentIndex;
-    }
-
-    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return currentIndex;
     }
 
     // 次に確定する係数に既に加算済みの寄与を返す。
@@ -221,13 +216,8 @@ public:
     }
 
     // 追加済みの項数を返す。計算量 O(1)。
-    Int len() const {
-        return currentIndex;
-    }
-
-    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return currentIndex;
     }
 
     // 確定した係数列を返す。追加済み項数を n として O(n)。
@@ -269,13 +259,8 @@ public:
     }
 
     // 追加済みの項数を返す。計算量 O(1)。
-    Int len() const {
-        return currentIndex;
-    }
-
-    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return currentIndex;
     }
 
     // 確定した係数列を返す。追加済み項数を n として O(n)。
@@ -317,13 +302,8 @@ public:
     }
 
     // 追加済みの項数を返す。計算量 O(1)。
-    Int len() const {
-        return currentIndex;
-    }
-
-    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return currentIndex;
     }
 
     // 確定した係数列を返す。追加済み項数を n として O(n)。
@@ -368,13 +348,8 @@ public:
     }
 
     // 追加済みの項数を返す。計算量 O(1)。
-    Int len() const {
-        return currentIndex;
-    }
-
-    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return currentIndex;
     }
 
     // 確定した平方根の係数列を返す。失敗時は空。追加済み項数を n として O(n)。
@@ -430,13 +405,8 @@ public:
     }
 
     // 追加済みの項数を返す。計算量 O(1)。
-    Int len() const {
-        return currentIndex;
-    }
-
-    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return currentIndex;
     }
 
     // 確定した係数列を返す。追加済み項数を n として O(n)。
@@ -483,11 +453,6 @@ template <class T> auto initRelaxedConvolution(Int count) {
     return RelaxedConvolution<T>(count);
 }
 
-// 追加済みの項数を返す。計算量 O(1)。
-template <class T> Int len(const RelaxedConvolution<T> &s) {
-    return s.len();
-}
-
 // 確定した係数列を返す。計算量は状態の coefficients と同じ。
 template <class T> auto coefficients(const RelaxedConvolution<T> &s) {
     return s.coefficients();
@@ -511,11 +476,6 @@ template <class T> auto get(RelaxedConvolution<T> &s, T a, T b) {
 // 指定した項数の逐次計算状態を初期化する。計算量は対応するコンストラクタと同じ。
 template <class T> auto initRelaxedInv(Int count) {
     return RelaxedInv<T>(count);
-}
-
-// 追加済みの項数を返す。計算量 O(1)。
-template <class T> Int len(const RelaxedInv<T> &s) {
-    return s.len();
 }
 
 // 確定した係数列を返す。計算量は状態の coefficients と同じ。
@@ -543,11 +503,6 @@ template <class T> auto initRelaxedExp(Int count) {
     return RelaxedExp<T>(count);
 }
 
-// 追加済みの項数を返す。計算量 O(1)。
-template <class T> Int len(const RelaxedExp<T> &s) {
-    return s.len();
-}
-
 // 確定した係数列を返す。計算量は状態の coefficients と同じ。
 template <class T> auto coefficients(const RelaxedExp<T> &s) {
     return s.coefficients();
@@ -571,11 +526,6 @@ template <class T> auto get(RelaxedExp<T> &s, T a) {
 // 指定した項数の逐次計算状態を初期化する。計算量は対応するコンストラクタと同じ。
 template <class T> auto initRelaxedLog(Int count) {
     return RelaxedLog<T>(count);
-}
-
-// 追加済みの項数を返す。計算量 O(1)。
-template <class T> Int len(const RelaxedLog<T> &s) {
-    return s.len();
 }
 
 // 確定した係数列を返す。計算量は状態の coefficients と同じ。
@@ -603,11 +553,6 @@ template <class T> auto initRelaxedSqrt(Int count) {
     return RelaxedSqrt<T>(count);
 }
 
-// 追加済みの項数を返す。計算量 O(1)。
-template <class T> Int len(const RelaxedSqrt<T> &s) {
-    return s.len();
-}
-
 // 確定した係数列を返す。計算量は状態の coefficients と同じ。
 template <class T> auto coefficients(const RelaxedSqrt<T> &s) {
     return s.coefficients();
@@ -631,11 +576,6 @@ template <class T> auto get(RelaxedSqrt<T> &s, T a) {
 // 指定した項数の逐次計算状態を初期化する。計算量は対応するコンストラクタと同じ。
 template <class T> auto initRelaxedPow(Int count, Int exponent) {
     return RelaxedPow<T>(count, exponent);
-}
-
-// 追加済みの項数を返す。計算量 O(1)。
-template <class T> Int len(const RelaxedPow<T> &s) {
-    return s.len();
 }
 
 // 確定した係数列を返す。計算量は状態の coefficients と同じ。
@@ -669,10 +609,10 @@ template <class T> std::vector<T> invRelaxed(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return {};
     RelaxedInv<T> state(n);
-    std::vector<T> out(n);
+    std::vector<T> output_value(n);
     for (Int i = 0; i < n; ++i)
-        out[i] = state.add(i < Int(f.size()) ? f[i] : T(0));
-    return out;
+        output_value[i] = state.add(i < Int(f.size()) ? f[i] : T(0));
+    return output_value;
 }
 
 // f.size() 項まで計算する。計算量は項数を指定する同名関数と同じ。
@@ -686,10 +626,10 @@ template <class T> std::vector<T> expRelaxed(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return {};
     RelaxedExp<T> state(n);
-    std::vector<T> out(n);
+    std::vector<T> output_value(n);
     for (Int i = 0; i < n; ++i)
-        out[i] = state.add(i < Int(f.size()) ? f[i] : T(0));
-    return out;
+        output_value[i] = state.add(i < Int(f.size()) ? f[i] : T(0));
+    return output_value;
 }
 
 // f.size() 項まで計算する。計算量は項数を指定する同名関数と同じ。
@@ -703,10 +643,10 @@ template <class T> std::vector<T> logRelaxed(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return {};
     RelaxedLog<T> state(n);
-    std::vector<T> out(n);
+    std::vector<T> output_value(n);
     for (Int i = 0; i < n; ++i)
-        out[i] = state.add(i < Int(f.size()) ? f[i] : T(0));
-    return out;
+        output_value[i] = state.add(i < Int(f.size()) ? f[i] : T(0));
+    return output_value;
 }
 
 // f.size() 項まで計算する。計算量は項数を指定する同名関数と同じ。
@@ -728,14 +668,14 @@ template <class T> std::optional<std::vector<T>> sqrtRelaxed(const std::vector<T
         return {};
     Int shift = order / 2, size = n - shift;
     RelaxedSqrt<T> state(size);
-    std::vector<T> out(n);
+    std::vector<T> output_value(n);
     for (Int i = 0; i < size; ++i) {
         auto root = state.add(order + i < Int(f.size()) ? f[order + i] : T(0));
         if (!root)
             return {};
-        out[shift + i] = *root;
+        output_value[shift + i] = *root;
     }
-    return out;
+    return output_value;
 }
 
 // f.size() 項まで計算する。計算量は項数を指定する同名関数と同じ。
@@ -750,10 +690,10 @@ template <class T> std::vector<T> powRelaxed(const std::vector<T> &f, Int k, Int
     if (n <= 0)
         return {};
     RelaxedPow<T> state(n, k);
-    std::vector<T> out(n);
+    std::vector<T> output_value(n);
     for (Int i = 0; i < n; ++i)
-        out[i] = state.add(i < Int(f.size()) ? f[i] : T(0));
-    return out;
+        output_value[i] = state.add(i < Int(f.size()) ? f[i] : T(0));
+    return output_value;
 }
 
 // f.size() 項まで計算する。計算量は項数を指定する同名関数と同じ。

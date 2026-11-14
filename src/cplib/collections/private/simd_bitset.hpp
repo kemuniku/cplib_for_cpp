@@ -425,8 +425,8 @@ public:
             Kernel::avxFromBools(bits_.data(), v.data(), v.size(), bits_.size());
     }
 
-    // s[i] == matchの位置を1にし、残りを0にする。添字はバイト単位。O(s.size() + len()/64)。
-    // UTF-8の文字単位の比較ではなく、NULを含む文字列も扱う。s.size() <= len()を満たすこと。
+    // s[i] == matchの位置を1にし、残りを0にする。添字はバイト単位。O(s.size() + size()/64)。
+    // UTF-8の文字単位の比較ではなく、NULを含む文字列も扱う。s.size() <= size()を満たすこと。
     void fromString(std::string_view s, char match) {
         if (Int(s.size()) > size_)
             throw std::invalid_argument("source string is longer than BitSet size");
@@ -436,7 +436,7 @@ public:
     }
 
     // 同じ長さの文字列を位置ごとに比較し、s[i] == reference[i]の位置を1にする。残りは0。
-    // 添字はバイト単位でNULも比較する。s.size() <= len()。O(s.size() + len()/64)。
+    // 添字はバイト単位でNULも比較する。s.size() <= size()。O(s.size() + size()/64)。
     void fromString(std::string_view s, std::string_view reference) {
         if (Int(s.size()) > size_ || s.size() != reference.size())
             throw std::invalid_argument("source/reference size mismatch");
@@ -446,13 +446,8 @@ public:
     }
 
     // ビット数を返す。O(1)。
-    Int len() const {
-        return size_;
-    }
-
-    // ビット数を返す。O(1)。
     Int size() const {
-        return len();
+        return size_;
     }
 
     // 格納された64ビット整数列への読み取り専用ビューを返す。O(1)。
@@ -534,9 +529,9 @@ public:
     // yとのANDを返す。長さnとしてO(1+n/64)。
     SimdBitSet operator&(const SimdBitSet &y) const {
         same(y);
-        auto out = empty();
-        out.andInto(*this, y);
-        return out;
+        auto output_value = empty();
+        output_value.andInto(*this, y);
+        return output_value;
     }
 
     // yとのANDで更新する。長さnとしてO(1+n/64)。
@@ -557,9 +552,9 @@ public:
     // yとのORを返す。長さnとしてO(1+n/64)。
     SimdBitSet operator|(const SimdBitSet &y) const {
         same(y);
-        auto out = empty();
-        out.orInto(*this, y);
-        return out;
+        auto output_value = empty();
+        output_value.orInto(*this, y);
+        return output_value;
     }
 
     // yとのORで更新する。長さnとしてO(1+n/64)。
@@ -580,9 +575,9 @@ public:
     // yとのXORを返す。長さnとしてO(1+n/64)。
     SimdBitSet operator^(const SimdBitSet &y) const {
         same(y);
-        auto out = empty();
-        out.xorInto(*this, y);
-        return out;
+        auto output_value = empty();
+        output_value.xorInto(*this, y);
+        return output_value;
     }
 
     // yとのXORで更新する。長さnとしてO(1+n/64)。
@@ -645,14 +640,14 @@ public:
     SimdBitSet majority(const SimdBitSet &y, const SimdBitSet &z) const {
         same(y);
         same(z);
-        auto out = empty();
+        auto output_value = empty();
         if (size_)
-            Kernel::avxMajority(out.bits_.data(), bits_.data(), y.bits_.data(), z.bits_.data(),
+            Kernel::avxMajority(output_value.bits_.data(), bits_.data(), y.bits_.data(), z.bits_.data(),
                                 bits_.size());
-        return out;
+        return output_value;
     }
 
-    // 確保済みの自身へ~(x ^ y)を書き込む。全て同じ長さとする。O(len()/64)。
+    // 確保済みの自身へ~(x ^ y)を書き込む。全て同じ長さとする。O(size()/64)。
     // 中間集合や領域確保は不要で、xやyに自身を指定してもよい。
     void xnorInto(const SimdBitSet &x, const SimdBitSet &y) {
         same(x);
@@ -666,9 +661,9 @@ public:
 
     // 入力を変更せず~(*this ^ y)を返し、範囲外のビットを0にします。O(ビット数 / 64)。中間集合は作りません。
     SimdBitSet xnor(const SimdBitSet &y) const {
-        auto out = empty();
-        out.xnorInto(*this, y);
-        return out;
+        auto output_value = empty();
+        output_value.xnorInto(*this, y);
+        return output_value;
     }
 
     // 自身を~(*this ^ y)に更新し、範囲外のビットを0にします。O(ビット数 / 64)。
@@ -678,34 +673,34 @@ public:
 
     // 全ビットを反転した列を返す。長さnとしてO(1+n/64)。
     SimdBitSet operator~() const {
-        auto out = empty();
+        auto output_value = empty();
         if (size_) {
-            Kernel::avxNot(out.bits_.data(), bits_.data(), bits_.size());
-            out.trim();
+            Kernel::avxNot(output_value.bits_.data(), bits_.data(), bits_.size());
+            output_value.trim();
         }
-        return out;
+        return output_value;
     }
 
     // 添字の大きい方向にshiftビットずらした列を返す。長さnとしてO(1+n/64)。
     SimdBitSet operator<<(Int shift) const {
         if (shift < 0)
             throw std::invalid_argument("negative shift");
-        auto out = empty();
+        auto output_value = empty();
         if (shift < size_) {
-            Kernel::avxShl(out.bits_.data(), bits_.data(), bits_.size(), shift);
-            out.trim();
+            Kernel::avxShl(output_value.bits_.data(), bits_.data(), bits_.size(), shift);
+            output_value.trim();
         }
-        return out;
+        return output_value;
     }
 
     // 添字の小さい方向にshiftビットずらした列を返す。長さnとしてO(1+n/64)。
     SimdBitSet operator>>(Int shift) const {
         if (shift < 0)
             throw std::invalid_argument("negative shift");
-        auto out = empty();
+        auto output_value = empty();
         if (shift < size_)
-            Kernel::avxShr(out.bits_.data(), bits_.data(), bits_.size(), shift);
-        return out;
+            Kernel::avxShr(output_value.bits_.data(), bits_.data(), bits_.size(), shift);
+        return output_value;
     }
 
     // 長さnとしてO(1+n/64)。
@@ -714,7 +709,7 @@ public:
         return size_ ? Int(Kernel::avxPopcount(bits_.data(), bits_.data(), bits_.size())) : 0;
     }
 
-    // 自身の半開区間[l, r)の要素数を返します。0 <= l <= r <= len()。O(1 + (r-l) / 64)。
+    // 自身の半開区間[l, r)の要素数を返します。0 <= l <= r <= size()。O(1 + (r-l) / 64)。
     // 一時集合は作らず、両端の最大2ワードだけをマスクします。空区間は0です。
     Int popcountrange(Int l, Int r) const {
         range(l, r);
@@ -728,7 +723,7 @@ public:
         return size_ ? Int(Kernel::avxAndPopcount(bits_.data(), y.bits_.data(), bits_.size())) : 0;
     }
 
-    // 自身とyの共通部分の半開区間[l, r)の要素数を返します。0 <= l <= r <= len()。O(1 + (r-l) / 64)。
+    // 自身とyの共通部分の半開区間[l, r)の要素数を返します。0 <= l <= r <= size()。O(1 + (r-l) / 64)。
     // 一時集合は作らず、両端の最大2ワードだけをマスクします。空区間は0です。
     Int andpopcountrange(const SimdBitSet &y, Int l, Int r) const {
         same(y);
@@ -743,7 +738,7 @@ public:
         return size_ ? Int(Kernel::avxOrPopcount(bits_.data(), y.bits_.data(), bits_.size())) : 0;
     }
 
-    // 自身とyの和集合について半開区間[l,r)の要素数を返す。0 <= l <= r <= len()。
+    // 自身とyの和集合について半開区間[l,r)の要素数を返す。0 <= l <= r <= size()。
     // 一時集合は作らず、空区間は0。O(1 + (r-l)/64)。
     Int orpopcountrange(const SimdBitSet &y, Int l, Int r) const {
         same(y);
@@ -758,7 +753,7 @@ public:
         return size_ ? Int(Kernel::avxXorPopcount(bits_.data(), y.bits_.data(), bits_.size())) : 0;
     }
 
-    // 自身とyの対称差について半開区間[l,r)の要素数を返す。0 <= l <= r <= len()。
+    // 自身とyの対称差について半開区間[l,r)の要素数を返す。0 <= l <= r <= size()。
     // 一時集合は作らず、空区間は0。O(1 + (r-l)/64)。
     Int xorpopcountrange(const SimdBitSet &y, Int l, Int r) const {
         same(y);
@@ -766,7 +761,7 @@ public:
         return l < r ? Int(Kernel::avxXorpopcountRange(bits_.data(), y.bits_.data(), l, r)) : 0;
     }
 
-    // 自身とyのビットが一致する位置の個数を、一時集合を作らずに返す。O(len()/64)。
+    // 自身とyのビットが一致する位置の個数を、一時集合を作らずに返す。O(size()/64)。
     Int xnorpopcount(const SimdBitSet &y) const {
         return size_ - xorpopcount(y);
     }
@@ -783,7 +778,7 @@ public:
         return !size_ || Kernel::avxSubset(bits_.data(), y.bits_.data(), bits_.size());
     }
 
-    // start以上で最初の1の添字を返し、なければ-1。0 <= start <= len()。最悪O(1 + ビット数/64)。
+    // start以上で最初の1の添字を返し、なければ-1。0 <= start <= size()。最悪O(1 + ビット数/64)。
     // 最初のワードを調べた後、ゼロ区間をSIMDでまとめて飛ばします。
     Int nextSetBit(Int start) const {
         if (start < 0 || start > size_)
@@ -798,7 +793,7 @@ public:
         return j < bits_.size() ? Int(j * 64 + std::countr_zero(bits_[j])) : -1;
     }
 
-    // start以下で最後の1の添字を返し、なければ-1。-1 <= start < len()。最悪O(1 + ビット数/64)。
+    // start以下で最後の1の添字を返し、なければ-1。-1 <= start < size()。最悪O(1 + ビット数/64)。
     // start == -1なら-1。最初のワードを調べた後、ゼロ区間をSIMDで逆順に飛ばします。
     Int prevSetBit(Int start) const {
         if (start < -1 || start >= size_)
@@ -878,8 +873,12 @@ public:
 
     // 有効な全ビットが1かを返します。0を見つけたら終了し、長さ0ではtrueを返します。
     // 最悪時間O(1 + N / 64)、追加メモリO(1)。
-    bool all() const {
+    bool allOnes() const {
         return !size_ || Kernel::avxAll(bits_.data(), size_);
+    }
+
+    bool (all)() const {
+        return allOnes();
     }
 
     // 有効なビットに1があるかを返します。1を見つけたら終了し、長さ0ではfalseを返します。
@@ -891,11 +890,11 @@ public:
     // 長さnとしてO(n)。
     // 添字の大きい順にビットを並べた文字列を返す。
     std::string to_string() const {
-        std::string out(size_, '0');
+        std::string output_value(size_, '0');
         for (Int i = 0; i < size_; ++i)
             if ((*this)[i])
-                out[size_ - 1 - i] = '1';
-        return out;
+                output_value[size_ - 1 - i] = '1';
+        return output_value;
     }
 
     struct Iterator {
@@ -947,7 +946,7 @@ public:
         return *this;
     }
 
-    // 自身を自身 & yに更新し、更新後の要素数を返す。O(len()/64)、1回の走査。
+    // 自身を自身 & yに更新し、更新後の要素数を返す。O(size()/64)、1回の走査。
     Int andAssignPopcount(const SimdBitSet &y)
         requires(Width == 512)
     {
@@ -957,7 +956,7 @@ public:
                      : 0;
     }
 
-    // 自身を自身 | yに更新し、更新後の要素数を返す。O(len()/64)、1回の走査。
+    // 自身を自身 | yに更新し、更新後の要素数を返す。O(size()/64)、1回の走査。
     Int orAssignPopcount(const SimdBitSet &y)
         requires(Width == 512)
     {
@@ -967,7 +966,7 @@ public:
                      : 0;
     }
 
-    // 自身を自身 ^ yに更新し、更新後の要素数を返す。O(len()/64)、1回の走査。
+    // 自身を自身 ^ yに更新し、更新後の要素数を返す。O(size()/64)、1回の走査。
     Int xorAssignPopcount(const SimdBitSet &y)
         requires(Width == 512)
     {
@@ -977,7 +976,7 @@ public:
                      : 0;
     }
 
-    // 自身を自身 & ~yに更新し、更新後の要素数を返す。O(len()/64)、1回の走査。
+    // 自身を自身 & ~yに更新し、更新後の要素数を返す。O(size()/64)、1回の走査。
     Int andNotAssignPopcount(const SimdBitSet &y)
         requires(Width == 512)
     {
@@ -987,7 +986,7 @@ public:
                      : 0;
     }
 
-    // zが1の位置だけyを採用するよう自身を更新し、更新後の要素数を返す。O(len()/64)、1回の走査。
+    // zが1の位置だけyを採用するよう自身を更新し、更新後の要素数を返す。O(size()/64)、1回の走査。
     Int selectAssignPopcount(const SimdBitSet &y, const SimdBitSet &z)
         requires(Width == 512)
     {
@@ -998,7 +997,7 @@ public:
                      : 0;
     }
 
-    // 自身を自身 | (y & z)に更新し、更新後の要素数を返す。O(len()/64)、1回の走査。
+    // 自身を自身 | (y & z)に更新し、更新後の要素数を返す。O(size()/64)、1回の走査。
     Int orAndAssignPopcount(const SimdBitSet &y, const SimdBitSet &z)
         requires(Width == 512)
     {
@@ -1009,7 +1008,7 @@ public:
                      : 0;
     }
 
-    // 自身を自身 & (y | z)に更新し、更新後の要素数を返す。O(len()/64)、1回の走査。
+    // 自身を自身 & (y | z)に更新し、更新後の要素数を返す。O(size()/64)、1回の走査。
     Int andOrAssignPopcount(const SimdBitSet &y, const SimdBitSet &z)
         requires(Width == 512)
     {
@@ -1020,7 +1019,7 @@ public:
                      : 0;
     }
 
-    // 自身を自身 ^ (y & z)に更新し、更新後の要素数を返す。O(len()/64)、1回の走査。
+    // 自身を自身 ^ (y & z)に更新し、更新後の要素数を返す。O(size()/64)、1回の走査。
     Int xorAndAssignPopcount(const SimdBitSet &y, const SimdBitSet &z)
         requires(Width == 512)
     {
@@ -1031,7 +1030,7 @@ public:
                      : 0;
     }
 
-    // 自身を~(自身 ^ y)に更新し、更新後の要素数を返す。O(len()/64)、1回の走査。
+    // 自身を~(自身 ^ y)に更新し、更新後の要素数を返す。O(size()/64)、1回の走査。
     Int xnorAssignPopcount(const SimdBitSet &y)
         requires(Width == 512)
     {
@@ -1056,12 +1055,12 @@ public:
         requires(Width == 512)
     {
         same(y);
-        auto out = empty();
+        auto output_value = empty();
         if (size_) {
-            Kernel::avxAdd(out.bits_.data(), bits_.data(), y.bits_.data(), bits_.size());
-            out.trim();
+            Kernel::avxAdd(output_value.bits_.data(), bits_.data(), y.bits_.data(), bits_.size());
+            output_value.trim();
         }
-        return out;
+        return output_value;
     }
 
     // ビット列を符号なし整数として加算し、長さを超える桁を捨てる。長さnとしてO(1+n/64)。
@@ -1104,7 +1103,7 @@ public:
         return *this;
     }
 
-    // x |= x << kを一時領域なしで計算します。O(len()/64)。
+    // x |= x << kを一時領域なしで計算します。O(size()/64)。
     void orShiftLeftAssign(Int k)
         requires(Width == 512)
     {
@@ -1116,7 +1115,7 @@ public:
         }
     }
 
-    // x |= x >> kを一時領域なしで計算します。O(len()/64)。
+    // x |= x >> kを一時領域なしで計算します。O(size()/64)。
     void orShiftRightAssign(Int k)
         requires(Width == 512)
     {
@@ -1134,11 +1133,6 @@ public:
     }
 };
 
-// ビット数を返す。ビット数nとしてO(1)。
-template <int W, Int N> auto len(const SimdBitSet<W, N> &x) {
-    return x.len();
-}
-
 // 1の個数を返す。ビット数nとしてO(1+n/64)。
 template <int W, Int N> auto popcount(const SimdBitSet<W, N> &x) {
     return x.popcount();
@@ -1150,8 +1144,12 @@ template <int W, Int N> auto lowestBit(const SimdBitSet<W, N> &x) {
 }
 
 // 全ビットが1か返す。ビット数nとしてO(1+n/64)。
-template <int W, Int N> auto all(const SimdBitSet<W, N> &x) {
-    return x.all();
+template <int W, Int N> auto allOnes(const SimdBitSet<W, N> &x) {
+    return x.allOnes();
+}
+
+template <int W, Int N> auto (all)(const SimdBitSet<W, N> &s) {
+    return s.allOnes();
 }
 
 // 1のビットがあるか返す。ビット数nとしてO(1+n/64)。

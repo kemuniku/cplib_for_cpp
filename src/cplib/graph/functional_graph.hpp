@@ -170,13 +170,13 @@ public:
     std::vector<Int> walk(Int x, Int k) const {
         assert(0 <= x && x < Int(cycle_number.size()) && 0 <= k &&
                k < std::numeric_limits<Int>::max());
-        std::vector<Int> out(k + 1);
+        std::vector<Int> output_value(k + 1);
         for (Int i = 0; i <= k; ++i) {
-            out[i] = x;
+            output_value[i] = x;
             if (i < k)
                 x = next(x);
         }
-        return out;
+        return output_value;
     }
 
     // k回の遷移でxへ到達する始点の数を二分探索で求める。O(log N)。

@@ -3,7 +3,7 @@
 #include <cplib/utils/backwards_index.hpp>
 #include <sstream>
 
-namespace cplib {
+namespace cplib::variable_op_segtree {
 // 構築O(N)、点更新・区間取得・境界探索O(log N)、全体取得O(1)。
 template <class T, class Merge = std::function<T(T, T)>> class SegmentTree {
     T identity;
@@ -150,13 +150,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return length;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return length;
     }
 
     // x番目の値を設定する。O(log(n+1))回の演算。
@@ -295,12 +290,7 @@ template <class T, class Op> auto initSegmentTree(const std::vector<T> &v, Op op
 
 // 配列から木を構築する。要素数をnとしてO(n+1)回の演算。
 template <class V, class Op, class T> auto newSegWith(const V &v, Op op, T e) {
-    return cplib::initSegmentTree(v, op, e);
-}
-
-// 要素数を返す。O(1)。
-template <class T, class M> Int len(const SegmentTree<T, M> &s) {
-    return s.len();
+    return ::cplib::variable_op_segtree::initSegmentTree(v, op, e);
 }
 
 // i番目の値を更新する。O(log(n+1))回の演算。

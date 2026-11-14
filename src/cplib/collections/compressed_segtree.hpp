@@ -166,13 +166,8 @@ public:
     }
 
     // 重複除去後の座標数を返す。O(1)。
-    Int len() const {
-        return coords.size();
-    }
-
-    // 重複除去後の座標数を返す。O(1)。
     Int size() const {
-        return len();
+        return coords.size();
     }
 
     // 圧縮順の全値を文字列で返す。出力長LとしてO(N+L)。
@@ -241,11 +236,6 @@ auto newCompressedSegWith(const Coords &coords, Op op, T e, Initial initial = nu
                              : self.template rangeProductBody<false>(l, r, op);
         });
     return result;
-}
-
-// 登録座標数を返す。O(1)。
-template <class K, class T> Int len(const CompressedSegmentTree<K, T> &s) {
-    return s.len();
 }
 
 // 指定区間の積を返す。O(log(N+1))。

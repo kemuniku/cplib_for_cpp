@@ -52,13 +52,8 @@ protected:
 
 public:
     // 重複を含む要素数を返す。O(1)。
-    Int len() const {
-        return root->value;
-    }
-
-    // 重複を含む要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return root->value;
     }
 
     // xの多重度を返す。ビット幅Hに対しO(H+1)。

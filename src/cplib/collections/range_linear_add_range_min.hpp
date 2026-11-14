@@ -139,13 +139,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return length_;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return length_;
     }
 
     // 半開区間[l,r)のa[i]にb*i+cを加えます。iは配列全体での添字です。O(log² N)。
@@ -163,12 +158,12 @@ public:
 
     // 両端を含む区間の各a[i]にb*i+cを加える。要素数nとしてO(log²(n+1))。
     template <class L, class R> void add(ClosedSlice<L, R> s, Int b, Int c) {
-        add(resolve_index(len(), s.a), resolve_index(len(), s.b) + 1, b, c);
+        add(resolve_index(size(), s.a), resolve_index(size(), s.b) + 1, b, c);
     }
 
     // 両端を含む区間の最小値を返す。要素数nとしてO(log²(n+1))。
     template <class L, class R> Int prod(ClosedSlice<L, R> s) const {
-        return prod(resolve_index(len(), s.a), resolve_index(len(), s.b) + 1);
+        return prod(resolve_index(size(), s.a), resolve_index(size(), s.b) + 1);
     }
 
     // 両端を含む区間の最小値を返す。要素数nとしてO(log²(n+1))。
@@ -178,13 +173,13 @@ public:
 
     // i番目の値を返す。要素数nとしてO(log(n+1))。
     Int operator[](Int i) const {
-        assert(0 <= i && i < len());
+        assert(0 <= i && i < size());
         return prod(i, i + 1);
     }
 
     // 末尾からi番目の値を返す。要素数nとしてO(log(n+1))。
     Int operator[](BackwardsIndex i) const {
-        return (*this)[len() - i.value];
+        return (*this)[size() - i.value];
     }
 };
 

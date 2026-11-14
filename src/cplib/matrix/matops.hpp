@@ -10,19 +10,19 @@ template <class T> auto rotated(const std::vector<std::vector<T>> &a, Int turns 
     turns = (turns % 4 + 4) % 4;
     if (!turns)
         return a;
-    std::vector<std::vector<T>> out;
+    std::vector<std::vector<T>> output_value;
     if (turns == 1 || turns == 3) {
-        out.assign(w, std::vector<T>(h));
+        output_value.assign(w, std::vector<T>(h));
         for (Int i = 0; i < w; ++i)
             for (Int j = 0; j < h; ++j)
-                out[i][j] = turns == 1 ? a[h - 1 - j][i] : a[j][w - 1 - i];
+                output_value[i][j] = turns == 1 ? a[h - 1 - j][i] : a[j][w - 1 - i];
     } else {
-        out.assign(h, std::vector<T>(w));
+        output_value.assign(h, std::vector<T>(w));
         for (Int i = 0; i < h; ++i)
             for (Int j = 0; j < w; ++j)
-                out[i][j] = a[h - 1 - i][w - 1 - j];
+                output_value[i][j] = a[h - 1 - i][w - 1 - j];
     }
-    return out;
+    return output_value;
 }
 
 // H行W列の二次元配列の転置を返す。O(HW+H+W)。
@@ -30,11 +30,11 @@ template <class T> auto transposed(const std::vector<std::vector<T>> &a) {
     if (a.empty())
         return a;
     Int h = a.size(), w = a[0].size();
-    std::vector<std::vector<T>> out(w, std::vector<T>(h));
+    std::vector<std::vector<T>> output_value(w, std::vector<T>(h));
     for (Int i = 0; i < w; ++i)
         for (Int j = 0; j < h; ++j)
-            out[i][j] = a[j][i];
-    return out;
+            output_value[i][j] = a[j][i];
+    return output_value;
 }
 
 // H行W列の配列から周囲のzeroだけの行・列を取り除く。O(HW+H+W)。
@@ -50,17 +50,17 @@ template <class T> auto trimmed(std::vector<std::vector<T>> a, const T &zero) {
 
 namespace detail {
 inline auto matops_chars(const std::vector<std::string> &a) {
-    std::vector<std::vector<char>> out;
+    std::vector<std::vector<char>> output_value;
     for (const auto &row : a)
-        out.emplace_back(row.begin(), row.end());
-    return out;
+        output_value.emplace_back(row.begin(), row.end());
+    return output_value;
 }
 
 inline auto matops_strings(const std::vector<std::vector<char>> &a) {
-    std::vector<std::string> out;
+    std::vector<std::string> output_value;
     for (const auto &row : a)
-        out.emplace_back(row.begin(), row.end());
-    return out;
+        output_value.emplace_back(row.begin(), row.end());
+    return output_value;
 }
 }
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <cplib/collections/private/scalar_bitset.hpp>
 
-namespace cplib {
+namespace cplib::static_bitset {
 template <Int N> using BitSet = ScalarBitSet<N>;
 
 // 長さNの全ビット0の列を構築する。O(1+N/64)。

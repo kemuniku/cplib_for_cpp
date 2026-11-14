@@ -76,13 +76,8 @@ public:
     }
 
     // 重複を含む文字列の総数を返す。O(1)。
-    Int len() const {
-        return nodes.empty() ? 0 : nodes[0].subtree;
-    }
-
-    // 重複を含む文字列の総数を返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return nodes.empty() ? 0 : nodes[0].subtree;
     }
 
     // sに対応する節点IDを個数が0でも返す。存在しなければ -1。O(|s|)。
@@ -126,7 +121,7 @@ public:
             assert(valid(c));
             (void)c;
         }
-        assert(v <= std::numeric_limits<std::int32_t>::max() - len());
+        assert(v <= std::numeric_limits<std::int32_t>::max() - size());
         if (nodes.empty())
             nodes.resize(1);
         Int node = 0;

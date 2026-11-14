@@ -169,7 +169,7 @@ CPLIB_BS_AVX2 static inline void cplib_bs_from_bools(uint64_t *dst, const void *
 #undef CPLIB_BS_AVX2
 }
 
-namespace cplib {
+namespace cplib::legacy_bitset {
 // 展開済みファイルに保存された旧固定長AVX2版。検索はワード走査、シフトは別領域へ書き出す。
 template <Int N> class BitSet {
     static_assert(N >= 0);
@@ -187,11 +187,11 @@ template <Int N> class BitSet {
     }
 
     inline static constexpr auto ByteStrings = []() {
-        std::array<std::array<char, 8>, 256> out{};
+        std::array<std::array<char, 8>, 256> output_value{};
         for (Int i = 0; i < 256; ++i)
             for (Int j = 0; j < 8; ++j)
-                out[i][j] = char('0' + ((i >> (7 - j)) & 1));
-        return out;
+                output_value[i][j] = char('0' + ((i >> (7 - j)) & 1));
+        return output_value;
     }();
 
 public:
@@ -218,22 +218,17 @@ public:
 
     // 指定した添字だけ1の列を生成する。添字数kとしてO(1+N/64+k)。
     static BitSet fromIndexes(std::span<const Int> indexes) {
-        BitSet out;
+        BitSet output_value;
         for (Int i : indexes) {
-            out.check(i);
-            out.bits_[i >> 6] |= UInt(1) << (i & 63);
+            output_value.check(i);
+            output_value.bits_[i >> 6] |= UInt(1) << (i & 63);
         }
-        return out;
-    }
-
-    // ビット数Nを返す。O(1)。
-    static constexpr Int len() {
-        return N;
+        return output_value;
     }
 
     // ビット数Nを返す。O(1)。
     static constexpr Int size() {
-        return len();
+        return N;
     }
 
     // i番目のビットを返す。O(1)。
@@ -315,66 +310,66 @@ public:
 
     // aとbのANDを返す。O(1+N/64)。
     friend BitSet operator&(const BitSet &a, const BitSet &b) {
-        BitSet out;
+        BitSet output_value;
         if constexpr (N > 0)
-            detail::combined_collections_native::cplib_bs_and(out.bits_.data(), a.bits_.data(),
+            detail::combined_collections_native::cplib_bs_and(output_value.bits_.data(), a.bits_.data(),
                                                               b.bits_.data(), Words);
-        return out;
+        return output_value;
     }
 
     // aとbのORを返す。O(1+N/64)。
     friend BitSet operator|(const BitSet &a, const BitSet &b) {
-        BitSet out;
+        BitSet output_value;
         if constexpr (N > 0)
-            detail::combined_collections_native::cplib_bs_or(out.bits_.data(), a.bits_.data(),
+            detail::combined_collections_native::cplib_bs_or(output_value.bits_.data(), a.bits_.data(),
                                                              b.bits_.data(), Words);
-        return out;
+        return output_value;
     }
 
     // aとbのXORを返す。O(1+N/64)。
     friend BitSet operator^(const BitSet &a, const BitSet &b) {
-        BitSet out;
+        BitSet output_value;
         if constexpr (N > 0)
-            detail::combined_collections_native::cplib_bs_xor(out.bits_.data(), a.bits_.data(),
+            detail::combined_collections_native::cplib_bs_xor(output_value.bits_.data(), a.bits_.data(),
                                                               b.bits_.data(), Words);
-        return out;
+        return output_value;
     }
 
     // 添字の大きい方向にcountビットずらした列を返す。O(1+N/64)。
     BitSet operator<<(Int count) const {
         if (count < 0)
             throw std::invalid_argument("shift count must be non-negative");
-        BitSet out;
+        BitSet output_value;
         if constexpr (N > 0)
             if (count < N) {
-                detail::combined_collections_native::cplib_bs_shl(out.bits_.data(), bits_.data(),
+                detail::combined_collections_native::cplib_bs_shl(output_value.bits_.data(), bits_.data(),
                                                                   Words, count);
-                out.trim();
+                output_value.trim();
             }
-        return out;
+        return output_value;
     }
 
     // 添字の小さい方向にcountビットずらした列を返す。O(1+N/64)。
     BitSet operator>>(Int count) const {
         if (count < 0)
             throw std::invalid_argument("shift count must be non-negative");
-        BitSet out;
+        BitSet output_value;
         if constexpr (N > 0)
             if (count < N)
-                detail::combined_collections_native::cplib_bs_shr(out.bits_.data(), bits_.data(),
+                detail::combined_collections_native::cplib_bs_shr(output_value.bits_.data(), bits_.data(),
                                                                   Words, count);
-        return out;
+        return output_value;
     }
 
     // 全ビットを反転した列を返す。O(1+N/64)。
     BitSet operator~() const {
-        BitSet out;
+        BitSet output_value;
         if constexpr (N > 0) {
-            detail::combined_collections_native::cplib_bs_not(out.bits_.data(), bits_.data(),
+            detail::combined_collections_native::cplib_bs_not(output_value.bits_.data(), bits_.data(),
                                                               Words);
-            out.trim();
+            output_value.trim();
         }
-        return out;
+        return output_value;
     }
 
     // 1のビット数を返す。O(1+N/64)。
@@ -447,9 +442,9 @@ public:
 
     // 最初の1を指すイテレータを返す。最悪O(1+N/64)。
     Iterator begin() const {
-        Iterator out{this, 0, Words ? bits_[0] : 0};
-        out.skip();
-        return out;
+        Iterator output_value{this, 0, Words ? bits_[0] : 0};
+        output_value.skip();
+        return output_value;
     }
 
     // 列挙終了を表すイテレータを返す。O(1)。
@@ -472,23 +467,23 @@ public:
 
     // 添字の大きい順にビットを文字列化する。O(N+1)。
     std::string str() const {
-        std::string out(N, '\0');
+        std::string output_value(N, '\0');
         Int finish = N;
         for (Int i = 0; i < Words; ++i) {
             UInt word = bits_[i];
             unsigned remaining = unsigned(std::min(Int(64), N - i * 64));
             while (remaining >= 8) {
                 finish -= 8;
-                std::memcpy(out.data() + finish, ByteStrings[word & 255].data(), 8);
+                std::memcpy(output_value.data() + finish, ByteStrings[word & 255].data(), 8);
                 word >>= 8;
                 remaining -= 8;
             }
             for (unsigned j = 0; j < remaining; ++j) {
-                out[--finish] = char('0' + (word & 1));
+                output_value[--finish] = char('0' + (word & 1));
                 word >>= 1;
             }
         }
-        return out;
+        return output_value;
     }
 };
 
@@ -505,11 +500,6 @@ template <Int N, class R> auto initBitSet(const R &values) {
 // 指定した添字のみ1の列を構築する。添字数kとしてO(1+N/64+k)。
 template <Int N> auto initBitSetFromIndexes(std::span<const Int> indexes) {
     return BitSet<N>::fromIndexes(indexes);
-}
-
-// ビット数を返す。O(1)。
-template <Int N> Int len(const BitSet<N> &a) {
-    return a.len();
 }
 
 // 1のビット数を返す。O(1+N/64)。

@@ -20,31 +20,26 @@ template <class T, std::size_t N> struct FixedLengthMergedStaticString {
     }
 
     // 結合したN区間の全長を返す。計算量 O(N+1)。
-    Int len() const {
-        return detail::merged_length(*this);
-    }
-
-    // 結合したN区間の全長を返す。計算量 O(N+1)。
     Int size() const {
-        return len();
+        return detail::merged_length(*this);
     }
 
     // i番目の要素を返す。区間数Nとして O(N+1)。
     T operator[](Int i) const {
-        assert(0 <= i && i < len());
+        assert(0 <= i && i < size());
         return detail::merged_at(*this, i);
     }
 
     // 末尾基準の添字で要素を返す。区間数Nとして O(N+1)。
     T operator[](BackwardsIndex i) const {
-        return (*this)[len() - i.value];
+        return (*this)[size() - i.value];
     }
 
     // 両端を含む区間のビューを返す。区間数Nとして O(N+1)。
     template <class A, class B>
     FixedLengthMergedStaticString operator[](ClosedSlice<A, B> slice) const {
-        Int a = resolve_index(len(), slice.a), b = resolve_index(len(), slice.b);
-        assert(0 <= a && a <= b + 1 && b < len());
+        Int a = resolve_index(size(), slice.a), b = resolve_index(size(), slice.b);
+        assert(0 <= a && a <= b + 1 && b < size());
         FixedLengthMergedStaticString out;
         out.base = base;
         Int previous = 0;
@@ -83,7 +78,7 @@ auto initFixedLengthMergedStaticString(const StaticString<T> &s,
     FixedLengthMergedStaticString<T, N> out;
     for (std::size_t i = 0; i < N; ++i) {
         auto [l, r] = ranges[i];
-        assert(0 <= l && l <= r && r <= s.len());
+        assert(0 <= l && l <= r && r <= s.size());
         out.setRange(i, s.base, s.l + l, s.l + r);
     }
     return out;
@@ -146,7 +141,7 @@ int cmp(const FixedLengthMergedStaticString<T, N> &s,
 template <class T, std::size_t N, std::size_t M>
 bool operator==(const FixedLengthMergedStaticString<T, N> &s,
                 const FixedLengthMergedStaticString<T, M> &t) {
-    return s.len() == t.len() && lcp(s, t) == s.len();
+    return s.size() == t.size() && lcp(s, t) == s.size();
 }
 
 // 同じ基底の結合列を辞書順に比較する。区間数N、Mとして O(N+M+1)。
@@ -154,11 +149,6 @@ template <class T, std::size_t N, std::size_t M>
 auto operator<=>(const FixedLengthMergedStaticString<T, N> &s,
                  const FixedLengthMergedStaticString<T, M> &t) {
     return cmp(s, t) <=> 0;
-}
-
-// 結合したN区間の全長を返す。計算量 O(N+1)。
-template <class T, std::size_t N> Int len(const FixedLengthMergedStaticString<T, N> &s) {
-    return s.len();
 }
 
 // 文字列に変換する。区間数N、全長Lとして O(N+L+1) と要素の出力費用が必要。

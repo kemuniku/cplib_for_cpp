@@ -124,13 +124,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return length;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return length;
     }
 
     struct Reference {
@@ -247,11 +242,6 @@ template <class... Args> auto newDualSegWith(Args &&...args) {
 
 #define CPLIB_DUAL_TEMPLATE template <class S, class F, class M, class C, bool B>
 #define CPLIB_DUAL_TYPE DualSegmentTree<S, F, M, C, B>
-
-// 要素数を返す。O(1)。
-CPLIB_DUAL_TEMPLATE Int len(const CPLIB_DUAL_TYPE &s) {
-    return s.len();
-}
 
 // i番目の値を取得する。O(log(n+1))回の作用・合成。
 CPLIB_DUAL_TEMPLATE auto get(CPLIB_DUAL_TYPE &s, Int i) {

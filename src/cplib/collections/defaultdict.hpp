@@ -74,13 +74,8 @@ public:
     }
 
     // 登録済みの要素数を返す。O(1)。
-    Int len() const {
-        return table.size();
-    }
-
-    // 登録済みの要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return table.size();
     }
 
     // keyを削除して値をvalueに格納し、存在したか返す。要素数nとして期待O(1)、最悪O(n)。
@@ -165,11 +160,6 @@ template <class K, class V> auto toDefaultDict(std::unordered_map<K, V> table, V
     return DefaultDict<K, V>(std::move(table), std::move(value));
 }
 
-// 登録済みの要素数を返す。O(1)。
-template <class K, class V> Int len(const DefaultDict<K, V> &d) {
-    return d.len();
-}
-
 // kが登録済みか返す。要素数nとして期待O(1)、最悪O(n)。
 template <class K, class V> bool hasKey(const DefaultDict<K, V> &d, const K &k) {
     return d.hasKey(k);
@@ -191,7 +181,7 @@ template <class K, class V> void clear(DefaultDict<K, V> &d) {
 }
 
 // 登録済みの組のハッシュを返す。要素数nとしてO(n)回のハッシュ計算。
-template <class K, class V> auto hash(const DefaultDict<K, V> &d) {
+template <class K, class V> auto hashValue(const DefaultDict<K, V> &d) {
     return d.hash();
 }
 

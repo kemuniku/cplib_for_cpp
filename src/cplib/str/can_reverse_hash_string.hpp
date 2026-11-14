@@ -2,7 +2,7 @@
 #include <cplib/str/private/hash_string_base.hpp>
 #include <concepts>
 
-namespace cplib {
+namespace cplib::reversible_hash {
 using HashString = BasicHashString<true>;
 using RollingHash = BasicRollingHash<true>;
 

@@ -79,20 +79,20 @@ struct MergeTree {
     // オイラーツアー順に配列を並び替える
     template <class T> std::vector<T> make_seq(const std::vector<T> &values) const {
         assert(Int(values.size()) == N);
-        std::vector<T> out(N);
+        std::vector<T> output_value(N);
         for (Int i = 0; i < N; ++i)
-            out[ret[i]] = values[i];
-        return out;
+            output_value[ret[i]] = values[i];
+        return output_value;
     }
 
     // 計算量O(N)。
     // オイラーツアー順になっている配列をもとに戻す
     template <class T> std::vector<T> restore_seq(const std::vector<T> &values) const {
         assert(Int(values.size()) == N);
-        std::vector<T> out(N);
+        std::vector<T> output_value(N);
         for (Int i = 0; i < N; ++i)
-            out[et[i]] = values[i];
-        return out;
+            output_value[et[i]] = values[i];
+        return output_value;
     }
 
     // 計算量O(1)。

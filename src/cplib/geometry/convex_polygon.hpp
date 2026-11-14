@@ -1,12 +1,7 @@
 #pragma once
 #include <cplib/geometry/polygon.hpp>
-#include <optional>
 
 namespace cplib {
-template <class T> struct ConvexDiameter {
-    T distance_sq;
-    std::array<Point<T>, 2> endpoints;
-};
 namespace detail {
 template <class T> Int convexSign(T value) {
     return geometry_lt(value, T(0)) ? -1 : geometry_gt(value, T(0)) ? 1 : 0;
@@ -17,41 +12,48 @@ template <class T> bool convexOnSegment(Point<T> a, Point<T> b, Point<T> p) {
     return convexSign(cross(b - a, p - a)) == 0 && geometry_le(dot(p - a, p - b), T(0));
 }
 }
-template <class T> class ConvexPolygon {
-    std::vector<Point<T>> vertices_;
+template <class T> class ConvexPolygon : public std::vector<Point<T>> {
+    using Base = std::vector<Point<T>>;
     Int location(Point<T> p) const {
-        Int n = size();
+        const Base &vertices = *this;
+        Int n = this->size();
         if (n == 0)
             return -1;
         if (n == 1)
-            return p == vertices_[0] ? 0 : -1;
+            return p == vertices[0] ? 0 : -1;
         if (n == 2)
-            return detail::convexOnSegment(vertices_[0], vertices_[1], p) ? 0 : -1;
-        auto origin = vertices_[0];
-        Int first = detail::convexSign(cross(vertices_[1] - origin, p - origin));
-        Int last = detail::convexSign(cross(vertices_.back() - origin, p - origin));
+            return detail::convexOnSegment(vertices[0], vertices[1], p) ? 0 : -1;
+        auto origin = vertices[0];
+        Int first = detail::convexSign(cross(vertices[1] - origin, p - origin));
+        Int last = detail::convexSign(cross(vertices.back() - origin, p - origin));
         if (first < 0 || last > 0)
             return -1;
         if (first == 0)
-            return detail::convexOnSegment(origin, vertices_[1], p) ? 0 : -1;
+            return detail::convexOnSegment(origin, vertices[1], p) ? 0 : -1;
         if (last == 0)
-            return detail::convexOnSegment(origin, vertices_.back(), p) ? 0 : -1;
+            return detail::convexOnSegment(origin, vertices.back(), p) ? 0 : -1;
         Int lo = 1, hi = n - 1;
         while (hi - lo > 1) {
             Int mid = (lo + hi) / 2;
-            if (cross(vertices_[mid] - origin, p - origin) >= T(0))
+            if (cross(vertices[mid] - origin, p - origin) >= T(0))
                 lo = mid;
             else
                 hi = mid;
         }
-        Int side = detail::convexSign(cross(vertices_[hi] - vertices_[lo], p - vertices_[lo]));
-        if (side == 0 && !detail::convexOnSegment(vertices_[lo], vertices_[hi], p))
+        Int side = detail::convexSign(cross(vertices[hi] - vertices[lo], p - vertices[lo]));
+        if (side == 0 && !detail::convexOnSegment(vertices[lo], vertices[hi], p))
             return -1;
         return side;
     }
 public:
+    using Base::Base;
+    using Base::operator=;
+
+    ConvexPolygon() = default;
+
     // 凸多角形の周回順頂点列を正規化する。共線・重複点も許す。時間・領域 O(N)。
     explicit ConvexPolygon(const std::vector<Point<T>> &input) {
+        Base &vertices = *this;
         std::vector<Point<T>> points;
         for (auto p : input)
             if (points.empty() || !exact_equal(points.back(), p))
@@ -59,7 +61,7 @@ public:
         if (points.size() > 1 && exact_equal(points.front(), points.back()))
             points.pop_back();
         if (points.size() <= 1) {
-            vertices_ = std::move(points);
+            vertices = std::move(points);
             return;
         }
         Int lo = std::min_element(points.begin(), points.end()) - points.begin();
@@ -71,7 +73,7 @@ public:
                 orientation = turn;
         }
         if (orientation == T(0)) {
-            vertices_ = {points[lo], points[hi]};
+            vertices = {points[lo], points[hi]};
             return;
         }
         if (orientation < T(0)) {
@@ -80,35 +82,23 @@ public:
         }
         for (Int i = 0; i < Int(points.size()); ++i) {
             auto p = points[(lo + i) % points.size()];
-            while (vertices_.size() >= 2 &&
-                   cross(vertices_.back() - vertices_[vertices_.size() - 2],
-                         p - vertices_[vertices_.size() - 2]) <= T(0))
-                vertices_.pop_back();
-            vertices_.push_back(p);
+            while (vertices.size() >= 2 &&
+                   cross(vertices.back() - vertices[vertices.size() - 2],
+                         p - vertices[vertices.size() - 2]) <= T(0))
+                vertices.pop_back();
+            vertices.push_back(p);
         }
-        while (vertices_.size() >= 3 &&
-               cross(vertices_.back() - vertices_[vertices_.size() - 2],
-                     vertices_.front() - vertices_[vertices_.size() - 2]) <= T(0))
-            vertices_.pop_back();
+        while (vertices.size() >= 3 &&
+               cross(vertices.back() - vertices[vertices.size() - 2],
+                     vertices.front() - vertices[vertices.size() - 2]) <= T(0))
+            vertices.pop_back();
     }
     // Polygonをコピーして正規化する。時間・領域 O(N)。
-    explicit ConvexPolygon(const Polygon<T> &poly) : ConvexPolygon(poly.v) {
-    }
-    // 正規化後の頂点数を返す。計算量 O(1)。
-    Int size() const {
-        return vertices_.size();
-    }
-    // 頂点列の先頭を返す。計算量 O(1)。
-    auto begin() const {
-        return vertices_.begin();
-    }
-    // 頂点列の終端を返す。計算量 O(1)。
-    auto end() const {
-        return vertices_.end();
+    explicit ConvexPolygon(const Polygon<T> &poly) : ConvexPolygon(static_cast<const std::vector<Point<T>> &>(poly)) {
     }
     // 独立したPolygonを返す。時間・領域 O(N)。
     Polygon<T> toPolygon() const {
-        return {vertices_};
+        return Polygon<T>(static_cast<const Base &>(*this));
     }
     // 点の包含を判定する。strict=trueは境界を除く。時間 O(log(N+1))。
     bool contains(Point<T> p, bool strict = false) const {
@@ -118,16 +108,16 @@ public:
     bool on_edge(Point<T> p) const {
         return location(p) == 0;
     }
-    // 二乗直径と端点を返す。空はnullopt。回転calipersで時間 O(N)、追加領域 O(1)。
-    std::optional<ConvexDiameter<T>> diameter() const {
-        Int n = size();
-        if (n == 0)
-            return std::nullopt;
-        ConvexDiameter<T> best{T(0), {vertices_[0], vertices_[0]}};
+    // 二乗直径を返す。空の多角形は不可。回転calipersで時間 O(N)、追加領域 O(1)。
+    T diameter() const {
+        const Base &vertices = *this;
+        Int n = this->size();
+        assert(n > 0);
+        T best = T(0);
         auto consider = [&](Int i, Int j) {
-            T distance = norm(vertices_[i] - vertices_[j]);
-            if (distance > best.distance_sq)
-                best = {distance, {vertices_[i], vertices_[j]}};
+            T distance = norm(vertices[i] - vertices[j]);
+            if (distance > best)
+                best = distance;
         };
         if (n == 2)
             consider(0, 1);
@@ -135,12 +125,12 @@ public:
             Int j = 1;
             for (Int i = 0; i < n; ++i) {
                 Int next = (i + 1) % n;
-                auto edge = vertices_[next] - vertices_[i];
-                while (cross(edge, vertices_[(j + 1) % n] - vertices_[j]) > T(0))
+                auto edge = vertices[next] - vertices[i];
+                while (cross(edge, vertices[(j + 1) % n] - vertices[j]) > T(0))
                     j = (j + 1) % n;
                 consider(i, j);
                 consider(next, j);
-                if (cross(edge, vertices_[(j + 1) % n] - vertices_[j]) == T(0)) {
+                if (cross(edge, vertices[(j + 1) % n] - vertices[j]) == T(0)) {
                     consider(i, (j + 1) % n);
                     consider(next, (j + 1) % n);
                 }
@@ -165,12 +155,12 @@ template <class T> bool contains(const ConvexPolygon<T> &poly, Point<T> p, bool 
 template <class T> bool on_edge(const ConvexPolygon<T> &poly, Point<T> p) {
     return poly.on_edge(p);
 }
-// 二乗直径と端点を返す。時間 O(N)、追加領域 O(1)。
-template <class T> auto diameter(const ConvexPolygon<T> &poly) {
+// 二乗直径を返す。空の多角形は不可。時間 O(N)、追加領域 O(1)。
+template <class T> T diameter(const ConvexPolygon<T> &poly) {
     return poly.diameter();
 }
-// 凸Polygonの二乗直径と端点を返す。時間・領域 O(N)。
-template <class T> auto diameter(const Polygon<T> &poly) {
+// 凸Polygonの二乗直径を返す。空の多角形は不可。時間・領域 O(N)。
+template <class T> T diameter(const Polygon<T> &poly) {
     return initConvexPolygon(poly).diameter();
 }
 // 正規化した頂点列をコピーする。時間・領域 O(N)。
@@ -183,20 +173,21 @@ Polygon<T> convex_cut(const Polygon<T> &poly, Line<T> line) {
     assert(line.s != line.t);
     Polygon<T> result;
     auto append = [&](Point<T> p) {
-        if (result.v.empty() || result.v.back() != p)
-            result.v.push_back(p);
+        if (result.empty() || result.back() != p)
+            result.push_back(p);
     };
-    for (Int i = 0; i < poly.size(); ++i) {
-        auto a = poly.v[i], b = poly.v[(i + 1) % poly.size()];
-        T ca = cross(vector(line), a - line.s), cb = cross(vector(line), b - line.s);
+    const Int n = static_cast<Int>(poly.size());
+    for (Int i = 0; i < n; ++i) {
+        auto a = poly[i], b = poly[(i + 1) % n];
+        T ca = cross(toVector(line), a - line.s), cb = cross(toVector(line), b - line.s);
         Int sa = detail::convexSign(ca), sb = detail::convexSign(cb);
         if (sa >= 0)
             append(a);
         if (sa * sb < 0)
             append(a + (b - a) * (ca / (ca - cb)));
     }
-    if (result.v.size() > 1 && result.v.front() == result.v.back())
-        result.v.pop_back();
+    if (result.size() > 1 && result.front() == result.back())
+        result.pop_back();
     return result;
 }
 // 前処理済み凸多角形を切断する。時間・領域 O(N)。

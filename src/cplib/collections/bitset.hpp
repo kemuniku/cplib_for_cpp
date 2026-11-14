@@ -21,9 +21,9 @@ inline BitSet initBitSet(const std::vector<bool> &v) {
 
 // 指定した添字のみ1の長さnの列を構築する。添字数をkとしてO(1+n/64+k)。
 inline BitSet initBitSetFromIndexes(const std::vector<Int> &indexes, Int n) {
-    BitSet out(n);
+    BitSet output_value(n);
     for (Int i : indexes)
-        out.set(i, true);
-    return out;
+        output_value.set(i, true);
+    return output_value;
 }
 }

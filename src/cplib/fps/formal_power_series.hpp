@@ -2,15 +2,18 @@
 #include <cplib/convolution/convolution.hpp>
 #include <optional>
 #include <memory>
+#include <cmath>
 
 namespace cplib {
+// 形式的平方根と数値の平方根を同じ名前で使えるようにする。
+using std::sqrt;
 // f を x^n で打ち切る。返り値の長さは max(n, 0)。計算量 O(max(n, 0))。
 template <class T> std::vector<T> prefix(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return {};
-    std::vector<T> out(n);
-    std::copy_n(f.begin(), std::min(f.size(), std::size_t(n)), out.begin());
-    return out;
+    std::vector<T> output_value(n);
+    std::copy_n(f.begin(), std::min(f.size(), std::size_t(n)), output_value.begin());
+    return output_value;
 }
 
 // 指定した次数の係数を返す。範囲外なら零を返す。計算量 O(1)。
@@ -27,10 +30,10 @@ template <Modint T> std::vector<T> normalized(std::vector<T> f) {
 
 // 二つの級数の和を返す。計算量 O(max(f.size(), g.size()))。
 template <Modint T> std::vector<T> operator+(const std::vector<T> &f, const std::vector<T> &g) {
-    auto out = prefix(f, std::max(f.size(), g.size()));
+    auto output_value = prefix(f, std::max(f.size(), g.size()));
     for (std::size_t i = 0; i < g.size(); ++i)
-        out[i] += g[i];
-    return out;
+        output_value[i] += g[i];
+    return output_value;
 }
 
 // 定数項に整数 c を加えた級数を返す。計算量 O(f.size())。
@@ -49,10 +52,10 @@ template <Modint T, std::integral I> auto operator+(I c, const std::vector<T> &f
 
 // 二つの級数の差を返す。計算量 O(max(f.size(), g.size()))。
 template <Modint T> std::vector<T> operator-(const std::vector<T> &f, const std::vector<T> &g) {
-    auto out = prefix(f, std::max(f.size(), g.size()));
+    auto output_value = prefix(f, std::max(f.size(), g.size()));
     for (std::size_t i = 0; i < g.size(); ++i)
-        out[i] -= g[i];
-    return out;
+        output_value[i] -= g[i];
+    return output_value;
 }
 
 // 各係数を符号反転した級数を返す。計算量 O(f.size())。
@@ -127,28 +130,28 @@ template <Modint T> auto &operator/=(std::vector<T> &f, std::type_identity_t<T> 
 template <Modint T> std::vector<T> derivative(const std::vector<T> &f) {
     if (f.size() <= 1)
         return {};
-    std::vector<T> out(f.size() - 1);
+    std::vector<T> output_value(f.size() - 1);
     for (std::size_t i = 1; i < f.size(); ++i)
-        out[i - 1] = f[i] * T(i);
-    return out;
+        output_value[i - 1] = f[i] * T(i);
+    return output_value;
 }
 
 namespace detail {
 // 1以上n未満の逆数表を作る。素数法ではO(n)、合成数法では各添字のinvを使う。
 template <Modint T> std::vector<T> fpsIndexInverses(Int n) {
-    std::vector<T> out(n);
+    std::vector<T> output_value(n);
     if (n > 1)
-        out[1] = 1;
+        output_value[1] = 1;
     if (n <= 2)
-        return out;
+        return output_value;
     Int p = T::umod();
     if (!isprime(p)) {
         for (Int i = 2; i < n; ++i)
-            out[i] = T(i).inv();
+            output_value[i] = T(i).inv();
     } else
         for (Int i = 2; i < n; ++i)
-            out[i] = -out[p % i] * T(p / i);
-    return out;
+            output_value[i] = -output_value[p % i] * T(p / i);
+    return output_value;
 }
 
 // 固定側NTTを保持する特化版と巡回畳み込み版の両経路を維持。O(m log m)。
@@ -226,10 +229,10 @@ template <Modint T> std::optional<T> modSqrt(T a) {
 template <Modint T> std::vector<T> integral(const std::vector<T> &f) {
     assert(f.size() < T::umod());
     auto inverses = detail::fpsIndexInverses<T>(f.size() + 1);
-    std::vector<T> out(f.size() + 1);
+    std::vector<T> output_value(f.size() + 1);
     for (std::size_t i = 0; i < f.size(); ++i)
-        out[i + 1] = f[i] * inverses[i + 1];
-    return out;
+        output_value[i + 1] = f[i] * inverses[i + 1];
+    return output_value;
 }
 
 // Newton法により、x^nを法とした乗法逆元をO(n log n)で求める。
@@ -237,10 +240,10 @@ template <Modint T> std::vector<T> inv(const std::vector<T> &f, Int n) {
     if (n <= 0)
         return {};
     assert(!f.empty() && f[0].val() != 0);
-    std::vector<T> out = {f[0].inv()};
-    while (Int(out.size()) < n)
-        detail::fpsInvExtend(f, out, std::min(Int(out.size()) * 2, n));
-    return out;
+    std::vector<T> output_value = {f[0].inv()};
+    while (Int(output_value.size()) < n)
+        detail::fpsInvExtend(f, output_value, std::min(Int(output_value.size()) * 2, n));
+    return output_value;
 }
 
 // f.size() 項までの乗法逆元を返す。計算量は inv(f, f.size()) と同じ。
@@ -284,27 +287,27 @@ template <Modint T> std::vector<T> exp(const std::vector<T> &f, Int n) {
     auto inverses = detail::fpsIndexInverses<T>(n);
     auto fp = f.size() <= std::size_t(n) ? f : std::vector<T>(f.begin(), f.begin() + n);
     auto df = derivative(fp);
-    std::vector<T> out = {T(1)}, inverse = {T(1)};
+    std::vector<T> output_value = {T(1)}, inverse = {T(1)};
     for (Int m = 1; m < n;) {
         Int next = std::min(m * 2, n);
         if (Int(inverse.size()) < m)
-            detail::fpsInvExtend(out, inverse, m);
+            detail::fpsInvExtend(output_value, inverse, m);
         auto dfp =
             df.size() < std::size_t(next) ? df : std::vector<T>(df.begin(), df.begin() + next - 1);
-        auto product = convolutionCyclicPowerOfTwo(dfp, out, m * 2);
+        auto product = convolutionCyclicPowerOfTwo(dfp, output_value, m * 2);
         std::vector<T> error(next - m);
         for (Int i = 0; i < Int(error.size()); ++i)
             error[i] = -product[m - 1 + i];
         auto quotient = error * prefix(inverse, error.size());
         for (Int i = 0; i < Int(error.size()); ++i)
             error[i] = -quotient[i] * inverses[m + i];
-        auto extension = out * error;
-        out.resize(next);
+        auto extension = output_value * error;
+        output_value.resize(next);
         for (Int i = 0; i < Int(error.size()); ++i)
-            out[m + i] = extension[i];
+            output_value[m + i] = extension[i];
         m = next;
     }
-    return out;
+    return output_value;
 }
 
 // f.size() 項までの形式的指数を返す。計算量は exp(f, f.size()) と同じ。
@@ -319,9 +322,9 @@ template <Modint T> std::vector<T> pow(const std::vector<T> &f, Int k, Int n) {
         return {};
     assert(n <= T::umod());
     if (k == 0) {
-        std::vector<T> out(n);
-        out[0] = 1;
-        return out;
+        std::vector<T> output_value(n);
+        output_value[0] = 1;
+        return output_value;
     }
     if (k == 1)
         return prefix(f, n);
@@ -337,9 +340,9 @@ template <Modint T> std::vector<T> pow(const std::vector<T> &f, Int k, Int n) {
         unit[i] = f[ord + i] * cinv;
     auto body = exp(log(unit, size) * T(k), size);
     body *= c.pow(k);
-    std::vector<T> out(n);
-    std::copy(body.begin(), body.end(), out.begin() + shift);
-    return out;
+    std::vector<T> output_value(n);
+    std::copy(body.begin(), body.end(), output_value.begin() + shift);
+    return output_value;
 }
 
 // f.size() 項までの整数冪を返す。計算量は pow(f, k, f.size()) と同じ。
@@ -382,9 +385,9 @@ template <Modint T> std::optional<std::vector<T>> sqrt(const std::vector<T> &f, 
             root[m + i] = extension[i];
         m = next;
     }
-    std::vector<T> out(n);
-    std::copy(root.begin(), root.end(), out.begin() + shift);
-    return out;
+    std::vector<T> output_value(n);
+    std::copy(root.begin(), root.end(), output_value.begin() + shift);
+    return output_value;
 }
 
 // f.size() 項までの形式的平方根を返す。計算量は sqrt(f, f.size()) と同じ。
@@ -431,9 +434,9 @@ template <Modint T> auto operator%(const std::vector<T> &f, const std::vector<T>
 
 // 多項式 f の x における値を返す。計算量 O(f.size())。
 template <Modint T> T eval(const std::vector<T> &f, std::type_identity_t<T> x) {
-    T out = 0;
+    T output_value = 0;
     for (Int i = Int(f.size()) - 1; i >= 0; --i)
-        out = out * x + f[i];
-    return out;
+        output_value = output_value * x + f[i];
+    return output_value;
 }
 }

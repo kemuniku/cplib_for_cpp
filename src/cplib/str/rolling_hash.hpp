@@ -1,7 +1,7 @@
 #pragma once
 #include <cplib/str/private/hash_string_base.hpp>
 
-namespace cplib {
+namespace cplib::legacy_rolling_hash {
 namespace detail {
 // この版だけ、元ソースどおり mod と等しい値を 0 に正規化しない。
 inline UInt modulo(UInt x) {

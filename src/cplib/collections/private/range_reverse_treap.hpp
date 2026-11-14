@@ -356,13 +356,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return length_;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return length_;
     }
 
     // 要素数をnとして期待O(log(n+1))。
@@ -503,7 +498,7 @@ public:
         insert(index, value);
         return index;
     }
-    // indexの直前にvalueを挿入します。index=len()なら末尾です。期待O(log N)。
+    // indexの直前にvalueを挿入します。index=size()なら末尾です。期待O(log N)。
     // 遅延版では挿入前の区間更新は新しい要素には作用しません。
     void insert(Int index, const S &value)
     {
@@ -791,11 +786,6 @@ public:
 namespace cplib {
 #define CPLIB_REVERSE_TEMPLATE template <class S, class F, bool A, bool L>
 #define CPLIB_REVERSE_TYPE detail::RangeReverseTreap<S, F, A, L>
-
-// 要素数を返す。O(1)。
-CPLIB_REVERSE_TEMPLATE Int len(const CPLIB_REVERSE_TYPE &tree) {
-    return tree.len();
-}
 
 // 先頭k要素で分割して元を空にする。期待時間 O(log(N+1))。
 CPLIB_REVERSE_TEMPLATE auto split(CPLIB_REVERSE_TYPE &tree, Int k) {

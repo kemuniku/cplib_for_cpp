@@ -9,21 +9,21 @@ inline constexpr Int COUNTER_CLOCKWISE = 2, CLOCKWISE = -2, ON_SEGMENT = 0, ONLI
 // COUNTER_CLOCKWISE: 2、CLOCKWISE: -2、ON_SEGMENT: 0、ONLINE_BACK: 1、ONLINE_FRONT: -1。
 // strict=trueでは始点・終点もそれぞれONLINE_BACK・ONLINE_FRONTに分類する。
 template <class T> Int ccw(const Line<T> &l, Point<T> p, bool strict = false) {
-    T c = cross(vector(l), p - l.s);
+    T c = cross(toVector(l), p - l.s);
     if (geometry_lt(c, 0))
         return CLOCKWISE;
     if (geometry_gt(c, 0))
         return COUNTER_CLOCKWISE;
-    T d = dot(vector(l), p - l.s);
+    T d = dot(toVector(l), p - l.s);
     if (strict) {
         if (geometry_le(d, 0))
             return ONLINE_BACK;
-        if (geometry_ge(d, norm(vector(l))))
+        if (geometry_ge(d, norm(toVector(l))))
             return ONLINE_FRONT;
     } else {
         if (geometry_lt(d, 0))
             return ONLINE_BACK;
-        if (geometry_gt(d, norm(vector(l))))
+        if (geometry_gt(d, norm(toVector(l))))
             return ONLINE_FRONT;
     }
     return ON_SEGMENT;

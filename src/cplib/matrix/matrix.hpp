@@ -66,21 +66,21 @@ public:
     }
 
     Matrix operator-() const {
-        auto out = *this;
+        auto output_value = *this;
         for (Int i = 0; i < h(); ++i)
             for (Int j = 0; j < w(); ++j)
-                out(i, j) = -(*this)(i, j);
-        return out;
+                output_value(i, j) = -(*this)(i, j);
+        return output_value;
     }
 
     Matrix &operator*=(const Matrix &b) {
         assert(w() == b.h());
-        Matrix out(h(), b.w(), T(0));
+        Matrix output_value(h(), b.w(), T(0));
         for (Int i = 0; i < h(); ++i)
             for (Int j = 0; j < b.w(); ++j)
                 for (Int k = 0; k < w(); ++k)
-                    out(i, j) += (*this)(i, k) * b(k, j);
-        *this = std::move(out);
+                    output_value(i, j) += (*this)(i, k) * b(k, j);
+        *this = std::move(output_value);
         return *this;
     }
 
@@ -529,10 +529,10 @@ public:
 
     // n次の単位行列を作る。計算量 O(n²+n)。
     static Matrix identity(Int n, T one = T(1), T zero = T(0)) {
-        Matrix out(n, n, zero);
+        Matrix output_value(n, n, zero);
         for (Int i = 0; i < n; ++i)
-            out(i, i) = one;
-        return out;
+            output_value(i, i) = one;
+        return output_value;
     }
 
     // 正方行列を非負の指数kで累乗する。次元nとして O(n³ log(k+1)+n²+n)。
@@ -558,20 +558,20 @@ public:
 
     // 行列を文字列に変換する。要素の出力時間の合計と O(HW+H) が必要。
     std::string str() const {
-        std::ostringstream out;
+        std::ostringstream output_value;
         for (Int i = 0; i < h(); ++i) {
             if (i)
-                out << '\n';
+                output_value << '\n';
             for (Int j = 0; j < w(); ++j) {
                 if (j)
-                    out << ' ';
+                    output_value << ' ';
                 if constexpr (std::is_same_v<T, bool>)
-                    out << ((*this)(i, j) ? "true" : "false");
+                    output_value << ((*this)(i, j) ? "true" : "false");
                 else
-                    out << (*this)(i, j);
+                    output_value << (*this)(i, j);
             }
         }
-        return out.str();
+        return output_value.str();
     }
 
     // 行列のハッシュを返す。要素のハッシュを O(1) として O(HW+H)。
@@ -664,7 +664,7 @@ template <class T> auto to_string(const Matrix<T> &m) {
 }
 
 // 要素のハッシュを O(1) として行列のハッシュを O(HW+H) で求める。
-template <class T> auto hash(const Matrix<T> &m) {
+template <class T> auto hashValue(const Matrix<T> &m) {
     return m.hash();
 }
 

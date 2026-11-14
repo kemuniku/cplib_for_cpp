@@ -20,7 +20,7 @@ template <class T> class BitSetBinaryTrie {
     void check(const T &x) const {
         if (nodes_.empty())
             throw std::invalid_argument("BitSetBinaryTrie is not initialized");
-        if (x.len() != height_)
+        if (x.size() != height_)
             throw std::invalid_argument("BitSet length must match trie height");
     }
 
@@ -35,7 +35,7 @@ template <class T> class BitSetBinaryTrie {
     }
 
     T kth(Int k, const T *mask) const {
-        if (k < 0 || k >= len())
+        if (k < 0 || k >= size())
             throw std::out_of_range("BitSetBinaryTrie index out of bounds");
         Int node = 0;
         for (Int i = 0; i < height_; ++i) {
@@ -80,17 +80,12 @@ public:
     }
 
     // sampleと同じ型・長さのキーを扱う空集合を構築します。sampleは挿入しません。O(1)。
-    explicit BitSetBinaryTrie(const T &sample) : BitSetBinaryTrie(sample.len()) {
-    }
-
-    // 重複を含む要素数を返す。O(1)。
-    Int len() const {
-        return nodes_.empty() ? 0 : nodes_[0].count;
+    explicit BitSetBinaryTrie(const T &sample) : BitSetBinaryTrie(sample.size()) {
     }
 
     // 重複を含む要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return nodes_.empty() ? 0 : nodes_[0].count;
     }
 
     // xの多重度を返す。キー長をNとしてO(1+N)。
@@ -115,7 +110,7 @@ public:
         check(x);
         if (multiplicity < 0)
             throw std::invalid_argument("Multiplicity must be non-negative");
-        if (multiplicity > std::numeric_limits<Int>::max() - len())
+        if (multiplicity > std::numeric_limits<Int>::max() - size())
             throw std::overflow_error("BitSetBinaryTrie size overflow");
         if (!multiplicity)
             return;
@@ -182,7 +177,7 @@ public:
 
     // 辞書順の末尾からk番目のキーを返す。キー長NとしてO(1+N)とキーのコピーに要する時間。
     T operator[](BackwardsIndex k) const {
-        return get_kth(len() - k.value);
+        return get_kth(size() - k.value);
     }
 
     // 辞書順でx未満の要素数を重複込みで返します。O(1 + N)。
@@ -216,11 +211,6 @@ template <class T> auto initBitSetBinaryTrie(Int h) {
 // sampleと同じ長さのキーを扱う空のTrieを生成する。O(1)。
 template <class T> auto initBitSetBinaryTrie(const T &sample) {
     return BitSetBinaryTrie<T>(sample);
-}
-
-// 重複を含む要素数を返す。O(1)。
-template <class T> Int len(const BitSetBinaryTrie<T> &trie) {
-    return trie.len();
 }
 
 // xの多重度を返す。キー長NとしてO(1+N)。

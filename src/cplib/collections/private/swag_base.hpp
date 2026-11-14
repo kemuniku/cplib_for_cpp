@@ -47,18 +47,13 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return top.size() + bottom.size();
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return top.size() + bottom.size();
     }
 
     // i番目の要素への参照を返す。O(1)。
     const T &operator[](Int i) const {
-        if (i < 0 || i >= len())
+        if (i < 0 || i >= size())
             throw std::out_of_range("SWAG index");
         return i < Int(top.size()) ? top[top.size() - 1 - i] : bottom[i - top.size()];
     }

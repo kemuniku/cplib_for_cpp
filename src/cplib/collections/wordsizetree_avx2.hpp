@@ -92,22 +92,22 @@ public:
 };
 
 // 固定容量2^24の空集合を作る。固定サイズの領域を初期化するためO(1)。
-inline WordsizeTreeAvx2 initWordsizeTree() {
+inline WordsizeTreeAvx2 initWordsizeTreeAvx2() {
     return {};
 }
 
 // 文字'1'の位置を集合に登録する。入力長NとしてO(N+1)。
-inline WordsizeTreeAvx2 initWordsizeTree(std::string_view v) {
+inline WordsizeTreeAvx2 initWordsizeTreeAvx2(std::string_view v) {
     return WordsizeTreeAvx2(v);
 }
 
 // 真の位置を集合に登録する。入力長NとしてO(N+1)。
-inline WordsizeTreeAvx2 initWordsizeTree(std::span<const bool> v) {
+inline WordsizeTreeAvx2 initWordsizeTreeAvx2(std::span<const bool> v) {
     return WordsizeTreeAvx2(v);
 }
 
 // 真の位置を集合に登録する。入力長NとしてO(N+1)。
-inline WordsizeTreeAvx2 initWordsizeTree(const std::vector<bool> &v) {
+inline WordsizeTreeAvx2 initWordsizeTreeAvx2(const std::vector<bool> &v) {
     return WordsizeTreeAvx2(v);
 }
 }

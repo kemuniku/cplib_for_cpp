@@ -9,7 +9,7 @@ class WaveletMatrixFenwick {
     std::vector<FenwickTreeAvx2> bits;
 
     Int sum_less_rank(Int l, Int r, Int k) const {
-        assert(0 <= l && l <= r && r <= len());
+        assert(0 <= l && l <= r && r <= size());
         if (k == 0 || l == r)
             return 0;
         if (k == Int(keys.size()))
@@ -59,24 +59,19 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return weights.size();
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return weights.size();
     }
 
     // 位置iの現在の重みを返す。O(1)。
     Int operator[](Int i) const {
-        assert(0 <= i && i < len());
+        assert(0 <= i && i < size());
         return weights[i];
     }
 
     // 更新と値域付き区間和はO(H log N)。
     void add(Int i, Int delta) {
-        assert(0 <= i && i < len());
+        assert(0 <= i && i < size());
         weights[i] += delta;
         Int p = i;
         for (Int h = Int(bits.size()) - 1; h >= 0; --h) {
@@ -121,7 +116,7 @@ public:
 
     // l <= i < rを満たすb_iの総和をO(log N)で返します。
     Int range_sum(Int l, Int r) const {
-        assert(0 <= l && l <= r && r <= len());
+        assert(0 <= l && l <= r && r <= size());
         Int h = bits.size() - 1;
         auto [l0, r0, l1, r1] = matrix.get_child(h, l, r);
         return bits[h].get(l0, r0) + bits[h].get(l1, r1);
@@ -145,11 +140,6 @@ public:
 // (キー,重み)の列から構築する。異なるキー数のビット数をHとしてO(N log(N+1)+NH)。
 inline auto initWaveletMatrixFenwick(std::span<const std::pair<Int, Int>> values) {
     return WaveletMatrixFenwick(values);
-}
-
-// 要素数を返す。O(1)。
-inline Int len(const WaveletMatrixFenwick &w) {
-    return w.len();
 }
 
 // 位置iの重みにdeltaを加算する。O(H log(N+1))。

@@ -241,7 +241,7 @@ template <class T> Fraction<T> pow(Fraction<T> x, Int n) {
 }
 
 // 約分して分数のハッシュ値を返す。計算量は約分と T のハッシュ計算の和。
-template <class T> std::size_t hash(Fraction<T> x) {
+template <class T> std::size_t hashValue(Fraction<T> x) {
     x.reduce();
     auto a = std::hash<T>{}(x.num), b = std::hash<T>{}(x.den);
     return a ^ (b + 0x9e3779b97f4a7c15ULL + (a << 6) + (a >> 2));
@@ -250,9 +250,9 @@ template <class T> std::size_t hash(Fraction<T> x) {
 
 namespace std {
 template <class T> struct hash<cplib::Fraction<T>> {
-    // 約分した分数のハッシュ値を返す。計算量は cplib::hash(x) と同じ。
+    // 約分した分数のハッシュ値を返す。計算量は cplib::hashValue(x) と同じ。
     size_t operator()(const cplib::Fraction<T> &x) const {
-        return cplib::hash(x);
+        return cplib::hashValue(x);
     }
 };
 }

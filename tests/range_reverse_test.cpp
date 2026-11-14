@@ -16,7 +16,7 @@ template<class Tree,class S,class Merge,class Map,class Make> void check(Tree tr
   else if(choice==4&&n){if constexpr(requires{tree.erase(l);}){Int p=rng()%n;tree.erase(p);plain.erase(plain.begin()+p);}}
   else if(choice==5){if constexpr(requires{tree.apply(l,r,Action{});}){Action action{Int(rng()%2),Int(rng()%5)};tree.apply(l,r,action);for(Int i=l;i<r;++i)plain[i]=map(action,plain[i]);}}
   else if(choice==6&&n){if constexpr(requires{tree.apply(l,Action{});}){Int p=rng()%n;Action action{0,3};tree.apply(p,action);plain[p]=map(action,plain[p]);}}
-  n=plain.size();assert(tree.len()==n);l=rng()%(n+1);r=rng()%(n+1);if(l>r)std::swap(l,r);
+  n=plain.size();assert(tree.size()==n);l=rng()%(n+1);r=rng()%(n+1);if(l>r)std::swap(l,r);
   if constexpr(requires{tree.get(l,r);}){S want=identity,total=identity;for(Int i=l;i<r;++i)want=merge(want,plain[i]);for(const S& x:plain)total=merge(total,x);assert(tree.get(l,r)==want&&tree.fold(closed_slice(l,r-1))==want&&tree.get_all()==total&&tree.fold()==total);}
   if(n){Int p=rng()%n;assert(tree.get(p)==plain[p]);assert(S(tree[from_end(1)])==plain.back());}
   if(q%37==0){assert(tree.toSeq()==plain);std::vector<S> actual;for(S x:items(tree))actual.push_back(x);assert(actual==plain);auto copy=tree;if(n){copy.update(0,value);assert(tree.get(0)==plain[0]);}}
@@ -34,7 +34,7 @@ int main(){
  check(initRangeReverseArrayMonoid(text,concat,std::string{}),text,std::string{},concat,textmap,textmake);
  check(initRangeReverseLazySegmentTree(text,concat,std::string{},textmap,composition,Action{}),text,std::string{},concat,textmap,textmake);
  check_bounds(initRangeReverseArrayMonoid(text,concat,std::string{}));check_bounds(initRangeReverseLazySegmentTree(text,concat,std::string{},textmap,composition,Action{}));
- auto empty=initRangeReverseLazySegmentTree(Int(0),sumop,Sum{},summap,composition,Action{});assert(empty.len()==0&&empty.fold()==Sum{});empty.insert(0,{2,1});empty.apply(0,1,{1,5});assert(empty.get(0)==(Sum{7,1}));empty.erase(0);assert(empty.toSeq().empty());
+ auto empty=initRangeReverseLazySegmentTree(Int(0),sumop,Sum{},summap,composition,Action{});assert(empty.size()==0&&empty.fold()==Sum{});empty.insert(0,{2,1});empty.apply(0,1,{1,5});assert(empty.get(0)==(Sum{7,1}));empty.erase(0);assert(empty.toSeq().empty());
  auto dual=initRangeReverseDualSegmentTree(Int(100),Int(2),intmap,composition,Action{});dual.apply(0,100,{1,3});dual.insert(20,Int(9));assert(dual.get(20)==9&&dual.get(21)==5);
  auto booleans=initRangeReverseArray(std::vector<bool>{true,false,false});booleans.reverse(0,3);assert((booleans.toSeq()==std::vector<bool>{false,false,true}));
  std::vector<Int> big(200000);std::iota(big.begin(),big.end(),Int(0));auto linear=initRangeReverseArray(big);linear.reverse(0,big.size());assert(linear.get(0)==199999&&linear.get(199999)==0);

@@ -9,10 +9,10 @@ std::vector<std::vector<T>> compositionRec(const std::vector<T> &outer,
                                            const std::vector<std::vector<T>> &denominator, Int n,
                                            Int yDegree) {
     if (n == 0) {
-        std::vector<std::vector<T>> out(yDegree, std::vector<T>(1));
+        std::vector<std::vector<T>> output_value(yDegree, std::vector<T>(1));
         for (Int i = 0; i < std::min(Int(outer.size()), yDegree); ++i)
-            out[yDegree - 1 - i][0] = outer[i];
-        return out;
+            output_value[yDegree - 1 - i][0] = outer[i];
+        return output_value;
     }
     Int degree = 0;
     for (const auto &p : denominator)
@@ -39,14 +39,14 @@ std::vector<std::vector<T>> compositionRec(const std::vector<T> &outer,
         for (Int x = 0; x < Int(projected[y].size()); ++x)
             lifted[y * stride + 2 * x] = projected[y][x];
     auto recovered = lifted * negative;
-    std::vector<std::vector<T>> out(yDegree, std::vector<T>(n + 1));
+    std::vector<std::vector<T>> output_value(yDegree, std::vector<T>(n + 1));
     for (Int y = 0; y < yDegree; ++y)
         for (Int x = 0; x <= n; ++x) {
             Int i = (yDegree + y) * stride + x;
             if (i < Int(recovered.size()))
-                out[y][x] = recovered[i];
+                output_value[y][x] = recovered[i];
         }
-    return out;
+    return output_value;
 }
 }
 
@@ -75,20 +75,20 @@ template <Modint T> std::vector<T> compositionalInverse(const std::vector<T> &f,
     assert(f.size() >= 2 && f[0].val() == 0 && f[1].val() != 0);
     if (n == 1)
         return std::vector<T>(1);
-    std::vector<T> out = {T(0), f[1].inv()};
+    std::vector<T> output_value = {T(0), f[1].inv()};
     for (Int m = 2; m < n;) {
         Int next = std::min(m * 2, n);
-        auto composed = compose(f, out, next);
+        auto composed = compose(f, output_value, next);
         Int size = next - m;
         std::vector<T> error(composed.begin() + m, composed.begin() + next);
-        auto inverseSlope = prefix(derivative(out) * inv(derivative(composed), size), size);
+        auto inverseSlope = prefix(derivative(output_value) * inv(derivative(composed), size), size);
         auto correction = prefix(error * inverseSlope, size);
-        out.resize(next);
+        output_value.resize(next);
         for (Int i = 0; i < size; ++i)
-            out[m + i] -= correction[i];
+            output_value[m + i] -= correction[i];
         m = next;
     }
-    return out;
+    return output_value;
 }
 
 // f.size() 項まで合成逆元を求める。計算量は compositionalInverse(f, f.size()) と同じ。

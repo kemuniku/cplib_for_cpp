@@ -60,7 +60,7 @@ auto initStaticTopTreeDP(StaticTopTree tree, const std::vector<T> &values, C com
 }
 
 // 頂点と親辺を表す値を更新する。演算がO(1)ならO(log N)。
-template <class T> void set(StaticTopTreeDP<T> &dp, Int v, T value) {
+template <class T> void setValue(StaticTopTreeDP<T> &dp, Int v, T value) {
     dp.set(v, std::move(value));
 }
 

@@ -1,10 +1,9 @@
 #pragma once
 #include <cplib/collections/private/segtree_base.hpp>
 
-namespace cplib {
+namespace cplib::static_op_segtree {
 using detail::segtree_base::get;
 using detail::segtree_base::get_all;
-using detail::segtree_base::len;
 using detail::segtree_base::max_right;
 using detail::segtree_base::min_left;
 using detail::segtree_base::to_string;
@@ -28,17 +27,17 @@ template <class T, class Op> auto initSegmentTree(std::span<const T> v, Op op, T
 
 // 配列から木を構築する。要素数をnとしてO(n+1)回の演算。
 template <class T, class Op> auto initSegmentTree(const std::vector<T> &v, Op op, T e) {
-    return cplib::initSegmentTree(std::span<const T>(v), op, e);
+    return ::cplib::static_op_segtree::initSegmentTree(std::span<const T>(v), op, e);
 }
 
 // 配列から木を構築する。要素数をnとしてO(n+1)回の演算。
 template <class V, class Op, class T> auto newSegWith(const V &v, Op op, T e) {
-    return cplib::initSegmentTree(v, op, e);
+    return ::cplib::static_op_segtree::initSegmentTree(v, op, e);
 }
 
 // 名前付き関数は非型テンプレート引数で指定できる。
 // 静的に指定した演算と配列から木を構築する。要素数をnとしてO(n+1)回の演算。
 template <auto Op, class V, class T> auto initSegmentTree(const V &v, T e) {
-    return cplib::initSegmentTree(v, [](T a, T b) { return Op(a, b); }, e);
+    return ::cplib::static_op_segtree::initSegmentTree(v, [](T a, T b) { return Op(a, b); }, e);
 }
 }

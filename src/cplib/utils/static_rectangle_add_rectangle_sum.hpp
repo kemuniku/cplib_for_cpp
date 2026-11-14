@@ -73,7 +73,7 @@ static_rectangle_add_rectangle_sum(std::span<const std::tuple<K, K, K, K, T>> re
                                    std::span<const std::tuple<K, K, K, K>> queries) {
     using C = detail::RectangleCoefficients<T>;
     Int n = rectangles.size(), updates = 0;
-    std::vector<T> out(queries.size());
+    std::vector<T> output_value(queries.size());
     std::vector<detail::RectangleEvent<K>> events;
     events.reserve(2 * (n + queries.size()));
     for (Int i = 0; i < n; ++i) {
@@ -95,7 +95,7 @@ static_rectangle_add_rectangle_sum(std::span<const std::tuple<K, K, K, K, T>> re
         events.push_back({u, 2 * (n + i) + 1});
     }
     if (!updates || Int(events.size()) == 2 * updates)
-        return out;
+        return output_value;
     detail::sort_rectangle_events(events);
     std::vector<Int> indices(2 * (n + queries.size()));
     Int size = 0;
@@ -175,12 +175,12 @@ static_rectangle_add_rectangle_sum(std::span<const std::tuple<K, K, K, K, T>> re
             T v = value(prefix(indices[2 * i + 1]), e.coordinate, u) -
                   value(prefix(indices[2 * i]), e.coordinate, d);
             if (right)
-                out[q] += v;
+                output_value[q] += v;
             else
-                out[q] = out[q] - v;
+                output_value[q] = output_value[q] - v;
         }
     }
-    return out;
+    return output_value;
 }
 
 // 長方形加算後の各長方形の総和を返す。計算量は span を受け取る同名関数と同じ。

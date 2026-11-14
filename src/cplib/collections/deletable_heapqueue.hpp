@@ -60,14 +60,10 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
+    Int size() const {
         return Int(hq.size()) - Int(dlhq.size());
     }
 
-    // 要素数を返す。O(1)。
-    Int size() const {
-        return len();
-    }
 };
 
 // 空のヒープを生成する。O(1)。
@@ -83,11 +79,6 @@ template <class T> auto toDeletableHeapQueue(std::span<const T> v) {
 // 配列の要素からヒープを生成する。長さをnとしてO(n)。
 template <class T> auto toDeletableHeapQueue(const std::vector<T> &v) {
     return Deletable_HeapQueue<T>(v);
-}
-
-// 要素数を返す。O(1)。
-template <class T> Int len(const Deletable_HeapQueue<T> &q) {
-    return q.len();
 }
 
 // 存在する要素xを一つ削除する。内部ヒープの大きさをHとして償却O(log(H+1))。

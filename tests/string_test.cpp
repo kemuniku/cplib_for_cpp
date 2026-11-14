@@ -33,7 +33,7 @@ int main(){
         std::string word;Int length=rng()%7;for(Int i=0;i<length;++i)word+=char('a'+rng()%3);
         if(rng()%2){Int count=rng()%4;trie.incl(word,count);for(Int i=0;i<count;++i)words.insert(word);}
         else {trie.excl(word,2);for(int i=0;i<2;++i){auto it=words.find(word);if(it!=words.end())words.erase(it);}}
-        assert(trie.len()==Int(words.size()));assert(trie.count(word)==Int(words.count(word)));assert(trie.lowerBound(word)==std::distance(words.begin(),words.lower_bound(word)));assert(trie.upperBound(word)==std::distance(words.begin(),words.upper_bound(word)));
+        assert(trie.size()==Int(words.size()));assert(trie.count(word)==Int(words.count(word)));assert(trie.lowerBound(word)==std::distance(words.begin(),words.lower_bound(word)));assert(trie.upperBound(word)==std::distance(words.begin(),words.upper_bound(word)));
         Int prefixes=0;for(auto& w:words)prefixes+=w.starts_with(word);assert(trie.countPrefix(word)==prefixes);
     }
     auto tp=initTriePointer(trie);tp&='a';auto old=tp;tp&='b';assert(tp.restoreString()=="ab" && old.restoreString()=="a");assert(tp.pop()=='b');assert(trie.toGraph().len==Int(trie.nodes.size()));

@@ -69,7 +69,7 @@ inline auto newBitVector(Int length) {
 }
 
 // ビルド前にi番目のビットを1にする。O(1)。
-inline void set(BitVector &b, Int i) {
+inline void setValue(BitVector &b, Int i) {
     b.set(i);
 }
 

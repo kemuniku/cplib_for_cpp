@@ -39,8 +39,8 @@ template <class T> class StaticStringSearch {
 
     std::pair<Int, Int> suffixRange(const StaticString<T> &pattern) const {
         Int rank = base->RSA[pattern.l];
-        return {base->RMQ.minLeft(rank, std::int32_t(pattern.len())),
-                base->RMQ.maxRight(rank, std::int32_t(pattern.len())) + 1};
+        return {base->RMQ.minLeft(rank, std::int32_t(pattern.size())),
+                base->RMQ.maxRight(rank, std::int32_t(pattern.size())) + 1};
     }
 
 public:
@@ -52,14 +52,14 @@ public:
         index = std::make_shared<Index>(positions);
     }
 
-    // 同じ基底のs内で重複を許したtの出現回数をO(log(N+2))で返す。空のtはs.len()+1回。
+    // 同じ基底のs内で重複を許したtの出現回数をO(log(N+2))で返す。空のtはs.size()+1回。
     // 最大4096件の結果を保持し、同じ対象・内容のキャッシュに当たればO(1)。Nは基底の長さ。
     Int count(const StaticString<T> &s, const StaticString<T> &t) const {
         assert(s.base == base && t.base == base);
-        Int m = t.len();
+        Int m = t.size();
         if (!m)
-            return s.len() + 1;
-        if (m > s.len())
+            return s.size() + 1;
+        if (m > s.size())
             return 0;
         Int rank = base->RSA[t.l];
         auto &c = index->cache[rank >> index->shift];
@@ -81,11 +81,11 @@ public:
     static Generator<Int> positions(StaticStringSearch search, StaticString<T> s,
                                     StaticString<T> t) {
         assert(s.base == search.base && t.base == search.base);
-        Int m = t.len();
+        Int m = t.size();
         if (!m) {
-            for (Int p = 0; p <= s.len(); ++p)
+            for (Int p = 0; p <= s.size(); ++p)
                 co_yield p;
-        } else if (m <= s.len()) {
+        } else if (m <= s.size()) {
             auto [first, last] = search.suffixRange(t);
             auto &wm = search.index->wm;
             Int begin = wm.range_lowerbound(first, last, s.l),
@@ -96,7 +96,7 @@ public:
     }
 
     // 同じ基底のs内で重複を許したtの出現位置を、sの先頭を0とする昇順で列挙する。
-    // 準備と各要素の取得はO(log(N+2))、追加空間O(1)。空のtは0..s.len()を列挙する。
+    // 準備と各要素の取得はO(log(N+2))、追加空間O(1)。空のtは0..s.size()を列挙する。
     auto findAll(StaticString<T> s, StaticString<T> t) const {
         return positions(*this, s, t);
     }
@@ -177,13 +177,13 @@ StaticStringSearch<T> initStaticStringSearch(const std::shared_ptr<StaticStringB
     return std::static_pointer_cast<StaticStringSearchCacheEntry<T>>(entry)->search;
 }
 
-// 同じ基底のs内で重複を許したtの出現回数を返す。空のtはs.len()+1回。
+// 同じ基底のs内で重複を許したtの出現回数を返す。空のtはs.size()+1回。
 // 索引が必要な初回はO(N log(N+2))、構築後は期待O(log(N+2))。Nは基底の長さ。
 template <class T> Int count(const StaticString<T> &s, const StaticString<T> &t) {
     assert(s.base == t.base);
-    if (!t.len())
-        return s.len() + 1;
-    if (t.len() > s.len())
+    if (!t.size())
+        return s.size() + 1;
+    if (t.size() > s.size())
         return 0;
     return initStaticStringSearch(s.base).count(s, t);
 }
@@ -194,7 +194,7 @@ template <class T> bool contains(const StaticString<T> &s, const StaticString<T>
     return count(s, t) > 0;
 }
 
-// sの先頭を0とする出現位置を重複を許して昇順に列挙する。空のtは0..s.len()。
+// sの先頭を0とする出現位置を重複を許して昇順に列挙する。空のtは0..s.size()。
 // 初回は必要なら索引を構築する。構築後の準備は期待O(log(N+2))、各要素O(log(N+2))、追加空間O(1)。
 template <class T> auto findAll(StaticString<T> s, StaticString<T> t) {
     assert(s.base == t.base);

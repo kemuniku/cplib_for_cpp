@@ -195,13 +195,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return length;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return length;
     }
 
     // p番目の値を更新する。O(log(n+1))回の演算・作用・合成。
@@ -399,11 +394,6 @@ auto newLazySegWith(const V &v, Op op, S e, Map map, Comp comp, F id) {
 
 #define CPLIB_LAZY_TEMPLATE template <class S, class F, class M, class A, class C, bool B>
 #define CPLIB_LAZY_TYPE LazySegmentTree<S, F, M, A, C, B>
-
-// 要素数を返す。O(1)。
-CPLIB_LAZY_TEMPLATE Int len(const CPLIB_LAZY_TYPE &s) {
-    return s.len();
-}
 
 // p番目の値を更新する。O(log(n+1))回の演算・作用・合成。
 CPLIB_LAZY_TEMPLATE void update(CPLIB_LAZY_TYPE &s, Int p, const S &v) {

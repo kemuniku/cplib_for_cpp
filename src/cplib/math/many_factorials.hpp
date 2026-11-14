@@ -21,11 +21,11 @@ template <Modint T> std::vector<T> factorialBlocks(Int blockSize, Int blockCount
         auto tail = shiftOfSamplingPoints(samples, T(blockSize), blockCount - blockSize);
         samples.insert(samples.end(), tail.begin(), tail.end());
     }
-    std::vector<T> out(blockCount + 1);
-    out[0] = 1;
+    std::vector<T> output_value(blockCount + 1);
+    output_value[0] = 1;
     for (Int i = 0; i < blockCount; ++i)
-        out[i + 1] = out[i] * samples[i] * T((i + 1) * blockSize);
-    return out;
+        output_value[i + 1] = output_value[i] * samples[i] * T((i + 1) * blockSize);
+    return output_value;
 }
 }
 
@@ -56,10 +56,10 @@ public:
             return T(0);
         assert(n <= maxN);
         Int index = n / blockSize;
-        T out = blocks[index];
+        T output_value = blocks[index];
         for (Int i = index * blockSize + 1; i <= n; ++i)
-            out *= T(i);
-        return out;
+            output_value *= T(i);
+        return output_value;
     }
 };
 
@@ -78,7 +78,7 @@ template <Modint T> T fact(const LargeFactorial<T> &table, Int n) {
 // 素数pを法とするns[i]!を入力順に返す。負数は不可、ns[i] >= pには0を返す。
 // NTT使用時O(sqrt(p) log p + Q log Q + Q log^3 p)、Q = ns.size()。
 template <Modint T> std::vector<T> manyFactorials(std::span<const Int> ns) {
-    std::vector<T> out(ns.size());
+    std::vector<T> output_value(ns.size());
     Int modulus = T::umod(), maxN = -1;
     for (Int n : ns) {
         assert(n >= 0);
@@ -86,7 +86,7 @@ template <Modint T> std::vector<T> manyFactorials(std::span<const Int> ns) {
             maxN = std::max(maxN, n);
     }
     if (maxN < 0)
-        return out;
+        return output_value;
     if (maxN <= 1024) {
         std::vector<T> fact(maxN + 1);
         fact[0] = 1;
@@ -94,8 +94,8 @@ template <Modint T> std::vector<T> manyFactorials(std::span<const Int> ns) {
             fact[i] = fact[i - 1] * T(i);
         for (Int i = 0; i < Int(ns.size()); ++i)
             if (ns[i] < modulus)
-                out[i] = fact[ns[i]];
-        return out;
+                output_value[i] = fact[ns[i]];
+        return output_value;
     }
     Int blockSize = 1;
     while (blockSize * blockSize <= maxN)
@@ -105,7 +105,7 @@ template <Modint T> std::vector<T> manyFactorials(std::span<const Int> ns) {
     queries.reserve(ns.size());
     for (Int i = 0; i < Int(ns.size()); ++i)
         if (ns[i] < modulus) {
-            out[i] = blocks[ns[i] / blockSize];
+            output_value[i] = blocks[ns[i] / blockSize];
             queries.emplace_back(ns[i], i);
         }
     std::sort(queries.begin(), queries.end());
@@ -118,7 +118,7 @@ template <Modint T> std::vector<T> manyFactorials(std::span<const Int> ns) {
                     T product = 1;
                     for (Int i = 1; i <= width; ++i)
                         product *= T(start + i);
-                    out[index] *= product;
+                    output_value[index] *= product;
                 }
         } else {
             std::vector<T> points;
@@ -148,12 +148,12 @@ template <Modint T> std::vector<T> manyFactorials(std::span<const Int> ns) {
                         ++pointIndex;
                         previous = start;
                     }
-                    out[index] *= values[pointIndex];
+                    output_value[index] *= values[pointIndex];
                 }
         }
         if (2 * width < blockSize)
             polynomial = polynomial * taylorShift(polynomial, T(width));
     }
-    return out;
+    return output_value;
 }
 }

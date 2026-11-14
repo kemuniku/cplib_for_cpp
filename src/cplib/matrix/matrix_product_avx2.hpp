@@ -242,11 +242,11 @@ inline std::vector<std::uint32_t> matrixProduct(std::span<const std::uint32_t> a
         assert(x < p);
     for ([[maybe_unused]] auto x : b)
         assert(x < p);
-    std::vector<std::uint32_t> out(n * k);
+    std::vector<std::uint32_t> output_value(n * k);
     if (n && m && k && p != 1)
-        detail::matrix_product_avx2_native::cplib_matrix_product(a.data(), b.data(), out.data(), n,
+        detail::matrix_product_avx2_native::cplib_matrix_product(a.data(), b.data(), output_value.data(), n,
                                                                  m, k, p);
-    return out;
+    return output_value;
 }
 
 inline std::vector<std::vector<std::uint32_t>>
@@ -266,10 +266,10 @@ matrixProduct(const std::vector<std::vector<std::uint32_t>> &a,
         bb.insert(bb.end(), row.begin(), row.end());
     }
     auto cc = matrixProduct(aa, bb, n, m, k, p);
-    std::vector<std::vector<std::uint32_t>> out(n, std::vector<std::uint32_t>(k));
+    std::vector<std::vector<std::uint32_t>> output_value(n, std::vector<std::uint32_t>(k));
     for (Int i = 0; i < n; ++i)
-        std::copy_n(cc.begin() + i * k, k, out[i].begin());
-    return out;
+        std::copy_n(cc.begin() + i * k, k, output_value[i].begin());
+    return output_value;
 }
 
 // 既存のmodint行列を公開値へ変換し、AVX2で積を求める。
@@ -291,10 +291,10 @@ cplib::Matrix<T> matrixProduct(const cplib::Matrix<T> &a, const cplib::Matrix<T>
             bb[i * k + j] = b(i, j).val();
     }
     auto cc = matrixProduct(aa, bb, n, m, k, T::umod());
-    cplib::Matrix<T> out(n, k);
+    cplib::Matrix<T> output_value(n, k);
     for (Int i = 0; i < n; ++i)
         for (Int j = 0; j < k; ++j)
-            out(i, j) = T(cc[i * k + j]);
-    return out;
+            output_value(i, j) = T(cc[i * k + j]);
+    return output_value;
 }
 }

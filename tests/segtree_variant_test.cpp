@@ -6,7 +6,7 @@ int main(){
     for(Int n:{0,1,2,3,17,63,64,65,500}){
         std::vector<Int> a(n);for(auto& x:a)x=rng()%20;
         auto s=initSegmentTree(a,add,Int(0));auto st=cplib::initSegmentTree(a,add,Int(0));auto sv=cplib::initSegmentTree(a,add,Int(0));
-        auto check=[&](auto& tree){assert(tree.len()==n);assert(tree.get_all()==std::accumulate(a.begin(),a.end(),Int(0)));for(int q=0;q<30;++q){Int l=rng()%(n+1),r=rng()%(n+1);if(l>r)std::swap(l,r);assert(tree.get(l,r)==std::accumulate(a.begin()+l,a.begin()+r,Int(0)));assert(tree[closed_slice(l,r-1)]==tree.get(l,r));Int cap=rng()%80;Int rr=l,sum=0;while(rr<n&&sum+a[rr]<=cap)sum+=a[rr++];assert(tree.max_right(l,[&](Int v){return v<=cap;})==rr);Int ll=r;sum=0;while(ll>0&&sum+a[ll-1]<=cap)sum+=a[--ll];assert(tree.min_left(r,[&](Int v){return v<=cap;})==ll);}};
+        auto check=[&](auto& tree){assert(tree.size()==n);assert(tree.get_all()==std::accumulate(a.begin(),a.end(),Int(0)));for(int q=0;q<30;++q){Int l=rng()%(n+1),r=rng()%(n+1);if(l>r)std::swap(l,r);assert(tree.get(l,r)==std::accumulate(a.begin()+l,a.begin()+r,Int(0)));assert(tree[closed_slice(l,r-1)]==tree.get(l,r));Int cap=rng()%80;Int rr=l,sum=0;while(rr<n&&sum+a[rr]<=cap)sum+=a[rr++];assert(tree.max_right(l,[&](Int v){return v<=cap;})==rr);Int ll=r;sum=0;while(ll>0&&sum+a[ll-1]<=cap)sum+=a[--ll];assert(tree.min_left(r,[&](Int v){return v<=cap;})==ll);}};
         for(int q=0;q<100;++q){if(n){Int p=rng()%n,val=rng()%30;s[p]=val;st[p]=val;sv[p]=val;a[p]=val;}check(s);check(st);check(sv);}
 
 #ifdef CPLIB_SEGTREE_VAR

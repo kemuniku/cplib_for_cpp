@@ -56,13 +56,8 @@ public:
     }
 
     // 登録された壁の個数を返す。計算量 O(1)。
-    Int len() const {
-        return row_.len();
-    }
-
-    // 登録された壁の個数を返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return row_.size();
     }
 
     // 同じjでiより小さい座標の最寄りの壁を返す。

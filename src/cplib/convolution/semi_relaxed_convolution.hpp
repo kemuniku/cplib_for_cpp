@@ -13,20 +13,15 @@ public:
     }
 
     // 追加済みの項数を返す。計算量 O(1)。
-    Int len() const {
-        return online.size();
-    }
-
-    // 追加済みの項数を返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return online.size();
     }
 
     // 現在までに確定した積の係数を返す。追加済み項数を n として O(n)。
     std::vector<T> coefficients() const {
-        std::vector<T> out(online.size());
-        std::copy_n(product.begin(), std::min(out.size(), product.size()), out.begin());
-        return out;
+        std::vector<T> output_value(online.size());
+        std::copy_n(product.begin(), std::min(output_value.size(), product.size()), output_value.begin());
+        return output_value;
     }
 
     // 低位ビットごとのブロックを加算。N項の追加はO(N log²N)。
@@ -76,11 +71,6 @@ public:
 // 固定列を指定して状態を初期化する。固定列の長さを m として O(m)。
 template <class T> auto initSemiRelaxedConvolution(std::vector<T> fixed) {
     return SemiRelaxedConvolution<T>(std::move(fixed));
-}
-
-// 追加済み項数を返す。計算量 O(1)。
-template <class T> Int len(const SemiRelaxedConvolution<T> &s) {
-    return s.len();
 }
 
 // 確定した係数列を返す。計算量は s.coefficients() と同じ。

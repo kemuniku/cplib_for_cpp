@@ -257,7 +257,7 @@ auto initFunctionalGraph_with_op(const Source &source, const std::vector<T> &val
 }
 
 // 頂点xの値を更新する。O(log N)。
-template <class T> void set(FunctionalGraph_with_op<T> &f, Int x, const T &value) {
+template <class T> void setValue(FunctionalGraph_with_op<T> &f, Int x, const T &value) {
     f.set(x, value);
 }
 

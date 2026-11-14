@@ -28,13 +28,8 @@ public:
     }
 
     // 要素数をO(1)で返す。
-    Int len() const {
-        return tree.len();
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return tree.size();
     }
 
     // pをvに置き換えた新しい版を、時間・追加領域O(log N)で返す。

@@ -35,7 +35,7 @@ struct Avx512Warshall {
 };
 }
 
-namespace cplib {
+namespace cplib::warshall_avx512 {
 // 全点対最短路を上書きする。O(V^3)。
 // 正方隣接行列を最短距離で上書きする。到達不能はinf、負閉路を経由できる組は-inf。O(V^3)。
 template <class T>
@@ -49,7 +49,7 @@ void warshall_floyd_inplace(std::vector<std::vector<T>> &d, T zero = T(0),
 template <class T>
 auto warshall_floyd(std::vector<std::vector<T>> d, T zero = T(0),
                     T inf = cplib::detail::distance_inf<T>()) {
-    cplib::warshall_floyd_inplace(d, zero, inf);
+    cplib::warshall_avx512::warshall_floyd_inplace(d, zero, inf);
     return d;
 }
 
@@ -58,7 +58,7 @@ auto warshall_floyd(std::vector<std::vector<T>> d, T zero = T(0),
 template <cplib::GraphTypes G, class T = typename G::cost_type>
 auto warshall_floyd(const G &g, T zero = T(0), T inf = cplib::detail::distance_inf<T>()) {
     auto d = cplib::detail::graph_distance_matrix(g, zero, inf);
-    cplib::warshall_floyd_inplace(d, zero, inf);
+    cplib::warshall_avx512::warshall_floyd_inplace(d, zero, inf);
     return d;
 }
 
@@ -75,7 +75,7 @@ void warshall_floyd_nonnegative_inplace(std::vector<std::vector<T>> &d, T zero =
 template <class T>
 auto warshall_floyd_nonnegative(std::vector<std::vector<T>> d, T zero = T(0),
                                 T inf = cplib::detail::distance_inf<T>()) {
-    cplib::warshall_floyd_nonnegative_inplace(d, zero, inf);
+    cplib::warshall_avx512::warshall_floyd_nonnegative_inplace(d, zero, inf);
     return d;
 }
 
@@ -85,7 +85,7 @@ template <cplib::GraphTypes G, class T = typename G::cost_type>
 auto warshall_floyd_nonnegative(const G &g, T zero = T(0),
                                 T inf = cplib::detail::distance_inf<T>()) {
     auto d = cplib::detail::graph_distance_matrix(g, zero, inf);
-    cplib::warshall_floyd_nonnegative_inplace(d, zero, inf);
+    cplib::warshall_avx512::warshall_floyd_nonnegative_inplace(d, zero, inf);
     return d;
 }
 }

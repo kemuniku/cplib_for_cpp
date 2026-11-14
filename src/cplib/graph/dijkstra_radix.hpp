@@ -30,7 +30,7 @@ RestoredDistances<T> radix_dijkstra(const G &g, const Start &start, T zero, T in
     else
         for (Int s : start)
             init(s);
-    while (q.len()) {
+    while (q.size()) {
         auto [cost, u] = q.pop();
         if (cost > out.costs[u])
             continue;

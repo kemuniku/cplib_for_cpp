@@ -15,7 +15,7 @@ template<Int N> void check() {
     auto from_indices=cplib::initBitSetFromIndexes(indices,N);
 #endif
     assert(bits==from_indices);
-    assert(bits.len()==N && bits.popcount()==Int(indices.size()));
+    assert(bits.size()==N && bits.popcount()==Int(indices.size()));
     for (Int i=0;i<N;++i) assert(bool(bits[i])==values[i]);
 }
 int main(){check<0>();check<1>();check<63>();check<64>();check<65>();check<257>();check<1003>();}

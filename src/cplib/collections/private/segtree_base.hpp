@@ -33,13 +33,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return length;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return length;
     }
 
     // O(log(n+1))回の演算。
@@ -117,7 +112,7 @@ public:
 
     CPLIB_BACKWARDS_INDEX_OVERLOADS
 
-    // 全区間[0,len())の演算結果をO(1)で返す。
+    // 全区間[0,size())の演算結果をO(1)で返す。
     T get_all() const {
         return arr[1];
     }
@@ -204,11 +199,6 @@ template <class T, class Op> auto initSegmentTree(const std::vector<T> &v, Op op
 // 配列から木を構築する。要素数をnとしてO(n+1)回の演算。
 template <class V, class Op, class T> auto newSegWith(const V &v, Op op, T e) {
     return initSegmentTree(v, op, e);
-}
-
-// 要素数を返す。O(1)。
-template <class T, class M> Int len(const SegmentTree<T, M> &s) {
-    return s.len();
 }
 
 // i番目の値を更新する。O(log(n+1))回の演算。

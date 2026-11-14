@@ -89,7 +89,7 @@ template <class T> T &get(RootValueUnionFind<T> &u, Int x) {
 }
 
 // xの集合の値を設定する。償却O(α(n))と値の代入に要する時間。
-template <class T> void set(RootValueUnionFind<T> &u, Int x, T value) {
+template <class T> void setValue(RootValueUnionFind<T> &u, Int x, T value) {
     u.set(x, std::move(value));
 }
 }

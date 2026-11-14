@@ -56,7 +56,7 @@ public:
     std::vector<std::int32_t> start;
 
     // 頂点数nのグラフを構築する。動的版O(n)、静的版O(1)。
-    explicit BasicGraph(Int n = 0, Int capacity = 0) : len(n) {
+    explicit BasicGraph(Int n = 0, Int capacity = 0) : len{n} {
         edge_info.reserve(capacity);
         if constexpr (!Static)
             edges.resize(n);
@@ -278,11 +278,6 @@ inline auto initUnWeightedDirectedStaticGraph(Int n, Int capacity = 0) {
 // 頂点数nの静的グラフを生成する。計算量O(1)。利用前にbuildする。
 inline auto initUnWeightedUnDirectedStaticGraph(Int n, Int capacity = 0) {
     return UnWeightedUnDirectedStaticGraph(n, capacity);
-}
-
-// 頂点数を返す。O(1)。
-template <GraphTypes G> Int len(const G &g) {
-    return g.len;
 }
 
 // 辺数を返す。O(1)。

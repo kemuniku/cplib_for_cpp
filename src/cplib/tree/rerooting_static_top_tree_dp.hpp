@@ -132,7 +132,7 @@ template <class F, class B> auto prod(const RerootingStaticTopTreeDP<F, B> &dp, 
 
 // 頂点vに対応する双方向の値を更新する。各演算がO(1)ならO(log N)。
 template <class F, class B>
-void set(RerootingStaticTopTreeDP<F, B> &dp, Int v, F forward, B backward) {
+void setValue(RerootingStaticTopTreeDP<F, B> &dp, Int v, F forward, B backward) {
     dp.set(v, std::move(forward), std::move(backward));
 }
 }

@@ -53,10 +53,10 @@ public:
         }
 
         operator std::array<T, W>() const {
-            std::array<T, W> out;
+            std::array<T, W> output_value;
             for (Int j = 0; j < W; ++j)
-                out[j] = (*owner)(row, j);
-            return out;
+                output_value[j] = (*owner)(row, j);
+            return output_value;
         }
 
         Row &operator=(const std::array<T, W> &values) {
@@ -75,28 +75,28 @@ public:
     }
 
     std::array<T, W> operator[](Int row) const {
-        std::array<T, W> out;
+        std::array<T, W> output_value;
         for (Int j = 0; j < W; ++j)
-            out[j] = (*this)(row, j);
-        return out;
+            output_value[j] = (*this)(row, j);
+        return output_value;
     }
 
     bool operator==(const StaticMatrix &) const = default;
 
     StaticMatrix operator-() const {
-        StaticMatrix out;
+        StaticMatrix output_value;
         for (Int i = 0; i < H * W; ++i)
-            out.arr_[i] = -arr_[i];
-        return out;
+            output_value.arr_[i] = -arr_[i];
+        return output_value;
     }
 
     template <Int C> auto operator*(const StaticMatrix<W, C, T> &b) const {
-        StaticMatrix<H, C, T> out;
+        StaticMatrix<H, C, T> output_value;
         for (Int i = 0; i < H; ++i)
             for (Int j = 0; j < C; ++j)
                 for (Int k = 0; k < W; ++k)
-                    out(i, j) += (*this)(i, k) * b(k, j);
-        return out;
+                    output_value(i, j) += (*this)(i, k) * b(k, j);
+        return output_value;
     }
 
     StaticMatrix &operator*=(const StaticMatrix<W, W, T> &b) {
@@ -544,10 +544,10 @@ public:
     // 正方単位行列を作る。計算量 O(H²+1)。
     static StaticMatrix identity(Int n = H, T one = T(1), T zero = T(0)) {
         assert(H == W && n == H);
-        StaticMatrix out(zero);
+        StaticMatrix output_value(zero);
         for (Int i = 0; i < H; ++i)
-            out(i, i) = one;
-        return out;
+            output_value(i, i) = one;
+        return output_value;
     }
 
     // H次正方行列を非負のk乗にする。計算量 O(H³ log(k+1)+H²+1)。
@@ -574,20 +574,20 @@ public:
 
     // 文字列に変換する。要素の出力時間の合計と O(HW+H+1) が必要。
     std::string str() const {
-        std::ostringstream out;
+        std::ostringstream output_value;
         for (Int i = 0; i < H; ++i) {
             if (i)
-                out << '\n';
+                output_value << '\n';
             for (Int j = 0; j < W; ++j) {
                 if (j)
-                    out << ' ';
+                    output_value << ' ';
                 if constexpr (std::is_same_v<T, bool>)
-                    out << ((*this)(i, j) ? "true" : "false");
+                    output_value << ((*this)(i, j) ? "true" : "false");
                 else
-                    out << (*this)(i, j);
+                    output_value << (*this)(i, j);
             }
         }
-        return out.str();
+        return output_value.str();
     }
 
     // ハッシュを返す。要素のハッシュを O(1) として O(HW+1)。
@@ -627,22 +627,22 @@ public:
         auto rows = fieldAdjugateInverse(matrixRows(*this, n, n), false);
         if (!rows)
             return std::nullopt;
-        StaticMatrix out;
+        StaticMatrix output_value;
         for (Int i = 0; i < n; ++i)
             for (Int j = 0; j < n; ++j)
-                out(i, j) = (*rows)[i][j];
-        return out;
+                output_value(i, j) = (*rows)[i][j];
+        return output_value;
     }
 
     // 左上n×nの余因子行列を返す。範囲外は零。O(n^3)。
     StaticMatrix adjugate(Int n = H) const {
         assert(0 <= n && n <= std::min(H, W));
         auto rows = fieldAdjugateInverse(matrixRows(*this, n, n), true);
-        StaticMatrix out;
+        StaticMatrix output_value;
         for (Int i = 0; i < n; ++i)
             for (Int j = 0; j < n; ++j)
-                out(i, j) = (*rows)[i][j];
-        return out;
+                output_value(i, j) = (*rows)[i][j];
+        return output_value;
     }
 };
 
@@ -679,7 +679,7 @@ template <Int H, Int W, class T> Int w(const StaticMatrix<H, W, T> &m) {
 }
 
 // 要素のハッシュを O(1) として行列のハッシュを O(HW+1) で求める。
-template <Int H, Int W, class T> auto hash(const StaticMatrix<H, W, T> &m) {
+template <Int H, Int W, class T> auto hashValue(const StaticMatrix<H, W, T> &m) {
     return m.hash();
 }
 

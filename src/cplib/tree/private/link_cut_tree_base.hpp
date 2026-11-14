@@ -94,16 +94,12 @@ template <class Derived, class S> struct LinkCutTreeOperations {
         splay(v);
     }
 
-    Int len() const {
+    Int size() const {
         return Int(self().nodes.size()) - 1;
     }
 
-    Int size() const {
-        return len();
-    }
-
     void check(Int v) const {
-        assert(v >= 0 && v < len());
+        assert(v >= 0 && v < size());
         (void)v;
     }
 
@@ -221,13 +217,8 @@ public:
     using value_type = S;
 
     // 頂点数を返す。O(1)。
-    Int len() const {
-        return impl_->len();
-    }
-
-    // 頂点数を返す。O(1)。
     Int size() const {
-        return len();
+        return impl_->size();
     }
 
     // vを所属する木の根にする。償却O(log N)。

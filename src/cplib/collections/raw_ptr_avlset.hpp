@@ -5,7 +5,7 @@
 #include <sstream>
 #include <cplib/utils/backwards_index.hpp>
 
-namespace cplib {
+namespace cplib::raw_ptr_avl {
 // 生ポインタ版。ノードの所有権は集合のプールが管理する。
 template <class K> struct AvlTreeNode {
     using Ptr = AvlTreeNode *;
@@ -334,25 +334,20 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return root ? root->len : 0;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return root ? root->len : 0;
     }
 
     // x未満の要素数を返す。O(log(n+1))。
     Int lowerBound(const T &x) const {
         auto n = lower_bound_node(root, x).second;
-        return n ? cplib::index(n) : len();
+        return n ? cplib::raw_ptr_avl::index(n) : size();
     }
 
     // x以下の要素数を返す。O(log(n+1))。
     Int upperBound(const T &x) const {
         auto n = upper_bound_node(root, x).second;
-        return n ? cplib::index(n) : len();
+        return n ? cplib::raw_ptr_avl::index(n) : size();
     }
 
     // x未満の要素数を返す。O(log(n+1))。
@@ -412,29 +407,29 @@ public:
         auto n = lower_bound_node(root, x).second;
         if (!n || !(n->key == x))
             return false;
-        root = cplib::erase(root, n, cplib::next(n));
+        root = cplib::raw_ptr_avl::erase(root, n, cplib::raw_ptr_avl::next(n));
         return true;
     }
 
     // 昇順でi番目の要素を返す。O(log(n+1))。
     T operator[](Int i) const {
-        assert(i >= 0 && i < len());
+        assert(i >= 0 && i < size());
         return get(root, i)->key;
     }
 
     // 昇順の末尾からi番目の要素を返す。O(log(n+1))。
     T operator[](BackwardsIndex i) const {
-        return (*this)[len() - i.value];
+        return (*this)[size() - i.value];
     }
 
     // 昇順でi番目の要素を削除して返す。負のiは末尾から数える。O(log(n+1))。
     T pop(Int i = -1) {
         if (i < 0)
-            i += len();
-        assert(i >= 0 && i < len());
+            i += size();
+        assert(i >= 0 && i < size());
         auto n = get(root, i);
         T out = n->key;
-        root = cplib::erase(root, n, cplib::next(n));
+        root = cplib::raw_ptr_avl::erase(root, n, cplib::raw_ptr_avl::next(n));
         return out;
     }
 
@@ -448,7 +443,7 @@ public:
 
         // 次の要素へ進む。最悪O(log(n+1))、全列挙では合計O(n)。
         Iterator &operator++() {
-            node = cplib::next(node);
+            node = cplib::raw_ptr_avl::next(node);
             return *this;
         }
 

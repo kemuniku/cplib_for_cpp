@@ -66,13 +66,8 @@ public:
     }
 
     // 現在保存している復元処理の数をO(1)で返す。
-    Int len() const {
-        return entries.size();
-    }
-
-    // 保存している復元処理の数を返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return entries.size();
     }
 
     // 同じスコープでは同じアドレス・サイズの最初の値だけを保存する。期待償却 O(sizeof(T))。
@@ -82,7 +77,7 @@ public:
         Int prev = it == latest.end() ? -1 : it->second;
         if (prev >= scopeStart)
             return;
-        Int i = len();
+        Int i = size();
         save(p, prev);
         latest[key] = i;
     }
@@ -108,7 +103,7 @@ public:
         Int prev = stamp - 1;
         if (prev >= scopeStart)
             return;
-        Int i = len();
+        Int i = size();
         save(p, prev, &stamp);
         stamp = i + 1;
     }
@@ -128,8 +123,8 @@ public:
     // 保存用vectorの容量を保ち、次の記録で再利用する。
     // 復元する履歴数K・合計サイズB、解放するキャッシュ数Cとして期待 O(K+B+C)。
     void restore(Int position) {
-        assert(0 <= position && position <= len());
-        while (len() > position) {
+        assert(0 <= position && position <= size());
+        while (size() > position) {
             auto e = entries.back();
             entries.pop_back();
             std::memcpy(e.location.address, saved.data() + e.offset, e.location.size);
@@ -150,8 +145,8 @@ public:
 
     // 入れ子の開始位置を保存し、新しいスコープで重複を判定する。O(1)。
     TemporaryCheckpoint beginTemporary() {
-        TemporaryCheckpoint c{len(), scopeStart};
-        scopeStart = len();
+        TemporaryCheckpoint c{size(), scopeStart};
+        scopeStart = size();
         return c;
     }
 

@@ -71,13 +71,8 @@ public:
     }
 
     // 最終状態に残る要素数を返す。O(1)。
-    Int len() const {
-        return queue.len();
-    }
-
-    // 最終状態に残る要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return queue.size();
     }
 
     // 最終状態に残る要素の総和を返す。O(1)。

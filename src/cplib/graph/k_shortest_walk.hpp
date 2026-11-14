@@ -130,7 +130,7 @@ std::vector<T> k_shortest_walk(const G &graph, Int s, Int t, Int k, T infinity) 
     }
 
     struct Node {
-        Int vertex = 0, left = 0, right = 0, rank = 0;
+        Int vertex = 0, left = 0, right = 0, heap_rank = 0;
     };
 
     std::vector<Node> nodes(1);
@@ -145,9 +145,9 @@ std::vector<T> k_shortest_walk(const G &graph, Int s, Int t, Int k, T infinity) 
             std::swap(a, b);
         auto node = nodes[a];
         node.right = self(self, node.right, b);
-        if (nodes[node.left].rank < nodes[node.right].rank)
+        if (nodes[node.left].heap_rank < nodes[node.right].heap_rank)
             std::swap(node.left, node.right);
-        node.rank = nodes[node.right].rank + 1;
+        node.heap_rank = nodes[node.right].heap_rank + 1;
         nodes.push_back(node);
         return nodes.size() - 1;
     };

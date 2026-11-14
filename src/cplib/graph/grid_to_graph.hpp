@@ -6,16 +6,16 @@ namespace cplib {
 template <bool ReturnStatic = false, class Grid, class T>
 auto grid_to_graph_impl(const Grid &a, const T &ok) {
     Int h = a.size(), w = h ? Int(a[0].size()) : 0;
-    BasicGraph<void, ReturnStatic, false> out(h * w);
+    BasicGraph<void, ReturnStatic, false> output_value(h * w);
     for (Int i = 0; i < h; ++i)
         for (Int j = 0; j < w; ++j)
             if (a[i][j] == ok) {
                 if (i + 1 < h && a[i + 1][j] == ok)
-                    out.add_edge(i * w + j, (i + 1) * w + j);
+                    output_value.add_edge(i * w + j, (i + 1) * w + j);
                 if (j + 1 < w && a[i][j + 1] == ok)
-                    out.add_edge(i * w + j, i * w + j + 1);
+                    output_value.add_edge(i * w + j, i * w + j + 1);
             }
-    return out;
+    return output_value;
 }
 
 // 通行可能な上下左右のマスを結んだグラフを返す。O(HW)。静的版は呼出側でbuildする。

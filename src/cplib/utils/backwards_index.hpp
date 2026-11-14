@@ -41,8 +41,8 @@ template <class Left, class Right> constexpr auto closed_slice(Left a, Right b) 
 // 整数添字版へ転送するオーバーロードをクラス内に追加する。追加計算量len()+O(1)。
 #define CPLIB_BACKWARDS_INDEX_OVERLOADS                                                            \
     decltype(auto) operator[](::cplib::BackwardsIndex index) {                                     \
-        return (*this)[len() - index.value];                                                       \
+        return (*this)[size() - index.value];                                                       \
     }                                                                                              \
     decltype(auto) operator[](::cplib::BackwardsIndex index) const {                               \
-        return (*this)[len() - index.value];                                                       \
+        return (*this)[size() - index.value];                                                       \
     }

@@ -35,7 +35,7 @@ public:
 };
 
 // モノイド演算と単位元を指定して空の列を生成する。O(1)。
-template <class Op, class T> QSWAG<T> initSWAG(Op op, T e) {
+template <class Op, class T> QSWAG<T> initQSWAG(Op op, T e) {
     return QSWAG<T>(op, e);
 }
 
@@ -54,11 +54,6 @@ template <class T> T fold(const QSWAG<T> &s) {
     return s.fold();
 }
 
-// 要素数を返す。O(1)。
-template <class T> Int len(const QSWAG<T> &s) {
-    return s.len();
-}
-
 // 全要素を文字列化する。要素数をnとしてO(n)と各要素の文字列化の計算量。
 template <class T> std::string to_string(const QSWAG<T> &s) {
     return s.to_string();
@@ -68,7 +63,7 @@ template <class T> std::string to_string(const QSWAG<T> &s) {
 template <class Range, class Op, class T, class Predicate>
 std::vector<Int> get_maxrights(const Range &v, Op op, T e, Predicate f) {
     assert(f(e));
-    auto s = initSWAG(op, e);
+    auto s = initQSWAG(op, e);
     Int r = 0;
     std::vector<Int> result;
     for (Int l = 0; l < Int(v.size()); ++l) {
@@ -77,7 +72,7 @@ std::vector<Int> get_maxrights(const Range &v, Op op, T e, Predicate f) {
         while (r < Int(v.size()) && f(s.fold()))
             s.push(v[r++]);
         result.push_back(f(s.fold()) ? Int(v.size()) : r - 1);
-        if (s.len())
+        if (s.size())
             s.pop();
     }
     return result;

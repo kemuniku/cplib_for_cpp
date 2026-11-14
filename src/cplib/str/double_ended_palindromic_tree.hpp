@@ -43,7 +43,7 @@ class DoubleEndedPalindromicTree {
     }
 
     template <bool Front> Entry &entry(Int i) {
-        return data[Front ? i : len() - 1 - i];
+        return data[Front ? i : size() - 1 - i];
     }
 
     template <bool Front> Int &near(Int i) {
@@ -68,7 +68,7 @@ class DoubleEndedPalindromicTree {
         else
             data.push_back({value});
         Int opposite = nodes[parent].length + 1;
-        if (opposite >= len() || entry<Front>(opposite).value != value)
+        if (opposite >= size() || entry<Front>(opposite).value != value)
             parent = direct[parent * sigma + value];
         Int node = children[parent * sigma + value];
         if (!node) {
@@ -126,13 +126,8 @@ public:
     }
 
     // 現在の文字列の長さを O(1) で返す。
-    Int len() const {
-        return data.size();
-    }
-
-    // 現在の文字列の長さを返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return data.size();
     }
 
     // 現在の文字列が空かを O(1) で返す。

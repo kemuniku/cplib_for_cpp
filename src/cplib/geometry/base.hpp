@@ -2,6 +2,7 @@
 #include <cplib/common.hpp>
 #include <cmath>
 #include <functional>
+#include <istream>
 #include <sstream>
 #include <type_traits>
 
@@ -144,8 +145,12 @@ template <class T> struct Point {
         return !(p < q);
     }
 
+    friend std::istream &operator>>(std::istream &in, Point &p) {
+        return in >> p.x >> p.y;
+    }
+
     friend std::ostream &operator<<(std::ostream &out, Point p) {
-        return out << '(' << p.x << ", " << p.y << ')';
+        return out << p.x << ' ' << p.y;
     }
 };
 
@@ -230,7 +235,7 @@ Line<T> initLine(T a, T b, T c) {
 }
 
 // 直線の接ベクトル（直線の方向のベクトル）を返す。計算量 O(1)。
-template <class T> Point<T> vector(const Line<T> &l) {
+template <class T> Point<T> toVector(const Line<T> &l) {
     return l.t - l.s;
 }
 
@@ -262,7 +267,7 @@ template <class T> auto toLine(const Segment<T> &s) {
 }
 
 // 線分の始点から終点へのベクトルを返す。計算量 O(1)。
-template <class T> auto vector(const Segment<T> &s) {
+template <class T> auto toVector(const Segment<T> &s) {
     return s.t - s.s;
 }
 }

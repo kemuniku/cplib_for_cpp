@@ -382,10 +382,10 @@ inline std::string matrixJoinValues(const std::uint32_t *values, Int count, std:
     assert(count >= 0 && count <= std::numeric_limits<Int>::max() / 10);
     assert(count == 1 ||
            separator.size() <= UInt((std::numeric_limits<Int>::max() - count * 10) / (count - 1)));
-    std::string out(count * 10 + (count - 1) * separator.size(), '\0');
-    out.resize(detail::matrix_avx2_native::cplib_matrix_join(
-        values, count, p, montgomery, out.data(), separator.data(), separator.size()));
-    return out;
+    std::string output_value(count * 10 + (count - 1) * separator.size(), '\0');
+    output_value.resize(detail::matrix_avx2_native::cplib_matrix_join(
+        values, count, p, montgomery, output_value.data(), separator.data(), separator.size()));
+    return output_value;
 }
 
 // count 個の値を指定の剰余表現へ変換する。計算量 O(count)。

@@ -1,7 +1,7 @@
 #pragma once
 #include <cplib/common.hpp>
 
-namespace cplib {
+namespace cplib::group_unionfind {
 class UnionFind {
     std::vector<std::int32_t> par_or_siz;
     std::vector<Int> next, edge_cnt;
@@ -177,5 +177,9 @@ template <class U> auto roots(const U &u) -> decltype(u.roots()) {
 }
 
 namespace cplib {
-using GroupUnionFind = cplib::UnionFind;
+using GroupUnionFind = group_unionfind::UnionFind;
+
+inline GroupUnionFind initGroupUnionFind(Int n) {
+    return GroupUnionFind(n);
+}
 }

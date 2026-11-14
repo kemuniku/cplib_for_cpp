@@ -185,7 +185,7 @@ template <class T, bool Products> class RangeSortEngine {
 
     // 配列上のiの直前にブロック境界を作る。O(log(N+1)+log(U+1))。
     void cut(Int i) {
-        if (i == len() || roots[i])
+        if (i == size() || roots[i])
             return;
         Int start = blockStart(i), root = roots[start], k = i - start;
         auto [a, b] = split(root, reversed[start] ? nodes[root].count - k : k);
@@ -203,7 +203,7 @@ template <class T, bool Products> class RangeSortEngine {
 
     // 現在の位置iの葉の添字を返す。O(log(N+1)+log(U+1))。
     Int locate(Int i) const {
-        assert(0 <= i && i < len());
+        assert(0 <= i && i < size());
         Int start = blockStart(i), node = roots[start], k = i - start;
         if (reversed[start])
             k = nodes[node].count - 1 - k;
@@ -261,14 +261,14 @@ public:
         assert(limit >= 0);
         if constexpr (Products)
             assert(keys.size() == values.size());
-        while (treeBase_ < len())
+        while (treeBase_ < size())
             treeBase_ *= 2;
         starts.assign(treeBase_ * 2, -1);
         if constexpr (Products)
             products.assign(treeBase_ * 2, e);
-        nodes.reserve(std::max<Int>(1, len() * 2));
+        nodes.reserve(std::max<Int>(1, size() * 2));
         nodes.emplace_back();
-        for (Int i = 0; i < len(); ++i) {
+        for (Int i = 0; i < size(); ++i) {
             Int key = keys[i];
             assert(0 <= key && key < limit);
 #ifndef NDEBUG
@@ -288,13 +288,8 @@ public:
     }
 
     // 要素数をO(1)で返す。
-    Int len() const {
-        return roots.size();
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return roots.size();
     }
 
     // 現在の位置iのキーを返す。O(log(N+1)+log(U+1))。
@@ -320,7 +315,7 @@ public:
 
     // 位置iのキーと値を変更する。O(log(N+1)+log(U+1))。他の要素とのキー重複は禁止。
     void update(Int i, Int k, T value) {
-        assert(0 <= i && i < len() && 0 <= k && k < keyLimit);
+        assert(0 <= i && i < size() && 0 <= k && k < keyLimit);
 #ifndef NDEBUG
         Int old = key(i);
         assert(k == old || !activeKeys.contains(k));
@@ -339,7 +334,7 @@ public:
     T get(Int l, Int r) const
         requires Products
     {
-        assert(0 <= l && l <= r && r <= len());
+        assert(0 <= l && l <= r && r <= size());
         if (l == r)
             return e;
         Int a = blockStart(l), b = blockStart(r - 1);
@@ -360,7 +355,7 @@ public:
 
     // [l,r)をキー順にソートする。償却O(log(N+1)+log(U+1))。空区間は変更しない。
     void sort(Int l, Int r, SortOrder order = Ascending) {
-        assert(0 <= l && l <= r && r <= len());
+        assert(0 <= l && l <= r && r <= size());
         if (r - l <= 1)
             return;
         cut(l);
@@ -381,7 +376,7 @@ public:
     // 現在の配列順にキーを列挙する。全体O(N)。列挙中の変更は禁止。
     Generator<Int> items() const {
         std::vector<Int> stack;
-        for (Int start = 0; start < len(); start = next[start]) {
+        for (Int start = 0; start < size(); start = next[start]) {
             stack.push_back(roots[start]);
             while (!stack.empty()) {
                 Int node = stack.back();

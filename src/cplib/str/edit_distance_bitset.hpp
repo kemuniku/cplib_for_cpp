@@ -14,7 +14,7 @@ inline Int editDistance_bitset(std::string_view s, std::string_view t) {
     std::array<BitSetAvx512, 256> matches;
     for (Int i = 0; i < m; ++i) {
         auto &mask = matches[static_cast<unsigned char>(t[i])];
-        if (!mask.len())
+        if (!mask.size())
             mask = BitSetAvx512(m);
         mask[i] = true;
     }
@@ -23,12 +23,12 @@ inline Int editDistance_bitset(std::string_view s, std::string_view t) {
     Int result = m;
     for (unsigned char c : s) {
         auto &mask = matches[c];
-        if (!mask.len())
+        if (!mask.size())
             mask = BitSetAvx512(m);
         bool positiveLast = false, negativeLast = false;
         cplib::fuse([&](auto &f) {
             auto p = f.var(positive), n = f.var(negative);
-            auto equal = f.read(mask);
+            auto equal = f.readValues(mask);
             auto vertical = equal | n;
             auto horizontal = (((equal & p) + p) ^ p) | equal;
             auto positiveHorizontal = ~(horizontal | p) | n;

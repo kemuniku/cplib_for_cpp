@@ -1,7 +1,7 @@
 #pragma once
 #include <cplib/collections/private/simd_bitset.hpp>
 
-namespace cplib {
+namespace cplib::static_bitset_avx512 {
 template <Int N> using BitSet = SimdBitSet<512, N>;
 
 // 長さNの全ビット0の列を構築する。O(1+N/64)。

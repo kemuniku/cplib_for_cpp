@@ -4,7 +4,7 @@
 #include <optional>
 #include <sstream>
 
-namespace cplib {
+namespace cplib::legacy_avl {
 // 順位付き AVL 集合。挿入・削除・順位取得 O(log N)、列挙 O(N)。
 template <class T, bool Multi> class BasicAvlSortedSet {
     static AvlNodePtr<T> clone(AvlNodePtr<T> n, AvlNodePtr<T> parent = get_avltree_nilnode<T>()) {
@@ -51,25 +51,20 @@ public:
     BasicAvlSortedSet &operator=(BasicAvlSortedSet &&) = default;
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return root->len;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return root->len;
     }
 
     // x未満の要素数を返す。O(log(n+1))。
     Int lowerBound(const T &x) const {
         auto n = lower_bound_node(root, x).second;
-        return n != get_avltree_nilnode<T>() ? cplib::index(n) : len();
+        return n != get_avltree_nilnode<T>() ? cplib::legacy_avl::index(n) : size();
     }
 
     // x以下の要素数を返す。O(log(n+1))。
     Int upperBound(const T &x) const {
         auto n = upper_bound_node(root, x).second;
-        return n != get_avltree_nilnode<T>() ? cplib::index(n) : len();
+        return n != get_avltree_nilnode<T>() ? cplib::legacy_avl::index(n) : size();
     }
 
     // x未満の要素数を返す。O(log(n+1))。
@@ -119,7 +114,7 @@ public:
             if (contains(x))
                 return false;
         }
-        root = cplib::insert(root, std::make_shared<AvlTreeNode<T>>(x));
+        root = cplib::legacy_avl::insert(root, std::make_shared<AvlTreeNode<T>>(x));
         return true;
     }
 
@@ -128,29 +123,29 @@ public:
         auto n = lower_bound_node(root, x).second;
         if (n == get_avltree_nilnode<T>() || !(n->key == x))
             return false;
-        root = cplib::erase(root, n, cplib::next(n));
+        root = cplib::legacy_avl::erase(root, n, cplib::legacy_avl::next(n));
         return true;
     }
 
     // 昇順でi番目の要素を返す。O(log(n+1))。
     T operator[](Int i) const {
-        assert(i >= 0 && i < len());
+        assert(i >= 0 && i < size());
         return get(root, i)->key;
     }
 
     // 昇順の末尾からi番目の要素を返す。O(log(n+1))。
     T operator[](BackwardsIndex i) const {
-        return (*this)[len() - i.value];
+        return (*this)[size() - i.value];
     }
 
     // 昇順でi番目の要素を削除して返す。負のiは末尾から数える。O(log(n+1))。
     T pop(Int i = -1) {
         if (i < 0)
-            i += len();
-        assert(i >= 0 && i < len());
+            i += size();
+        assert(i >= 0 && i < size());
         auto n = get(root, i);
         T out = n->key;
-        root = cplib::erase(root, n, cplib::next(n));
+        root = cplib::legacy_avl::erase(root, n, cplib::legacy_avl::next(n));
         return out;
     }
 
@@ -164,7 +159,7 @@ public:
 
         // 次の要素へ進む。最悪O(log(n+1))、全列挙では合計O(n)。
         Iterator &operator++() {
-            node = cplib::next(node);
+            node = cplib::legacy_avl::next(node);
             return *this;
         }
 

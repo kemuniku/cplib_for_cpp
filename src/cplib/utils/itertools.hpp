@@ -168,22 +168,22 @@ template <class I> using Value = typename I::value_type;
 template <class I> Generator<std::vector<Value<I>>> permutations(I v) {
     std::vector<Int> idx(v.size());
     std::iota(idx.begin(), idx.end(), 0);
-    std::vector<Value<I>> out(v.size());
+    std::vector<Value<I>> output_value(v.size());
     do {
         for (Int i = 0; i < v.size(); ++i)
-            out[i] = v[idx[i]];
-        co_yield out;
+            output_value[i] = v[idx[i]];
+        co_yield output_value;
     } while (std::next_permutation(idx.begin(), idx.end()));
 }
 
 template <class I> Generator<std::vector<Value<I>>> distinct_permutations(I v) {
-    std::vector<Value<I>> out;
+    std::vector<Value<I>> output_value;
     for (Int i = 0; i < v.size(); ++i)
-        out.push_back(v[i]);
-    std::sort(out.begin(), out.end());
+        output_value.push_back(v[i]);
+    std::sort(output_value.begin(), output_value.end());
     do {
-        co_yield out;
-    } while (std::next_permutation(out.begin(), out.end()));
+        co_yield output_value;
+    } while (std::next_permutation(output_value.begin(), output_value.end()));
 }
 
 template <class I> Generator<std::vector<Value<I>>> combinations(I v, Int r) {
@@ -196,11 +196,11 @@ template <class I> Generator<std::vector<Value<I>>> combinations(I v, Int r) {
         co_return;
     std::vector<Int> idx(r);
     std::iota(idx.begin(), idx.end(), 0);
-    std::vector<Value<I>> out(r);
+    std::vector<Value<I>> output_value(r);
     while (true) {
         for (Int i = 0; i < r; ++i)
-            out[i] = v[idx[i]];
-        co_yield out;
+            output_value[i] = v[idx[i]];
+        co_yield output_value;
         Int i = r - 1;
         while (i >= 0 && idx[i] == i + n - r)
             --i;
@@ -215,16 +215,16 @@ template <class I> Generator<std::vector<Value<I>>> combinations(I v, Int r) {
 template <Int R, class I> Generator<std::array<Value<I>, R>> combinations(I v) {
     static_assert(R >= 0);
     Int n = v.size();
-    std::array<Value<I>, R> out{};
+    std::array<Value<I>, R> output_value{};
     if constexpr (R == 0) {
-        co_yield out;
+        co_yield output_value;
     } else if (R <= n) {
         std::array<Int, R> idx{};
         for (Int i = 0; i < R; ++i) {
             idx[i] = i;
-            out[i] = v[i];
+            output_value[i] = v[i];
         }
-        co_yield out;
+        co_yield output_value;
         while (true) {
             Int i = R - 1;
             while (i >= 0 && idx[i] == i + n - R)
@@ -232,12 +232,12 @@ template <Int R, class I> Generator<std::array<Value<I>, R>> combinations(I v) {
             if (i < 0)
                 break;
             ++idx[i];
-            out[i] = v[idx[i]];
+            output_value[i] = v[idx[i]];
             for (Int j = i + 1; j < R; ++j) {
                 idx[j] = idx[j - 1] + 1;
-                out[j] = v[idx[j]];
+                output_value[j] = v[idx[j]];
             }
-            co_yield out;
+            co_yield output_value;
         }
     }
 }
@@ -279,12 +279,12 @@ template <class I> Generator<std::vector<Value<I>>> product(I v, Int repeat) {
     if (!v.size())
         co_return;
     std::vector<Int> idx(repeat);
-    std::vector<Value<I>> out(repeat);
+    std::vector<Value<I>> output_value(repeat);
     bool more = true;
     while (more) {
         for (Int i = 0; i < repeat; ++i)
-            out[i] = v[idx[i]];
-        co_yield out;
+            output_value[i] = v[idx[i]];
+        co_yield output_value;
         for (Int i = 0; i < repeat; ++i) {
             if (++idx[i] == v.size()) {
                 idx[i] = 0;
@@ -299,15 +299,15 @@ template <class I> Generator<std::vector<Value<I>>> product(I v, Int repeat) {
 template <class I> Generator<std::vector<Int>> bounded_sequences(I limits) {
     for (Int i = 0; i < limits.size(); ++i)
         assert(limits[i] >= 0);
-    std::vector<Int> out(limits.size());
+    std::vector<Int> output_value(limits.size());
     while (true) {
-        co_yield out;
+        co_yield output_value;
         Int i = limits.size() - 1;
-        while (i >= 0 && out[i] == limits[i])
-            out[i--] = 0;
+        while (i >= 0 && output_value[i] == limits[i])
+            output_value[i--] = 0;
         if (i < 0)
             break;
-        ++out[i];
+        ++output_value[i];
     }
 }
 
@@ -326,22 +326,22 @@ template <class I> Generator<std::vector<Int>> bounded_sum_sequences(Int sum, I 
         co_yield std::vector<Int>{};
         co_return;
     }
-    std::vector<Int> out(n), remaining(n + 1), upper(n);
+    std::vector<Int> output_value(n), remaining(n + 1), upper(n);
     remaining[0] = sum;
     Int depth = 0;
-    out[0] = std::max(Int(bounds[0].first), sum - hi[1]);
+    output_value[0] = std::max(Int(bounds[0].first), sum - hi[1]);
     upper[0] = std::min(Int(bounds[0].second) - 1, sum - lo[1]);
     while (depth >= 0) {
-        if (out[depth] > upper[depth]) {
+        if (output_value[depth] > upper[depth]) {
             if (--depth >= 0)
-                ++out[depth];
+                ++output_value[depth];
         } else if (depth == n - 1) {
-            co_yield out;
-            ++out[depth];
+            co_yield output_value;
+            ++output_value[depth];
         } else {
-            remaining[depth + 1] = remaining[depth] - out[depth];
+            remaining[depth + 1] = remaining[depth] - output_value[depth];
             ++depth;
-            out[depth] = std::max(Int(bounds[depth].first), remaining[depth] - hi[depth + 1]);
+            output_value[depth] = std::max(Int(bounds[depth].first), remaining[depth] - hi[depth + 1]);
             upper[depth] =
                 std::min(Int(bounds[depth].second) - 1, remaining[depth] - lo[depth + 1]);
         }
@@ -358,32 +358,32 @@ inline Generator<std::vector<Int>> monotone(Int n, Int l, Int r, Int step,
     }
     if (l >= r || (step && n > r - l))
         co_return;
-    std::vector<Int> out(n), prefix(n + 1);
+    std::vector<Int> output_value(n), prefix(n + 1);
     Int depth = 0;
-    out[0] = l;
+    output_value[0] = l;
     while (depth >= 0) {
         Int count = n - depth, upper = r - 1 - step * (count - 1);
-        bool exhausted = out[depth] > upper;
+        bool exhausted = output_value[depth] > upper;
         if (!exhausted && target) {
-            Int minimum = prefix[depth] + count * out[depth] + step * (count * (count - 1) / 2);
-            Int maximum = prefix[depth] + out[depth] + (count - 1) * (r - 1) -
+            Int minimum = prefix[depth] + count * output_value[depth] + step * (count * (count - 1) / 2);
+            Int maximum = prefix[depth] + output_value[depth] + (count - 1) * (r - 1) -
                           step * ((count - 1) * (count - 2) / 2);
             if (minimum > *target)
                 exhausted = true;
             else if (maximum < *target) {
-                out[depth] += *target - maximum;
+                output_value[depth] += *target - maximum;
                 continue;
             }
         }
         if (exhausted) {
             if (--depth >= 0)
-                ++out[depth];
+                ++output_value[depth];
         } else if (depth == n - 1) {
-            co_yield out;
-            ++out[depth];
+            co_yield output_value;
+            ++output_value[depth];
         } else {
-            prefix[depth + 1] = prefix[depth] + out[depth];
-            out[depth + 1] = out[depth] + step;
+            prefix[depth + 1] = prefix[depth] + output_value[depth];
+            output_value[depth + 1] = output_value[depth] + step;
             ++depth;
         }
     }
@@ -397,11 +397,11 @@ Generator<std::vector<typename Value<I>::value_type>> cartesian_product(I choice
         if (choices[i].empty())
             co_return;
     std::vector<Int> idx(n);
-    std::vector<T> out(n);
+    std::vector<T> output_value(n);
     while (true) {
         for (Int i = 0; i < n; ++i)
-            out[i] = choices[i][idx[i]];
-        co_yield out;
+            output_value[i] = choices[i][idx[i]];
+        co_yield output_value;
         Int i = n - 1;
         while (i >= 0 && idx[i] == Int(choices[i].size()) - 1)
             idx[i--] = 0;
@@ -457,11 +457,11 @@ template <class R> auto cartesian_product(R &&v) {
 
 // 初期値から左に累積した配列を返す。長さ n の入力に対し f を n 回呼び、それ以外の時間・追加領域は O(n+1)。
 template <class T, class F> std::vector<T> accumulated(const std::vector<T> &v, F f, T first) {
-    std::vector<T> out(v.size() + 1);
-    out[0] = first;
+    std::vector<T> output_value(v.size() + 1);
+    output_value[0] = first;
     for (std::size_t i = 0; i < v.size(); ++i)
-        out[i + 1] = f(out[i], v[i]);
-    return out;
+        output_value[i + 1] = f(output_value[i], v[i]);
+    return output_value;
 }
 
 // 左から累積し入力を更新する。長さ n に対し f を max(n-1,0) 回呼び、それ以外の時間 O(n+1)、追加領域 O(1)。
@@ -478,11 +478,11 @@ template <class T, class F> std::vector<T> accumulated(std::vector<T> v, F f) {
 
 // 初期値から右に累積した配列を返す。長さ n の入力に対し f を n 回呼び、それ以外の時間・追加領域は O(n+1)。
 template <class T, class F> std::vector<T> accumulatedr(const std::vector<T> &v, F f, T first) {
-    std::vector<T> out(v.size() + 1);
-    out.back() = first;
+    std::vector<T> output_value(v.size() + 1);
+    output_value.back() = first;
     for (Int i = Int(v.size()) - 1; i >= 0; --i)
-        out[i] = f(v[i], out[i + 1]);
-    return out;
+        output_value[i] = f(v[i], output_value[i + 1]);
+    return output_value;
 }
 
 // 右から累積し入力を更新する。長さ n に対し f を max(n-1,0) 回呼び、それ以外の時間 O(n+1)、追加領域 O(1)。
@@ -705,12 +705,12 @@ inline Generator<std::vector<Int>> contiguous_partitions(Int n, Int k = -1) {
     Int first = k == -1 ? 1 : k, last = k == -1 ? n : k;
     for (Int count = first; count <= last; ++count)
         for (const auto &cuts : strictly_increasing_sequences(count - 1, 1, n)) {
-            std::vector<Int> out;
-            out.reserve(count + 1);
-            out.push_back(0);
-            out.insert(out.end(), cuts.begin(), cuts.end());
-            out.push_back(n);
-            co_yield out;
+            std::vector<Int> output_value;
+            output_value.reserve(count + 1);
+            output_value.push_back(0);
+            output_value.insert(output_value.end(), cuts.begin(), cuts.end());
+            output_value.push_back(n);
+            co_yield output_value;
         }
 }
 

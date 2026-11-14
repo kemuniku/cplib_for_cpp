@@ -2,7 +2,7 @@
 #include <cplib/common.hpp>
 #include <unordered_map>
 
-namespace cplib {
+namespace cplib::legacy_graph {
 // 旧版は辺番号を保持せず、無向辺の両方向を挿入時に格納する。
 template <class T, bool Static, bool Directed, bool Weighted> struct BasicGraph {
     using value_type = T;
@@ -15,7 +15,7 @@ template <class T, bool Static, bool Directed, bool Weighted> struct BasicGraph 
     std::vector<Edge> elist;
 
     // n頂点のグラフを作る。動的版O(n)、静的版O(1)。
-    explicit BasicGraph(Int n = 0, Int capacity = 0) : len(n) {
+    explicit BasicGraph(Int n = 0, Int capacity = 0) : len{n} {
         assert(n >= 0);
         if constexpr (Static) {
             capacity *= Directed ? 1 : 2;
@@ -219,11 +219,6 @@ using UnWeightedUnDirectedStaticGraph = BasicGraph<Int, true, false, false>;
 // n頂点の静的無向重みなしグラフを作る。O(1)。
 inline auto initUnWeightedUnDirectedStaticGraph(Int n, Int capacity = 0) {
     return UnWeightedUnDirectedStaticGraph(n, capacity);
-}
-
-// 頂点数を返す。O(1)。
-template <GraphTypes G> Int len(const G &g) {
-    return g.len;
 }
 
 // グラフに辺を追加する。償却O(1)、ラベル付きグラフでは期待償却O(1)。

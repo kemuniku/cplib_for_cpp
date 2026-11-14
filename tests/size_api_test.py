@@ -51,8 +51,8 @@ for header in ["hash_string", "can_reverse_hash_string"]:
     case("str/" + header, """
 RollingHash e; check(e, 0); auto s = initRollingHash("abc"); check(s, 3);
 check(s.substr(1, 1), 0); check(s.substr(1, 2), 1); check(*s.R, 3);
-HashString h = s; static_assert(std::is_same_v<decltype(h.size), Int>);
-assert(h.size == 3 && h.len() == 3);
+HashString h = s; static_assert(std::is_same_v<decltype(h.size()), Int>);
+assert(h.size() == 3 && h.size() == 3);
 """)
 case("str/trie", """
 Trie<> t; check(t, 0); t.incl("a"); check(t, 1);
@@ -65,8 +65,8 @@ t.push_back('a'); check(t, 1); t.push_front('b'); check(t, 2);
 t.pop_back(); check(t, 1); t.pop_front(); check(t, 0);
 """)
 case("geometry/polygon", """
-Polygon<Int> p; check(p, 0); p.v.push_back({1, 2}); check(p, 1);
-p.v.push_back({2, 3}); check(p, 2); p.v.clear(); check(p, 0);
+Polygon<Int> p; check(p, 0); p.push_back({1, 2}); check(p, 1);
+p.push_back({2, 3}); check(p, 2); p.clear(); check(p, 0);
 """)
 case("utils/grid_searcher", """
 GridSearcher s; check(s, 0); s.incl(1, 2); check(s, 1);
@@ -392,7 +392,7 @@ s.append(1); check(s, 1); s.append(2); check(s, 2);
 """)
 case("str/static_string", """
 auto s = toStaticString("abc"); assert(s.size() == 3 && len(s) == 3 && sz(s) == 3);
-assert((s.len)() == 3 && (cplib::len)(s) == 3);
+assert((s.size)() == 3);
 """, "#define LOCAL_TEST\n#include <cplib/str/static_string.hpp>\n#include <cplib/tmpl/sheep.hpp>\n")
 
 PREAMBLE = """
@@ -407,7 +407,6 @@ template<class T> void check(const T& value, Int expected) {{
     static_assert(std::is_same_v<decltype(value.size()), Int>);
     assert(value.size() == expected && std::size(value) == expected);
     assert(std::ranges::size(value) == expected);
-    if constexpr (requires {{ (value.len)(); }}) assert((value.len)() == expected);
 }}
 int main() {{ {body} }}
 """

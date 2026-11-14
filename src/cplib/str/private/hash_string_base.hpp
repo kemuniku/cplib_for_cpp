@@ -71,7 +71,7 @@ namespace cplib {
 // 文字列の長さとハッシュを保持する。ハッシュの衝突により異なる文字列を等しいと判定する可能性がある。
 template <bool Reverse> struct BasicHashString : detail::ReverseHashField<Reverse> {
     UInt hash = 0, bpow = 1;
-    Int size = 0;
+    Int length_ = 0;
 
     // 1要素からハッシュを作る。計算量 O(1)。
     static BasicHashString character(Int s) {
@@ -82,7 +82,7 @@ template <bool Reverse> struct BasicHashString : detail::ReverseHashField<Revers
         if constexpr (Reverse)
             out.rhash = out.hash;
         out.bpow = detail::hash_string_config<Reverse>.base;
-        out.size = 1;
+        out.length_ = 1;
         return out;
     }
 
@@ -107,13 +107,13 @@ template <bool Reverse> struct BasicHashString : detail::ReverseHashField<Revers
                 detail::hash_string_mul(tmp, detail::hash_string_config<Reverse>.base));
         }
         out.bpow = detail::hash_string_config<Reverse>.power(s.size());
-        out.size = s.size();
+        out.length_ = s.size();
         return out;
     }
 
     // 列の長さを返す。計算量 O(1)。
-    Int len() const {
-        return size;
+    Int size() const {
+        return length_;
     }
 
     // 2つのハッシュを結合する。計算量 O(1)。
@@ -125,19 +125,19 @@ template <bool Reverse> struct BasicHashString : detail::ReverseHashField<Revers
             out.rhash = detail::hash_string_modulo(
                 detail::hash_string_modulo(detail::hash_string_mul(r.rhash, l.bpow)) + l.rhash);
         out.bpow = detail::hash_string_modulo(detail::hash_string_mul(l.bpow, r.bpow));
-        out.size = l.size + r.size;
+        out.length_ = l.length_ + r.length_;
         return out;
     }
 
     // 長さとハッシュが等しいか判定する。計算量 O(1)。
     bool operator==(const BasicHashString &r) const {
-        return size == r.size && hash == r.hash;
+        return length_ == r.length_ && hash == r.hash;
     }
 
     // 同じ列をx回繰り返したハッシュを返す。計算量 O(log(x+1))。
     BasicHashString operator*(Int x) const {
         BasicHashString out, tmp = *this;
-        Int total = size * x;
+        Int total = length_ * x;
         while (x > 0) {
             if (x & 1)
                 out = out & tmp;
@@ -145,7 +145,7 @@ template <bool Reverse> struct BasicHashString : detail::ReverseHashField<Revers
                 tmp = tmp & tmp;
             x >>= 1;
         }
-        out.size = total;
+        out.length_ = total;
         return out;
     }
 
@@ -153,14 +153,14 @@ template <bool Reverse> struct BasicHashString : detail::ReverseHashField<Revers
     BasicHashString removePrefix(const BasicHashString &prefix) const
         requires(!Reverse)
     {
-        Int n = size - prefix.size;
+        Int n = length_ - prefix.length_;
         BasicHashString out;
         out.hash = detail::hash_string_modulo(
             hash + detail::hash_string_mod -
             detail::hash_string_modulo(detail::hash_string_mul(
                 prefix.hash, detail::hash_string_config<Reverse>.power(n))));
         out.bpow = detail::hash_string_config<Reverse>.power(n);
-        out.size = n;
+        out.length_ = n;
         return out;
     }
 
@@ -189,14 +189,11 @@ template <bool Reverse> struct BasicRollingHash {
         std::vector<UInt> prefixs, rprefixs;
 
         // 基底文字列の長さを返す。計算量 O(1)。
-        Int len() const {
+        Int size() const {
             return S.size();
         }
 
         // 基底文字列の長さを返す。計算量 O(1)。
-        Int size() const {
-            return len();
-        }
     };
 
     std::shared_ptr<Base> R;
@@ -227,29 +224,24 @@ template <bool Reverse> struct BasicRollingHash {
     }
 
     // ビューの長さを返す。計算量 O(1)。
-    Int len() const {
-        return r - l;
-    }
-
-    // ビューの長さを返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return r - l;
     }
 
     // i番目の文字を返す。計算量 O(1)。
     char operator[](Int i) const {
-        assert(0 <= i && i < len());
+        assert(0 <= i && i < size());
         return R->S[l + i];
     }
 
     // 末尾基準の添字で文字を返す。計算量 O(1)。
     char operator[](BackwardsIndex i) const {
-        return (*this)[len() - i.value];
+        return (*this)[size() - i.value];
     }
 
     // 半開区間[a,b)の部分文字列を返す。空区間は返り値のl = r = 0へ正規化する。計算量 O(1)。
     BasicRollingHash substr(Int a, Int b) const {
-        assert(0 <= a && a <= b && b <= len());
+        assert(0 <= a && a <= b && b <= size());
         auto out = *this;
         if (a == b)
             out.l = out.r = 0;
@@ -262,7 +254,7 @@ template <bool Reverse> struct BasicRollingHash {
 
     // 両端を含む区間のビューを返す。計算量 O(1)。
     template <class A, class B> auto operator[](ClosedSlice<A, B> s) const {
-        return substr(resolve_index(len(), s.a), resolve_index(len(), s.b) + 1);
+        return substr(resolve_index(size(), s.a), resolve_index(size(), s.b) + 1);
     }
 
     // 半開区間のハッシュを返す。長さが累乗表の範囲内なら O(1)、範囲外は O(log(長さ+1))。
@@ -276,9 +268,9 @@ template <bool Reverse> struct BasicRollingHash {
     // ビューのハッシュを作る。長さと開始位置が累乗表の範囲内なら O(1)、範囲外は O(log(基底長+1))。
     operator Hash() const {
         Hash out;
-        out.hash = gethash(0, len());
-        out.bpow = detail::hash_string_config<Reverse>.power(len());
-        out.size = len();
+        out.hash = gethash(0, size());
+        out.bpow = detail::hash_string_config<Reverse>.power(size());
+        out.length_ = size();
         if constexpr (Reverse)
             out.rhash = detail::hash_string_modulo(detail::hash_string_mul(
                 detail::hash_string_modulo(R->rprefixs[r] + detail::hash_string_mod -
@@ -289,12 +281,12 @@ template <bool Reverse> struct BasicRollingHash {
 
     // 2つのビューの長さとハッシュが等しいか判定する。計算量はgethashの2回分。
     bool operator==(const BasicRollingHash &t) const {
-        return len() == t.len() && gethash(0, len()) == t.gethash(0, t.len());
+        return size() == t.size() && gethash(0, size()) == t.gethash(0, t.size());
     }
 
     // ビューの文字列をコピーする。長さNとして O(N+1)。
     std::string to_string() const {
-        return R->S.substr(l, len());
+        return R->S.substr(l, size());
     }
 
     // 2つのビューのハッシュを結合する。計算量は各ビューのHash変換と O(1)。
@@ -310,16 +302,6 @@ template <bool Reverse> struct BasicRollingHash {
     }
 };
 
-// ハッシュの表す列の長さを返す。計算量 O(1)。
-template <bool R> Int len(const BasicHashString<R> &s) {
-    return s.len();
-}
-
-// ビューの長さを返す。計算量 O(1)。
-template <bool R> Int len(const BasicRollingHash<R> &s) {
-    return s.len();
-}
-
 // ビューのハッシュを作る。計算量はHash変換と同じ。
 template <bool R> auto toHashString(const BasicRollingHash<R> &s) {
     return BasicHashString<R>(s);
@@ -327,7 +309,7 @@ template <bool R> auto toHashString(const BasicRollingHash<R> &s) {
 
 // ハッシュを二分探索して最長共通接頭辞長を返す。短い方の長さNとして表内は O(log(N+1))、表外は O(log²(N+1))。
 template <bool R> Int LCP(const BasicRollingHash<R> &s, const BasicRollingHash<R> &t) {
-    Int ok = 0, ng = std::min(s.len(), t.len()) + 1;
+    Int ok = 0, ng = std::min(s.size(), t.size()) + 1;
     while (ng - ok > 1) {
         Int mid = (ok + ng) / 2;
         if (s.gethash(0, mid) == t.gethash(0, mid))
@@ -341,8 +323,8 @@ template <bool R> Int LCP(const BasicRollingHash<R> &s, const BasicRollingHash<R
 // ハッシュを用いて辞書順に比較する。計算量はLCPと同じ。
 template <bool R> int cmp(const BasicRollingHash<R> &s, const BasicRollingHash<R> &t) {
     Int n = LCP(s, t);
-    if (n == std::min(s.len(), t.len()))
-        return (s.len() > t.len()) - (s.len() < t.len());
+    if (n == std::min(s.size(), t.size()))
+        return (s.size() > t.size()) - (s.size() < t.size());
     return static_cast<unsigned char>(s[n]) < static_cast<unsigned char>(t[n]) ? -1 : 1;
 }
 

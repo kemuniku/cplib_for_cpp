@@ -2,7 +2,7 @@
 #include <cplib/common.hpp>
 #include <memory>
 
-namespace cplib {
+namespace cplib::legacy_avl {
 // 旧版の番兵ノード付き AVL 木。現行版とは独立した高さ管理を保持。
 template <class K> struct AvlTreeNode;
 template <class K> std::shared_ptr<AvlTreeNode<K>> get_avltree_nilnode();
@@ -28,11 +28,11 @@ template <class K> using AvlNodePtr = std::shared_ptr<AvlTreeNode<K>>;
 template <class K> AvlNodePtr<K> get_avltree_nilnode() {
     static AvlTreeNode<K> node(K{}, true);
     static AvlNodePtr<K> ptr = []() {
-        AvlNodePtr<K> out(&node, [](auto *) {});
+        AvlNodePtr<K> output_value(&node, [](auto *) {});
         node.h = node.len = 0;
-        node.l = node.r = out;
-        node.p = out;
-        return out;
+        node.l = node.r = output_value;
+        node.p = output_value;
+        return output_value;
     }();
     return ptr;
 }

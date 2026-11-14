@@ -202,7 +202,7 @@ inline Int128 pow(Int128 x, Int128 n, Int128 m) {
 }
 
 // 上位・下位64ビットのハッシュを合成する。計算量O(1)。
-inline std::size_t hash(Int128 x) {
+inline std::size_t hashValue(Int128 x) {
     auto lo = std::hash<UInt>{}(static_cast<UInt>(x));
     auto hi = std::hash<UInt>{}(static_cast<UInt>(static_cast<UInt128>(x) >> 64));
     return lo ^ (hi + 0x9e3779b97f4a7c15ULL + (lo << 6) + (lo >> 2));

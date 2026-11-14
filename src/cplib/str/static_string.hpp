@@ -122,35 +122,30 @@ template <class T> struct StaticString {
     std::int32_t l = 0, r = 0;
 
     // 部分列の長さを返す。計算量 O(1)。
-    Int len() const {
-        return Int(r) - l;
-    }
-
-    // 部分列の長さを返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return Int(r) - l;
     }
 
     // 先頭からi番目の要素を返す。計算量 O(1)。
     T operator[](Int i) const {
-        assert(0 <= i && i < len());
+        assert(0 <= i && i < size());
         return base->S[l + i];
     }
 
     // 末尾基準の添字で要素を返す。計算量 O(1)。
     T operator[](BackwardsIndex i) const {
-        return (*this)[len() - i.value];
+        return (*this)[size() - i.value];
     }
 
     // 半開区間の部分列ビューを返す。計算量 O(1)。
     StaticString substr(Int a, Int b) const {
-        assert(0 <= a && a <= b && b <= len());
+        assert(0 <= a && a <= b && b <= size());
         return {base, std::int32_t(l + a), std::int32_t(l + b)};
     }
 
     // 両端を含む区間の部分列ビューを返す。計算量 O(1)。
     template <class L, class R> StaticString operator[](ClosedSlice<L, R> s) const {
-        return substr(resolve_index(len(), s.a), resolve_index(len(), s.b) + 1);
+        return substr(resolve_index(size(), s.a), resolve_index(size(), s.b) + 1);
     }
 
     // 反転した部分列のビューを返す。基底は反転対応で構築すること。計算量 O(1)。
@@ -162,13 +157,13 @@ template <class T> struct StaticString {
     // 部分列が回文か判定する。基底は反転対応で構築すること。計算量 O(1)。
     bool isPalindrome() const {
         auto other = reversed();
-        return detail::static_lcp_range(base, l, r, other.l, other.r) == len();
+        return detail::static_lcp_range(base, l, r, other.l, other.r) == size();
     }
 
     // 部分列を文字列に変換する。要素の出力時間の合計と O(長さ+1) が必要。
     std::string to_string() const {
         std::ostringstream out;
-        for (Int i = 0; i < len(); ++i) {
+        for (Int i = 0; i < size(); ++i) {
             if constexpr (!std::is_same_v<T, char>) {
                 if (i)
                     out << ' ';
@@ -187,11 +182,6 @@ template <class T> auto toStaticString(const std::vector<T> &s, bool reversible 
 // 長さNの文字列から静的文字列と索引を作る。計算量 O(N log(N+1)+1)。
 inline auto toStaticString(const std::string &s, bool reversible = false) {
     return StaticString<char>{initStaticStringBase(s, reversible), 0, std::int32_t(s.size())};
-}
-
-// 部分列の長さを返す。計算量 O(1)。
-template <class T> Int len(const StaticString<T> &s) {
-    return s.len();
 }
 
 // 同じ基底の部分列の最長共通接頭辞長を返す。計算量 O(1)。
@@ -219,18 +209,18 @@ template <class T> Int lcs(const StaticString<T> &s, const StaticString<T> &t) {
 // 同じ基底の部分文字列を RMQ と接尾辞順位で O(1) 比較。
 template <class T> int cmp(const StaticString<T> &s, const StaticString<T> &t) {
     assert(s.base == t.base);
-    Int n = std::min(s.len(), t.len());
+    Int n = std::min(s.size(), t.size());
     if (!n || s.l == t.l)
-        return (s.len() > t.len()) - (s.len() < t.len());
+        return (s.size() > t.size()) - (s.size() < t.size());
     Int a = s.base->RSA[s.l], b = s.base->RSA[t.l];
     if (s.base->RMQ.query(std::min(a, b), std::max(a, b)) >= n)
-        return (s.len() > t.len()) - (s.len() < t.len());
+        return (s.size() > t.size()) - (s.size() < t.size());
     return a < b ? -1 : 1;
 }
 
 // 同じ基底の部分列が等しいか判定する。計算量 O(1)。
 template <class T> bool operator==(const StaticString<T> &s, const StaticString<T> &t) {
-    return s.len() == t.len() && lcp(s, t) == s.len();
+    return s.size() == t.size() && lcp(s, t) == s.size();
 }
 
 // 同じ基底の部分列を辞書順に比較する。計算量 O(1)。
@@ -240,7 +230,7 @@ template <class T> auto operator<=>(const StaticString<T> &s, const StaticString
 
 // 同じ基底の部分列が指定接頭辞で始まるか判定する。計算量 O(1)。
 template <class T> bool startsWith(const StaticString<T> &s, const StaticString<T> &prefix) {
-    return lcp(s, prefix) == prefix.len();
+    return lcp(s, prefix) == prefix.size();
 }
 
 // 部分列を文字列に変換する。要素の出力時間の合計と O(長さ+1) が必要。
@@ -264,18 +254,18 @@ template <class T> void sortStaticStrings(std::span<StaticString<T>> strings) {
         const auto &s = strings[i];
         assert(s.base == base);
         Int left = 0;
-        if (s.len()) {
+        if (s.size()) {
             Int rank = base->RSA[s.l], right = rank;
             while (left < right) {
                 Int mid = (left + right) / 2;
-                if (base->RMQ.query(mid, rank) >= s.len())
+                if (base->RMQ.query(mid, rank) >= s.size())
                     right = mid;
                 else
                     left = mid + 1;
             }
             ++left;
         }
-        keys[i] = {std::int32_t(left), std::int32_t(s.len()), i};
+        keys[i] = {std::int32_t(left), std::int32_t(s.size()), i};
     }
     for (Int field = 0; field < 2; ++field)
         for (Int shift = 0; shift <= 24; shift += 8) {

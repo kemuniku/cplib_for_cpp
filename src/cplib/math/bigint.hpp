@@ -41,28 +41,28 @@ class BigInt {
     }
 
     static BigInt addAbs(const BigInt &a, const BigInt &b) {
-        BigInt out;
-        out.sign_ = 1;
+        BigInt output_value;
+        output_value.sign_ = 1;
         Int n = std::max(a.digits_.size(), b.digits_.size());
-        out.digits_.resize(n + 1);
+        output_value.digits_.resize(n + 1);
         UInt carry = 0;
         for (Int i = 0; i < n; ++i) {
             if (i < Int(a.digits_.size()))
                 carry += a.digits_[i];
             if (i < Int(b.digits_.size()))
                 carry += b.digits_[i];
-            out.digits_[i] = carry % Base;
+            output_value.digits_[i] = carry % Base;
             carry /= Base;
         }
-        out.digits_[n] = carry;
-        out.normalize();
-        return out;
+        output_value.digits_[n] = carry;
+        output_value.normalize();
+        return output_value;
     }
 
     static BigInt subAbs(const BigInt &a, const BigInt &b) {
-        BigInt out;
-        out.sign_ = 1;
-        out.digits_.resize(a.digits_.size());
+        BigInt output_value;
+        output_value.sign_ = 1;
+        output_value.digits_.resize(a.digits_.size());
         Int borrow = 0;
         for (Int i = 0; i < Int(a.digits_.size()); ++i) {
             Int digit = Int(a.digits_[i]) - borrow;
@@ -73,44 +73,44 @@ class BigInt {
                 digit += Base;
                 borrow = 1;
             }
-            out.digits_[i] = digit;
+            output_value.digits_[i] = digit;
         }
-        out.normalize();
-        return out;
+        output_value.normalize();
+        return output_value;
     }
 
     std::vector<std::uint32_t> binaryDigits() const {
-        std::vector<std::uint32_t> out;
+        std::vector<std::uint32_t> output_value;
         for (Int i = Int(digits_.size()) - 1; i >= 0; --i) {
             UInt carry = digits_[i];
-            for (auto &d : out) {
+            for (auto &d : output_value) {
                 UInt value = UInt(d) * Base + carry;
                 d = std::uint32_t(value);
                 carry = value >> 32;
             }
             if (carry)
-                out.push_back(carry);
+                output_value.push_back(carry);
         }
-        return out;
+        return output_value;
     }
 
     static BigInt fromBinary(const std::vector<std::uint32_t> &digits) {
-        BigInt out;
-        out.sign_ = 1;
+        BigInt output_value;
+        output_value.sign_ = 1;
         for (Int i = Int(digits.size()) - 1; i >= 0; --i) {
             UInt carry = digits[i];
-            for (auto &d : out.digits_) {
+            for (auto &d : output_value.digits_) {
                 UInt value = (UInt(d) << 32) + carry;
                 d = value % Base;
                 carry = value / Base;
             }
             while (carry) {
-                out.digits_.push_back(carry % Base);
+                output_value.digits_.push_back(carry % Base);
                 carry /= Base;
             }
         }
-        out.normalize();
-        return out;
+        output_value.normalize();
+        return output_value;
     }
 
     static void complement(std::vector<std::uint32_t> &digits) {
@@ -142,67 +142,67 @@ class BigInt {
         bool negative = left.back() >> 31;
         if (negative)
             complement(left);
-        auto out = fromBinary(left);
+        auto output_value = fromBinary(left);
         if (negative)
-            out.sign_ = -out.sign_;
-        return out;
+            output_value.sign_ = -output_value.sign_;
+        return output_value;
     }
 
     // 10^9進の筆算乗算。O(nm)。
     static BigInt mulSchoolbook(const BigInt &a, const BigInt &b) {
-        BigInt out;
-        out.sign_ = a.sign_ * b.sign_;
-        out.digits_.resize(a.digits_.size() + b.digits_.size());
+        BigInt output_value;
+        output_value.sign_ = a.sign_ * b.sign_;
+        output_value.digits_.resize(a.digits_.size() + b.digits_.size());
         for (std::size_t i = 0; i < a.digits_.size(); ++i) {
             UInt carry = 0;
             for (std::size_t j = 0; j < b.digits_.size(); ++j) {
-                UInt digit = UInt(out.digits_[i + j]) + UInt(a.digits_[i]) * b.digits_[j] + carry;
-                out.digits_[i + j] = digit % Base;
+                UInt digit = UInt(output_value.digits_[i + j]) + UInt(a.digits_[i]) * b.digits_[j] + carry;
+                output_value.digits_[i + j] = digit % Base;
                 carry = digit / Base;
             }
-            out.digits_[i + b.digits_.size()] = carry;
+            output_value.digits_[i + b.digits_.size()] = carry;
         }
-        out.normalize();
-        return out;
+        output_value.normalize();
+        return output_value;
     }
 
     static std::vector<std::uint32_t> convolutionDigits(const std::vector<std::uint32_t> &a,
                                                         const std::vector<std::uint32_t> &b,
                                                         std::uint32_t p, std::uint32_t root) {
         auto length = a.size() + b.size() - 1, size = std::bit_ceil(length);
-        std::vector<std::uint32_t> out(size);
-        detail::avx2_ntt::convolution_ntt_friendly(out.data(), a.data(), a.size(), b.data(),
+        std::vector<std::uint32_t> output_value(size);
+        detail::avx2_ntt::convolution_ntt_friendly(output_value.data(), a.data(), a.size(), b.data(),
                                                    b.size(), size, p, root, false);
-        out.resize(length);
-        return out;
+        output_value.resize(length);
+        return output_value;
     }
 
     template <int D> static std::vector<std::uint32_t> splitNttDigits(const BigInt &x) {
         constexpr UInt base = D == 6 ? 1000000 : 100000;
-        std::vector<std::uint32_t> out((x.digits_.size() * 9 + D - 1) / D);
+        std::vector<std::uint32_t> output_value((x.digits_.size() * 9 + D - 1) / D);
         UInt value = 0, scale = 1;
         std::size_t position = 0;
         for (auto digit : x.digits_) {
             value += UInt(digit) * scale;
             scale *= Base;
             while (scale >= base) {
-                out[position++] = value % base;
+                output_value[position++] = value % base;
                 value /= base;
                 scale /= base;
             }
         }
         if (scale > 1)
-            out[position] = value;
-        return out;
+            output_value[position] = value;
+        return output_value;
     }
 
     template <int D>
     static BigInt restoreNttProduct(const std::vector<std::uint32_t> &c1,
                                     const std::vector<std::uint32_t> &c2, Int length, int sign) {
         constexpr UInt base = D == 6 ? 1000000 : 100000;
-        BigInt out;
-        out.sign_ = sign;
-        out.digits_.resize(length);
+        BigInt output_value;
+        output_value.sign_ = sign;
+        output_value.digits_.resize(length);
         UInt carry = 0, value = 0, scale = 1;
         Int position = 0;
         auto append = [&]() {
@@ -210,7 +210,7 @@ class BigInt {
             carry /= base;
             scale *= base;
             if (scale >= Base) {
-                out.digits_[position++] = value % Base;
+                output_value.digits_[position++] = value % Base;
                 value /= Base;
                 scale /= Base;
             }
@@ -223,9 +223,9 @@ class BigInt {
         while (carry)
             append();
         if (value)
-            out.digits_[position] = value;
-        out.normalize();
-        return out;
+            output_value.digits_[position] = value;
+        output_value.normalize();
+        return output_value;
     }
 
     template <int D> static BigInt mulNtt(const BigInt &a, const BigInt &b) {
@@ -236,32 +236,32 @@ class BigInt {
     }
 
     static BigInt mulAbsSmall(const BigInt &x, std::uint32_t y) {
-        BigInt out;
-        out.sign_ = 1;
-        out.digits_.resize(x.digits_.size() + 1);
+        BigInt output_value;
+        output_value.sign_ = 1;
+        output_value.digits_.resize(x.digits_.size() + 1);
         UInt carry = 0;
         for (std::size_t i = 0; i < x.digits_.size(); ++i) {
             UInt digit = UInt(x.digits_[i]) * y + carry;
-            out.digits_[i] = digit % Base;
+            output_value.digits_[i] = digit % Base;
             carry = digit / Base;
         }
-        out.digits_.back() = carry;
-        out.normalize();
-        return out;
+        output_value.digits_.back() = carry;
+        output_value.normalize();
+        return output_value;
     }
 
     static std::pair<BigInt, std::uint32_t> divAbsSmall(const BigInt &x, std::uint32_t y) {
-        BigInt out;
-        out.sign_ = 1;
-        out.digits_.resize(x.digits_.size());
+        BigInt output_value;
+        output_value.sign_ = 1;
+        output_value.digits_.resize(x.digits_.size());
         UInt rem = 0;
         for (Int i = Int(x.digits_.size()) - 1; i >= 0; --i) {
             UInt digit = rem * Base + x.digits_[i];
-            out.digits_[i] = digit / y;
+            output_value.digits_[i] = digit / y;
             rem = digit % y;
         }
-        out.normalize();
-        return {std::move(out), std::uint32_t(rem)};
+        output_value.normalize();
+        return {std::move(output_value), std::uint32_t(rem)};
     }
 
     static BigIntDivision divmodSchoolbook(const BigInt &, const BigInt &);
@@ -306,28 +306,28 @@ class BigInt {
     static BigInt shiftLeft(const BigInt &x, Int count) {
         if (x.isZero())
             return {};
-        BigInt out;
-        out.sign_ = x.sign_;
-        out.digits_.resize(x.digits_.size() + count);
-        std::copy(x.digits_.begin(), x.digits_.end(), out.digits_.begin() + count);
-        return out;
+        BigInt output_value;
+        output_value.sign_ = x.sign_;
+        output_value.digits_.resize(x.digits_.size() + count);
+        std::copy(x.digits_.begin(), x.digits_.end(), output_value.digits_.begin() + count);
+        return output_value;
     }
 
     static BigInt shiftRight(const BigInt &x, Int count) {
         if (Int(x.digits_.size()) <= count)
             return {};
-        BigInt out;
-        out.sign_ = x.sign_;
-        out.digits_.assign(x.digits_.begin() + count, x.digits_.end());
-        return out;
+        BigInt output_value;
+        output_value.sign_ = x.sign_;
+        output_value.digits_.assign(x.digits_.begin() + count, x.digits_.end());
+        return output_value;
     }
 
     static BigInt basePower(Int n) {
-        BigInt out;
-        out.sign_ = 1;
-        out.digits_.resize(n + 1);
-        out.digits_[n] = 1;
-        return out;
+        BigInt output_value;
+        output_value.sign_ = 1;
+        output_value.digits_.resize(n + 1);
+        output_value.digits_[n] = 1;
+        return output_value;
     }
 
     static BigInt reciprocalAbs(const BigInt &);
@@ -408,17 +408,17 @@ public:
 
     // 絶対値を返す。計算量 O(n)。
     BigInt abs() const {
-        auto out = *this;
-        if (out.sign_ < 0)
-            out.sign_ = 1;
-        return out;
+        auto output_value = *this;
+        if (output_value.sign_ < 0)
+            output_value.sign_ = 1;
+        return output_value;
     }
 
     // 符号反転した値を返す。計算量 O(n)。
     BigInt operator-() const {
-        auto out = *this;
-        out.sign_ = -out.sign_;
-        return out;
+        auto output_value = *this;
+        output_value.sign_ = -output_value.sign_;
+        return output_value;
     }
 
     // 値を複製する。計算量 O(n)。
@@ -440,23 +440,23 @@ public:
             "00010203040506070809101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899";
         auto top = std::to_string(digits_.back());
         Int signLen = sign_ < 0;
-        std::string out((digits_.size() - 1) * 9 + top.size() + signLen, '\0');
+        std::string output_value((digits_.size() - 1) * 9 + top.size() + signLen, '\0');
         if (signLen)
-            out[0] = '-';
-        std::copy(top.begin(), top.end(), out.begin() + signLen);
-        Int pos = out.size();
+            output_value[0] = '-';
+        std::copy(top.begin(), top.end(), output_value.begin() + signLen);
+        Int pos = output_value.size();
         for (std::size_t i = 0; i + 1 < digits_.size(); ++i) {
             auto digit = digits_[i];
             for (int j = 0; j < 4; ++j) {
                 Int pair = (digit % 100) * 2;
-                out[pos - 1] = pairs[pair + 1];
-                out[pos - 2] = pairs[pair];
+                output_value[pos - 1] = pairs[pair + 1];
+                output_value[pos - 2] = pairs[pair];
                 pos -= 2;
                 digit /= 100;
             }
-            out[--pos] = char('0' + digit);
+            output_value[--pos] = char('0' + digit);
         }
-        return out;
+        return output_value;
     }
 
     // 大小を比較し -1, 0, 1 を返す。計算量 O(n)。
@@ -480,18 +480,18 @@ public:
             return b;
         if (!b.sign_)
             return a;
-        BigInt out;
+        BigInt output_value;
         if (a.sign_ == b.sign_) {
-            out = addAbs(a, b);
-            out.sign_ = a.sign_;
+            output_value = addAbs(a, b);
+            output_value.sign_ = a.sign_;
         } else if (cmpAbs(a, b) >= 0) {
-            out = subAbs(a, b);
-            out.sign_ *= a.sign_;
+            output_value = subAbs(a, b);
+            output_value.sign_ *= a.sign_;
         } else {
-            out = subAbs(b, a);
-            out.sign_ *= b.sign_;
+            output_value = subAbs(b, a);
+            output_value.sign_ *= b.sign_;
         }
-        return out;
+        return output_value;
     }
 
     // 差を返す。計算量 O(n)。
@@ -542,15 +542,15 @@ public:
             return *this;
         auto digits = binaryDigits();
         Int words = shift / 32, bits = shift % 32;
-        std::vector<std::uint32_t> out(digits.size() + words + 1);
+        std::vector<std::uint32_t> output_value(digits.size() + words + 1);
         UInt carry = 0;
         for (std::size_t i = 0; i < digits.size(); ++i) {
             UInt value = (UInt(digits[i]) << bits) | carry;
-            out[i + words] = std::uint32_t(value);
+            output_value[i + words] = std::uint32_t(value);
             carry = value >> 32;
         }
-        out[digits.size() + words] = carry;
-        auto result = fromBinary(out);
+        output_value[digits.size() + words] = carry;
+        auto result = fromBinary(output_value);
         result.sign_ *= sign_;
         return result;
     }
@@ -569,14 +569,14 @@ public:
         for (Int i = 0; i < words; ++i)
             discarded |= digits[i] != 0;
         discarded |= (UInt(digits[words]) & ((UInt(1) << bits) - 1)) != 0;
-        std::vector<std::uint32_t> out(digits.size() - words);
-        for (std::size_t i = 0; i < out.size(); ++i) {
+        std::vector<std::uint32_t> output_value(digits.size() - words);
+        for (std::size_t i = 0; i < output_value.size(); ++i) {
             UInt value = UInt(digits[i + words]) >> bits;
             if (bits && i + words + 1 < digits.size())
                 value |= UInt(digits[i + words + 1]) << (32 - bits);
-            out[i] = std::uint32_t(value);
+            output_value[i] = std::uint32_t(value);
         }
-        auto result = fromBinary(out);
+        auto result = fromBinary(output_value);
         if (sign_ < 0) {
             if (discarded)
                 result = result + BigInt(1);
@@ -649,15 +649,15 @@ public:
     BigInt pow(Int exponent) const {
         if (exponent < 0)
             throw std::invalid_argument("多倍長整数の指数は非負整数で指定してください");
-        BigInt out = 1, base = *this;
+        BigInt output_value = 1, base = *this;
         while (exponent) {
             if (exponent & 1)
-                out *= base;
+                output_value *= base;
             exponent >>= 1;
             if (exponent)
                 base *= base;
         }
-        return out;
+        return output_value;
     }
 
     // Intに変換し、範囲外ならstd::overflow_errorを送出する。計算量 O(n)。
@@ -679,10 +679,10 @@ public:
 
     // 格納桁からハッシュ値を返す。計算量 O(n)。
     std::size_t hash() const {
-        std::size_t out = std::hash<int>{}(sign_);
+        std::size_t output_value = std::hash<int>{}(sign_);
         for (auto d : digits_)
-            out ^= std::hash<std::uint32_t>{}(d) + 0x9e3779b97f4a7c15ULL + (out << 6) + (out >> 2);
-        return out;
+            output_value ^= std::hash<std::uint32_t>{}(d) + 0x9e3779b97f4a7c15ULL + (output_value << 6) + (output_value >> 2);
+        return output_value;
     }
 
     // 十進文字列として出力する。計算量 O(n)。
@@ -694,10 +694,10 @@ public:
 inline BigIntDivision BigInt::divmodSchoolbook(const BigInt &x, const BigInt &y) {
     if (!y.sign_)
         throw std::domain_error("多倍長整数を 0 で割ることはできません");
-    BigIntDivision out;
+    BigIntDivision output_value;
     if (cmpAbs(x, y) < 0) {
-        out.remainder = x;
-        return out;
+        output_value.remainder = x;
+        return output_value;
     }
     if (x.digits_.size() <= 2) {
         UInt numerator = x.digits_[0], denominator = y.digits_[0];
@@ -705,31 +705,31 @@ inline BigIntDivision BigInt::divmodSchoolbook(const BigInt &x, const BigInt &y)
             numerator += UInt(x.digits_[1]) * Base;
         if (y.digits_.size() == 2)
             denominator += UInt(y.digits_[1]) * Base;
-        out.quotient = BigInt(numerator / denominator);
-        out.remainder = BigInt(numerator % denominator);
-        out.quotient.sign_ *= x.sign_ * y.sign_;
-        out.remainder.sign_ *= x.sign_;
-        return out;
+        output_value.quotient = BigInt(numerator / denominator);
+        output_value.remainder = BigInt(numerator % denominator);
+        output_value.quotient.sign_ *= x.sign_ * y.sign_;
+        output_value.remainder.sign_ *= x.sign_;
+        return output_value;
     }
     if (y.digits_.size() == 1) {
         if (y.digits_[0] == 1) {
-            out.quotient = x;
-            out.quotient.sign_ *= y.sign_;
-            return out;
+            output_value.quotient = x;
+            output_value.quotient.sign_ *= y.sign_;
+            return output_value;
         }
         auto [q, r] = divAbsSmall(x, y.digits_[0]);
-        out.quotient = std::move(q);
-        out.quotient.sign_ *= x.sign_ * y.sign_;
-        out.remainder = BigInt(r);
-        out.remainder.sign_ *= x.sign_;
-        return out;
+        output_value.quotient = std::move(q);
+        output_value.quotient.sign_ *= x.sign_ * y.sign_;
+        output_value.remainder = BigInt(r);
+        output_value.remainder.sign_ *= x.sign_;
+        return output_value;
     }
     auto factor = std::uint32_t(Base / (UInt(y.digits_.back()) + 1));
     BigInt dividend = mulAbsSmall(x, factor), divisor = mulAbsSmall(y, factor);
     Int n = divisor.digits_.size(), qlen = Int(x.digits_.size()) - n + 1;
     dividend.digits_.resize(x.digits_.size() + 1);
-    out.quotient.sign_ = x.sign_ * y.sign_;
-    out.quotient.digits_.resize(qlen);
+    output_value.quotient.sign_ = x.sign_ * y.sign_;
+    output_value.quotient.digits_.resize(qlen);
     for (Int j = qlen - 1; j >= 0; --j) {
         UInt top = UInt(dividend.digits_[j + n]) * Base + dividend.digits_[j + n - 1],
              estimate = std::min(Base - 1, top / divisor.digits_[n - 1]),
@@ -762,14 +762,14 @@ inline BigIntDivision BigInt::divmodSchoolbook(const BigInt &x, const BigInt &y)
             last += Int(carry);
         }
         dividend.digits_[j + n] = last;
-        out.quotient.digits_[j] = estimate;
+        output_value.quotient.digits_[j] = estimate;
     }
-    out.quotient.normalize();
+    output_value.quotient.normalize();
     dividend.digits_.resize(n);
     dividend.normalize();
-    out.remainder = divAbsSmall(dividend, factor).first;
-    out.remainder.sign_ *= x.sign_;
-    return out;
+    output_value.remainder = divAbsSmall(dividend, factor).first;
+    output_value.remainder.sign_ *= x.sign_;
+    return output_value;
 }
 
 // 上位半分にガード2桁を加え、B^(2m)/xの下側・誤差2未満の逆数を求める。
@@ -791,18 +791,18 @@ inline BigInt BigInt::reciprocalAbs(const BigInt &x) {
 
 inline BigIntDivision BigInt::correctDivisionProduct(const BigInt &x, const BigInt &y,
                                                      BigInt quotient, const BigInt &product) {
-    BigIntDivision out{std::move(quotient), x - product};
-    if (out.remainder.sign_ < 0) {
-        out.quotient -= 1;
-        out.remainder += y;
+    BigIntDivision output_value{std::move(quotient), x - product};
+    if (output_value.remainder.sign_ < 0) {
+        output_value.quotient -= 1;
+        output_value.remainder += y;
     }
     for (int i = 0; i < 3; ++i) {
-        if (cmpAbs(out.remainder, y) < 0)
+        if (cmpAbs(output_value.remainder, y) < 0)
             break;
-        out.quotient += 1;
-        out.remainder -= y;
+        output_value.quotient += 1;
+        output_value.remainder -= y;
     }
-    return out;
+    return output_value;
 }
 
 // 長い被除数を除数長のブロックに分け、逆数と固定側NTTを再利用する。
@@ -814,20 +814,20 @@ inline BigIntDivision BigInt::divmodBlocks(const BigInt &x, const BigInt &y) {
         inverseMultiplier = FixedMultiplier(inverse, m + 1);
         divisorMultiplier = FixedMultiplier(y, m);
     }
-    BigIntDivision out;
-    out.quotient.sign_ = 1;
-    out.quotient.digits_.resize(n - m + 1);
+    BigIntDivision output_value;
+    output_value.quotient.sign_ = 1;
+    output_value.quotient.digits_.resize(n - m + 1);
     for (Int block = (n - 1) / m; block >= 0; --block) {
         Int offset = block * m, width = std::min(m, n - offset);
         BigInt dividend;
         dividend.sign_ = 1;
-        dividend.digits_.resize(width + out.remainder.digits_.size());
+        dividend.digits_.resize(width + output_value.remainder.digits_.size());
         std::copy_n(x.digits_.begin() + offset, width, dividend.digits_.begin());
-        std::copy(out.remainder.digits_.begin(), out.remainder.digits_.end(),
+        std::copy(output_value.remainder.digits_.begin(), output_value.remainder.digits_.end(),
                   dividend.digits_.begin() + width);
         dividend.normalize();
         if (cmpAbs(dividend, y) < 0) {
-            out.remainder = std::move(dividend);
+            output_value.remainder = std::move(dividend);
             continue;
         }
         auto quotient =
@@ -835,19 +835,19 @@ inline BigIntDivision BigInt::divmodBlocks(const BigInt &x, const BigInt &y) {
         auto division =
             correctDivisionProduct(dividend, y, quotient, divisorMultiplier.multiply(quotient, y));
         std::copy(division.quotient.digits_.begin(), division.quotient.digits_.end(),
-                  out.quotient.digits_.begin() + offset);
-        out.remainder = std::move(division.remainder);
+                  output_value.quotient.digits_.begin() + offset);
+        output_value.remainder = std::move(division.remainder);
     }
-    out.quotient.normalize();
-    return out;
+    output_value.quotient.normalize();
+    return output_value;
 }
 
 inline BigIntDivision BigInt::divmodNewton(const BigInt &x, const BigInt &y) {
     auto dividend = x.abs(), divisor = y.abs();
     Int n = dividend.digits_.size(), m = divisor.digits_.size();
-    BigIntDivision out;
+    BigIntDivision output_value;
     if (n > 2 * m)
-        out = divmodBlocks(dividend, divisor);
+        output_value = divmodBlocks(dividend, divisor);
     else {
         Int cut = std::max(Int(0), m - (n - m + 2));
         auto high = shiftRight(divisor, cut);
@@ -855,11 +855,11 @@ inline BigIntDivision BigInt::divmodNewton(const BigInt &x, const BigInt &y) {
         auto inverse = reciprocalAbs(shiftLeft(high, precision - (m - cut)));
         auto quotient =
             quotientFromReciprocal(shiftRight(dividend, cut), inverse, m - cut, precision);
-        out = correctDivisionProduct(dividend, divisor, quotient, quotient * divisor);
+        output_value = correctDivisionProduct(dividend, divisor, quotient, quotient * divisor);
     }
-    out.quotient.sign_ *= x.sign_ * y.sign_;
-    out.remainder.sign_ *= x.sign_;
-    return out;
+    output_value.quotient.sign_ *= x.sign_ * y.sign_;
+    output_value.remainder.sign_ *= x.sign_;
+    return output_value;
 }
 
 // 0方向に丸めた商と被除数と同符号の余りを返し、0除算にはstd::domain_errorを送出する。
@@ -875,12 +875,12 @@ inline BigIntDivision BigInt::divmodTrunc(const BigInt &x, const BigInt &y) {
 
 // Pythonと同じ床除算の商と除数と同符号の余りを返す。0除算はstd::domain_error。
 inline BigIntDivision BigInt::divmod(const BigInt &x, const BigInt &y) {
-    auto out = divmodTrunc(x, y);
-    if (!out.remainder.isZero() && x.sign_ != y.sign_) {
-        out.quotient -= 1;
-        out.remainder += y;
+    auto output_value = divmodTrunc(x, y);
+    if (!output_value.remainder.isZero() && x.sign_ != y.sign_) {
+        output_value.quotient -= 1;
+        output_value.remainder += y;
     }
-    return out;
+    return output_value;
 }
 
 inline BigInt operator/(const BigInt &x, const BigInt &y) {
@@ -963,7 +963,7 @@ inline Int toInt(const BigInt &x) {
 }
 
 // ハッシュ値を返す。桁数 n に対し O(n)。
-inline std::size_t hash(const BigInt &x) {
+inline std::size_t hashValue(const BigInt &x) {
     return x.hash();
 }
 
@@ -992,20 +992,20 @@ inline BigInt lcm(const BigInt &x, const BigInt &y) {
 
 // 10進数の_biリテラルを多倍長整数に変換する。桁区切りの_も使用できる。計算量 O(文字数)。
 inline BigInt operator""_bi(const char *s) {
-    std::string out;
+    std::string output_value;
     for (; *s; ++s)
         if (*s != '\'' && *s != '_')
-            out += *s;
-    return BigInt(out);
+            output_value += *s;
+    return BigInt(output_value);
 }
 
 // 文字列リテラルを多倍長整数に変換する。計算量 O(n)。
 inline BigInt operator""_bi(const char *s, std::size_t n) {
-    std::string out;
+    std::string output_value;
     for (std::size_t i = 0; i < n; ++i)
         if (s[i] != '\'' && s[i] != '_')
-            out += s[i];
-    return BigInt(out);
+            output_value += s[i];
+    return BigInt(output_value);
 }
 }
 

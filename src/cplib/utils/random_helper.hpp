@@ -106,10 +106,10 @@ inline std::vector<Int> random_parenthesis_sequence(Int n) {
 
 // 長さnの括弧列を文字列として生成する。期待 O(n)。
 inline std::string random_parenthesis_string(Int n) {
-    std::string out;
+    std::string output_value;
     for (Int x : random_parenthesis_sequence(n))
-        out += x == 1 ? '(' : ')';
-    return out;
+        output_value += x == 1 ? '(' : ')';
+    return output_value;
 }
 
 // 括弧列から二分木を復元
@@ -191,7 +191,7 @@ template <class L, class R> Int random_prime(ClosedSlice<L, R> slice) {
 // 区間内の素数をn個生成する。区間長M、総試行回数R、素数判定の費用Tとして期待 O((M+R)(T+1)+n)。
 template <class L, class R>
 std::vector<Int> random_prime_sequence(Int n, ClosedSlice<L, R> slice, bool unique = false) {
-    std::vector<Int> out;
+    std::vector<Int> output_value;
     if (unique) {
         if (Int(slice.b) - Int(slice.a) + 1 <= 1000000000) {
             std::vector<Int> primes;
@@ -199,19 +199,19 @@ std::vector<Int> random_prime_sequence(Int n, ClosedSlice<L, R> slice, bool uniq
                 if (isprime(x))
                     primes.push_back(x);
             for (Int i : randomseq(n, closed_slice(Int(0), Int(primes.size()) - 1), true))
-                out.push_back(primes[i]);
+                output_value.push_back(primes[i]);
         } else {
             std::unordered_set<Int> seen;
-            while (Int(out.size()) != n) {
+            while (Int(output_value.size()) != n) {
                 Int x = random_prime(slice);
                 if (seen.insert(x).second)
-                    out.push_back(x);
+                    output_value.push_back(x);
             }
         }
     } else
         for (Int i = 0; i < n; ++i)
-            out.push_back(random_prime(slice));
-    return out;
+            output_value.push_back(random_prime(slice));
+    return output_value;
 }
 
 // ランダムな単純グラフを作成。
@@ -309,31 +309,31 @@ inline UnWeightedUnDirectedGraph random_connected_graph(Int n, Int m) {
 inline std::vector<Int> random_01sequence(Int n, Int one) {
     assert(0 <= one && one <= n);
     auto indices = randomseq(one, closed_slice(Int(0), n - 1), true);
-    std::vector<Int> out(n);
+    std::vector<Int> output_value(n);
     for (Int i : indices)
-        out[i] = 1;
-    return out;
+        output_value[i] = 1;
+    return output_value;
 }
 
 // sliceに含まれる文字からなる長さnの文字列を一様ランダムに返す
 // 指定範囲の文字で長さnの文字列を生成する。期待 O(n)。
 inline std::string random_string(Int n, ClosedSlice<char, char> slice) {
     assert(n >= 0 && slice.a <= slice.b);
-    std::string out;
-    out.reserve(n);
+    std::string output_value;
+    output_value.reserve(n);
     for (Int i = 0; i < n; ++i)
-        out += char(draw(static_cast<unsigned char>(slice.a), static_cast<unsigned char>(slice.b)));
-    return out;
+        output_value += char(draw(static_cast<unsigned char>(slice.a), static_cast<unsigned char>(slice.b)));
+    return output_value;
 }
 
 // alphabetの位置を一様に選んで長さnの文字列を返す。重複文字の重みも保持する。
 // 指定した文字列から文字を選び長さnの文字列を生成する。期待 O(n)。
 inline std::string random_string(Int n, const std::string &alphabet) {
     assert(n >= 0 && !alphabet.empty());
-    std::string out;
-    out.reserve(n);
+    std::string output_value;
+    output_value.reserve(n);
     for (Int i = 0; i < n; ++i)
-        out += alphabet[draw(0, alphabet.size() - 1)];
-    return out;
+        output_value += alphabet[draw(0, alphabet.size() - 1)];
+    return output_value;
 }
 }

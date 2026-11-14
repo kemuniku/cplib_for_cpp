@@ -79,12 +79,12 @@ template <Modint T>
 std::vector<T> powerProjectionDiagonal(const std::vector<T> &f, const std::vector<T> &g, Int m) {
     assert(!f.empty() && m >= 0);
     if (f[0].val() == 0) {
-        std::vector<T> out(m + 1);
-        out[0] = coefficient(g, 0);
+        std::vector<T> output_value(m + 1);
+        output_value[0] = coefficient(g, 0);
         T linear = coefficient(f, 1);
         for (Int i = 1; i <= m; ++i)
-            out[i] = out[i - 1] * linear;
-        return out;
+            output_value[i] = output_value[i - 1] * linear;
+        return output_value;
     }
     Int size = m + 1;
     auto base = prefix(f, size);
@@ -93,9 +93,9 @@ std::vector<T> powerProjectionDiagonal(const std::vector<T> &f, const std::vecto
     std::vector<T> shifted(size);
     for (Int i = 1; i <= m; ++i)
         shifted[i] = inverse[i - 1];
-    auto out = powerProjection(shifted, weight, m);
-    std::reverse(out.begin(), out.end());
-    return out;
+    auto output_value = powerProjection(shifted, weight, m);
+    std::reverse(output_value.begin(), output_value.end());
+    return output_value;
 }
 
 // g=1として対角冪射影を求める。計算量は3引数版と同じ。

@@ -27,12 +27,12 @@ template <class T> Int angle(Point<T> p, Point<T> q) {
 
 // 2直線の方向ベクトルのなす角を八方位で返す。計算量 O(1)。
 template <class T> Int angle(const Line<T> &a, const Line<T> &b) {
-    return angle(vector(a), vector(b));
+    return angle(toVector(a), toVector(b));
 }
 
 // 2線分の方向ベクトルのなす角を八方位で返す。計算量 O(1)。
 template <class T> Int angle(const Segment<T> &a, const Segment<T> &b) {
-    return angle(vector(a), vector(b));
+    return angle(toVector(a), toVector(b));
 }
 
 // 直線と線分の方向ベクトルのなす角を八方位で返す。計算量 O(1)。

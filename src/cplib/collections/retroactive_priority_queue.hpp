@@ -207,13 +207,8 @@ public:
     }
 
     // 全操作の実行後に残る実要素数を返します。O(1)。
-    Int len() const {
-        return count_;
-    }
-
-    // 全操作実行後に残る実要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return count_;
     }
 
     // 全操作の実行後に残る値の総和をT型で返します。O(1)。

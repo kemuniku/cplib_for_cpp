@@ -32,8 +32,8 @@ Point<T> cross_point(const Line<T> &a, const Line<T> &b) {
     assert(intersect(a, b));
     if (is_parallel(a, b))
         return a.s;
-    T d1 = cross(vector(a), vector(b)), d2 = cross(vector(a), a.t - b.s);
-    return b.s + vector(b) * (d2 / d1);
+    T d1 = cross(toVector(a), toVector(b)), d2 = cross(toVector(a), a.t - b.s);
+    return b.s + toVector(b) * (d2 / d1);
 }
 
 // 2線分を延長した直線の交点を返す。計算量 O(1)。

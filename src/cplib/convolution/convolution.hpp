@@ -24,24 +24,24 @@ inline std::vector<std::uint32_t> convolutionNttFriendlyU32(const std::vector<st
         return {};
     std::size_t deg = f.size() + g.size() - 1;
     if (std::min(f.size(), g.size()) <= 60) {
-        std::vector<std::uint32_t> out(deg);
+        std::vector<std::uint32_t> output_value(deg);
         if (f.size() > g.size()) {
             for (std::size_t i = 0; i < f.size(); ++i)
                 for (std::size_t j = 0; j < g.size(); ++j)
-                    out[i + j] = (out[i + j] + UInt(f[i]) * g[j]) % modulus;
+                    output_value[i + j] = (output_value[i + j] + UInt(f[i]) * g[j]) % modulus;
         } else {
             for (std::size_t j = 0; j < g.size(); ++j)
                 for (std::size_t i = 0; i < f.size(); ++i)
-                    out[i + j] = (out[i + j] + UInt(f[i]) * g[j]) % modulus;
+                    output_value[i + j] = (output_value[i + j] + UInt(f[i]) * g[j]) % modulus;
         }
-        return out;
+        return output_value;
     }
     std::size_t size = std::bit_ceil(deg);
-    std::vector<std::uint32_t> out(size);
-    avx2_ntt::convolution_ntt_friendly(out.data(), f.data(), f.size(), g.data(), g.size(), size,
+    std::vector<std::uint32_t> output_value(size);
+    avx2_ntt::convolution_ntt_friendly(output_value.data(), f.data(), f.size(), g.data(), g.size(), size,
                                        modulus, primitiveRoot, false);
-    out.resize(deg);
-    return out;
+    output_value.resize(deg);
+    return output_value;
 }
 
 template <class T>
@@ -61,29 +61,29 @@ std::vector<T> convolutionArbitraryMod(const std::vector<T> &f, const std::vecto
     };
     auto c1 = run(M1, 11), c2 = run(M2, 3), c3 = run(M3, 3);
     UInt m1Target = M1 % target, m12Target = M12 % target;
-    std::vector<T> out(c1.size());
-    for (std::size_t i = 0; i < out.size(); ++i) {
+    std::vector<T> output_value(c1.size());
+    for (std::size_t i = 0; i < output_value.size(); ++i) {
         UInt r1 = c1[i], t2 = (UInt(c2[i]) + M2 - r1 % M2) % M2 * inv1 % M2,
              r12 = (r1 + (M1 % M3) * t2) % M3, t3 = (UInt(c3[i]) + M3 - r12) % M3 * inv12 % M3;
-        out[i] = T((r1 % target + m1Target * t2 % target + m12Target * t3 % target) % target);
+        output_value[i] = T((r1 % target + m1Target * t2 % target + m12Target * t3 % target) % target);
     }
-    return out;
+    return output_value;
 }
 
 // memcpy経由でオブジェクト表現を受け渡し、strict aliasing違反を避ける。
 template <class T> auto modintRawWords(const std::vector<T> &f) {
     static_assert(sizeof(T) == sizeof(std::uint32_t) && std::is_trivially_copyable_v<T>);
-    std::vector<std::uint32_t> out(f.size());
+    std::vector<std::uint32_t> output_value(f.size());
     if (!f.empty())
-        std::memcpy(out.data(), f.data(), sizeof(T) * f.size());
-    return out;
+        std::memcpy(output_value.data(), f.data(), sizeof(T) * f.size());
+    return output_value;
 }
 
 template <class T> auto modintFromRawWords(const std::vector<std::uint32_t> &f, std::size_t size) {
-    std::vector<T> out(size);
+    std::vector<T> output_value(size);
     for (std::size_t i = 0; i < size; ++i)
-        out[i] = std::bit_cast<T>(f[i]);
-    return out;
+        output_value[i] = std::bit_cast<T>(f[i]);
+    return output_value;
 }
 }
 
@@ -103,11 +103,11 @@ std::vector<T> convolution(const std::vector<T> &f, const std::vector<T> &g) {
     std::size_t deg = f.size() + g.size() - 1, size = std::bit_ceil(deg);
     if (detail::isNttFriendlyModulus(T::umod(), size)) {
         auto a = detail::modintRawWords(f), b = detail::modintRawWords(g);
-        std::vector<std::uint32_t> out(size);
-        detail::avx2_ntt::convolution_ntt_friendly(out.data(), a.data(), a.size(), b.data(),
+        std::vector<std::uint32_t> output_value(size);
+        detail::avx2_ntt::convolution_ntt_friendly(output_value.data(), a.data(), a.size(), b.data(),
                                                    b.size(), size, T::umod(), 0,
                                                    MontgomeryModint<T>);
-        return detail::modintFromRawWords<T>(out, deg);
+        return detail::modintFromRawWords<T>(output_value, deg);
     }
     return detail::convolutionArbitraryMod(f, g);
 }
@@ -119,9 +119,9 @@ std::vector<T> convolutionCyclicPowerOfTwo(const std::vector<T> &f, const std::v
                                            Int n) {
     assert(n > 0 && std::has_single_bit(UInt(n)) && f.size() <= std::size_t(n) &&
            g.size() <= std::size_t(n));
-    std::vector<T> out(n);
+    std::vector<T> output_value(n);
     if (f.empty() || g.empty())
-        return out;
+        return output_value;
     if (n >= 64 && detail::isNttFriendlyModulus(T::umod(), n)) {
         std::vector<std::uint32_t> a(f.size()), b(g.size()), res(n);
         if constexpr (MontgomeryModint<T>) {
@@ -137,15 +137,15 @@ std::vector<T> convolutionCyclicPowerOfTwo(const std::vector<T> &f, const std::v
                                                    b.size(), n, T::umod(), 0, false);
         if constexpr (MontgomeryModint<T>) {
             for (Int i = 0; i < n; ++i)
-                out[i] = T(res[i]);
+                output_value[i] = T(res[i]);
         } else
-            out = detail::modintFromRawWords<T>(res, n);
-        return out;
+            output_value = detail::modintFromRawWords<T>(res, n);
+        return output_value;
     }
     auto product = convolution(f, g);
     for (std::size_t i = 0; i < product.size(); ++i)
-        out[i < std::size_t(n) ? i : i - n] += product[i];
-    return out;
+        output_value[i < std::size_t(n) ? i : i - n] += product[i];
+    return output_value;
 }
 
 // 整数列を法 M で畳み込む。入力長の和を N として O(N log(N+1))。
@@ -155,10 +155,10 @@ std::vector<Int> convolution(const std::vector<Int> &f, const std::vector<Int> &
     using Mint = StaticBarrettModint<std::uint32_t(M)>;
     std::vector<Mint> a(f.begin(), f.end()), b(g.begin(), g.end());
     auto product = convolution(a, b);
-    std::vector<Int> out(product.size());
-    for (std::size_t i = 0; i < out.size(); ++i)
-        out[i] = product[i].val();
-    return out;
+    std::vector<Int> output_value(product.size());
+    for (std::size_t i = 0; i < output_value.size(); ++i)
+        output_value[i] = product[i].val();
+    return output_value;
 }
 
 // 各係数が符号付き64ビットに収まる整数畳み込み。入力長の和を N として O(N log(N+1))。

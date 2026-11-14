@@ -2,7 +2,7 @@
 #include <cplib/collections/bitset_avx512.hpp>
 #include <unordered_map>
 
-namespace cplib {
+namespace cplib::bitset_lcs {
 namespace detail {
 // vector<bool>や独自の等値比較要素もコピーせず区間を参照する。
 template <class Sequence> struct View {
@@ -30,7 +30,7 @@ template <bool Backwards = false, class A, class B> BitSetAvx512 dp(const A &a, 
     auto advance = [&](const BitSetAvx512 &mask) {
         cplib::fuse([&](auto &f) {
             auto s = f.var(state);
-            auto equal = f.read(mask);
+            auto equal = f.readValues(mask);
             auto combined = s | equal;
             auto difference = combined + ~(s << 1);
             s = combined & ~difference;
@@ -51,13 +51,13 @@ template <bool Backwards = false, class A, class B> BitSetAvx512 dp(const A &a, 
         // 頻度が語数を超える種類だけを事前にビット列化し、追加領域O(m)を保つ。
         for (std::size_t id = 0; id < positions.size(); ++id)
             if (Int(positions[id].size()) > words)
-                masks[id] = cplib::initBitSetFromIndexes(positions[id], m);
+                masks[id] = cplib::avx512::initBitSetFromIndexes(positions[id], m);
         for (std::size_t k = 0; k < a.size(); ++k) {
             auto it = ids.find(av(k));
             if (it == ids.end())
                 continue;
             Int id = it->second;
-            if (masks[id].len())
+            if (masks[id].size())
                 advance(masks[id]);
             else {
                 matched.clear();
@@ -123,7 +123,7 @@ template <class A, class B, class T> void restore(const A &a, const B &b, std::v
 // 要素のハッシュ・比較をO(1)とする。
 template <class A, class B> Int LCS(const A &a, const B &b) {
     if (a.size() < b.size())
-        return cplib::LCS(b, a);
+        return cplib::bitset_lcs::LCS(b, a);
     if (!b.size())
         return 0;
     return detail::dp(detail::View<A>{&a, 0, a.size()}, detail::View<B>{&b, 0, b.size()})

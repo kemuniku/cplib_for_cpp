@@ -58,13 +58,8 @@ public:
     }
 
     // 要素数を重複込みで返す。O(1)。
-    Int len() const {
-        return size_;
-    }
-
-    // 要素数を重複込みで返す。O(1)。
     Int size() const {
-        return len();
+        return size_;
     }
 
     // xを含むか返す。O(B+log(L+1))。

@@ -50,13 +50,8 @@ public:
     }
 
     // 登録済みの要素数を返す。O(1)。
-    Int len() const {
-        return length_;
-    }
-
-    // 登録済みの要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return length_;
     }
 
     // kが登録済みか返す。一様なハッシュを仮定して期待O(1)、容量Cで最悪O(C)。
@@ -248,7 +243,7 @@ template <class K, class V> auto initHashTable(Int capacity = 0) {
 }
 
 // 登録済みの組からハッシュを計算する。容量CとしてO(C)と各組のハッシュ計算に要する時間。
-template <class K, class V, class H> auto hash(const HashTable<K, V, H> &t) {
+template <class K, class V, class H> auto hashValue(const HashTable<K, V, H> &t) {
     return t.hash();
 }
 }

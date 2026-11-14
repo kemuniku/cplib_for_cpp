@@ -3,7 +3,7 @@
 #include <cplib/modint/modint.hpp>
 #include <span>
 
-namespace cplib {
+namespace cplib::avx2_matrix {
 // 行優先の n×m 行列と m×k 行列を法 p で掛ける。AVX2が必要。
 // 保守的な時間計算量 O((n+1)(m+1)(k+1))。
 inline std::vector<std::uint32_t> matrixProduct(std::span<const std::uint32_t> a,
@@ -19,10 +19,10 @@ inline std::vector<std::uint32_t> matrixProduct(std::span<const std::uint32_t> a
         assert(x < p);
     for ([[maybe_unused]] auto x : b)
         assert(x < p);
-    std::vector<std::uint32_t> out(n * k);
+    std::vector<std::uint32_t> output_value(n * k);
     if (n && m && k && p != 1)
-        matrixProductKernel(a.data(), b.data(), out.data(), n, m, k, p);
-    return out;
+        matrixProductKernel(a.data(), b.data(), output_value.data(), n, m, k, p);
+    return output_value;
 }
 
 // 二次元配列の行列積を返す。計算量は行優先配列を受け取る matrixProduct と同じ。
@@ -41,15 +41,15 @@ matrixProduct(const std::vector<std::vector<std::uint32_t>> &a,
         bb.insert(bb.end(), row.begin(), row.end());
     }
     auto cc = matrixProduct(aa, bb, n, m, k, p);
-    std::vector<std::vector<std::uint32_t>> out(n, std::vector<std::uint32_t>(k));
+    std::vector<std::vector<std::uint32_t>> output_value(n, std::vector<std::uint32_t>(k));
     for (Int i = 0; i < n; ++i)
-        std::copy_n(cc.begin() + i * k, k, out[i].begin());
-    return out;
+        std::copy_n(cc.begin() + i * k, k, output_value[i].begin());
+    return output_value;
 }
 
 }
 
-namespace cplib {
+namespace cplib::avx2_matrix {
 namespace impl = ::cplib::detail::matrix_avx2;
 
 template <impl::Element T, bool Mutable> class BasicMatrixRow {
@@ -68,24 +68,19 @@ public:
     }
 
     // 行の要素数を返す。計算量 O(1)。
-    Int len() const {
-        return length_;
-    }
-
-    // 行の要素数を返す。計算量 O(1)。
     Int size() const {
-        return len();
+        return length_;
     }
 
     // 指定要素への参照を返す。計算量 O(1)。
     reference operator[](Int j) const {
-        assert(j >= 0 && j < len());
+        assert(j >= 0 && j < size());
         return storage_->pointer[offset_ + j];
     }
 
     // 末尾から数えた要素への参照を返す。計算量 O(1)。
     reference operator[](BackwardsIndex j) const {
-        return (*this)[resolve_index(len(), j)];
+        return (*this)[resolve_index(size(), j)];
     }
 
     // 行の先頭を返す。計算量 O(1)。
@@ -95,7 +90,7 @@ public:
 
     // 行の終端を返す。計算量 O(1)。
     pointer end() const {
-        return len() ? begin() + len() : begin();
+        return size() ? begin() + size() : begin();
     }
 
     // 行の反復可能なビューを返す。計算量 O(1)。
@@ -141,7 +136,7 @@ public:
 
         // 終端位置を返す。計算量 O(1)。
         auto end() const {
-            return PairIterator{row, row.len()};
+            return PairIterator{row, row.size()};
         }
     };
 
@@ -150,33 +145,33 @@ public:
         return Pairs{*this};
     }
 
-    // 行ビューを独立した配列へコピーする。計算量 O(len())。
+    // 行ビューを独立した配列へコピーする。計算量 O(size())。
     std::vector<T> toSeq() const {
-        std::vector<T> out(len());
-        std::copy(begin(), end(), out.begin());
-        return out;
+        std::vector<T> output_value(size());
+        std::copy(begin(), end(), output_value.begin());
+        return output_value;
     }
 
     // 行の要素を区切り文字で連結する。計算量は出力文字数に比例。
     std::string join(std::string_view sep = "") const {
-        return len() ? matrixJoinValues(impl::raw(begin()), len(), impl::modulus<T>(),
+        return size() ? matrixJoinValues(impl::raw(begin()), size(), impl::modulus<T>(),
                                         MontgomeryModint<T>, sep)
                      : "";
     }
 
     // 行の要素を出力する。計算量は出力文字数に比例。
     void writeRow(FILE *output = stdout) const {
-        matrixWriteRow(impl::raw(begin()), len(), impl::modulus<T>(), MontgomeryModint<T>, output);
+        matrixWriteRow(impl::raw(begin()), size(), impl::modulus<T>(), MontgomeryModint<T>, output);
     }
 
     // 行ビューをコピーする。計算量 O(1)。
     BasicMatrixRow(const BasicMatrixRow &) = default;
 
-    // 行の要素をコピーする。計算量 O(len())。
+    // 行の要素をコピーする。計算量 O(size())。
     BasicMatrixRow &operator=(const BasicMatrixRow &b)
         requires Mutable
     {
-        assert(len() == b.len());
+        assert(size() == b.size());
         std::copy(b.begin(), b.end(), begin());
         return *this;
     }
@@ -186,21 +181,21 @@ public:
         requires(!Mutable)
     = default;
 
-    // 行の要素をコピーする。計算量 O(len())。
+    // 行の要素をコピーする。計算量 O(size())。
     template <bool M>
     BasicMatrixRow &operator=(const BasicMatrixRow<T, M> &b)
         requires Mutable
     {
-        assert(len() == b.len());
+        assert(size() == b.size());
         std::copy(b.begin(), b.end(), begin());
         return *this;
     }
 
-    // 配列から行の要素をコピーする。計算量 O(len())。
+    // 配列から行の要素をコピーする。計算量 O(size())。
     BasicMatrixRow &operator=(std::span<const T> b)
         requires Mutable
     {
-        assert(len() == Int(b.size()));
+        assert(size() == Int(b.size()));
         std::copy(b.begin(), b.end(), begin());
         return *this;
     }
@@ -369,17 +364,17 @@ public:
         a.check();
         b.check();
         assert(a.w() == b.h());
-        Matrix out(a.h(), b.w());
-        if (a.h() && a.w() && b.w() && out.modulus_ != 1) {
+        Matrix output_value(a.h(), b.w());
+        if (a.h() && a.w() && b.w() && output_value.modulus_ != 1) {
             if constexpr (MontgomeryModint<T>)
                 matrixProductMontgomeryKernel(impl::raw(a.data()), impl::raw(b.data()),
-                                              impl::raw(out.data()), a.h(), a.w(), b.w(),
-                                              out.modulus_);
+                                              impl::raw(output_value.data()), a.h(), a.w(), b.w(),
+                                              output_value.modulus_);
             else
-                matrixProductKernel(impl::raw(a.data()), impl::raw(b.data()), impl::raw(out.data()),
-                                    a.h(), a.w(), b.w(), out.modulus_);
+                matrixProductKernel(impl::raw(a.data()), impl::raw(b.data()), impl::raw(output_value.data()),
+                                    a.h(), a.w(), b.w(), output_value.modulus_);
         }
-        return out;
+        return output_value;
     }
 
     // 右から行列を掛ける。計算量は行列積と同じ。
@@ -470,22 +465,22 @@ public:
 
     // スカラーから各要素を引いた行列を返す。計算量 O(hw)。
     friend Matrix operator-(T value, const Matrix &a) {
-        Matrix out(a.h(), a.w(), value);
-        return out -= a;
+        Matrix output_value(a.h(), a.w(), value);
+        return output_value -= a;
     }
 
     // 各要素の符号を反転する。計算量 O(hw)。
     Matrix operator-() const {
-        Matrix out(h(), w());
-        return out -= *this;
+        Matrix output_value(h(), w());
+        return output_value -= *this;
     }
 
     // n次単位行列を返す。計算量 O(n²)。
     static Matrix identity(Int n, T one = T(1), T zero = T(0)) {
-        Matrix out(n, n, zero);
+        Matrix output_value(n, n, zero);
         for (Int i = 0; i < n; ++i)
-            out(i, i) = one;
-        return out;
+            output_value(i, i) = one;
+        return output_value;
     }
 
     // 正方行列の非負整数乗を返す。行列積を O(log(exponent+1)) 回行う。
@@ -494,14 +489,14 @@ public:
         assert(h() == w() && exponent >= 0);
         if (!exponent)
             return identity(h());
-        Matrix base = *this, out;
+        Matrix base = *this, output_value;
         bool initialized = false;
         while (exponent) {
             if (exponent & 1) {
                 if (initialized)
-                    out *= base;
+                    output_value *= base;
                 else {
-                    out = base;
+                    output_value = base;
                     initialized = true;
                 }
             }
@@ -509,16 +504,16 @@ public:
             if (exponent)
                 base *= base;
         }
-        return out;
+        return output_value;
     }
 
     // 全要素の和を返す。計算量 O(hw)。
     T sum() const {
         check();
-        T out = 0;
+        T output_value = 0;
         for (Int i = 0; i < h() * w(); ++i)
-            out += data()[i];
-        return out;
+            output_value += data()[i];
+        return output_value;
     }
 
     // 行列が等しいか判定する。計算量 O(hw)。
@@ -536,28 +531,28 @@ public:
     // 行列のハッシュ値を返す。計算量 O(hw)。
     std::size_t hash() const {
         check();
-        std::size_t out = 0;
+        std::size_t output_value = 0;
         auto add = [&](UInt v) {
-            out ^= std::hash<UInt>{}(v) + 0x9e3779b97f4a7c15ULL + (out << 6) + (out >> 2);
+            output_value ^= std::hash<UInt>{}(v) + 0x9e3779b97f4a7c15ULL + (output_value << 6) + (output_value >> 2);
         };
         add(h());
         add(w());
         add(T::umod());
         for (Int i = 0; i < h() * w(); ++i)
             add(data()[i].val() % T::umod());
-        return out;
+        return output_value;
     }
 
     // 行列を文字列で返す。計算量は行数と出力文字数に比例。
     std::string str() const {
         check();
-        std::string out;
+        std::string output_value;
         for (Int i = 0; i < h(); ++i) {
             if (i)
-                out += '\n';
-            out += (*this)[i].join(" ");
+                output_value += '\n';
+            output_value += (*this)[i].join(" ");
         }
-        return out;
+        return output_value;
     }
 
     // AVX2の前進消去で階数を求める。O(h*w*min(h,w))。
@@ -597,22 +592,22 @@ public:
         auto r = reduce(h(), true, nullptr, true);
         if (r.rank != h())
             return std::nullopt;
-        Matrix out(h(), h());
-        fieldInverseAdjugateKernel(r.values.data(), impl::raw(out.data()), h(), r.rank,
+        Matrix output_value(h(), h());
+        fieldInverseAdjugateKernel(r.values.data(), impl::raw(output_value.data()), h(), r.rank,
                                    r.pivots.data(), r.determinant, impl::modulus<T>(),
                                    MontgomeryModint<T>, false);
-        return out;
+        return output_value;
     }
 
     // AVX2で特異行列を含む余因子行列を返す。O(n^3)。
     Matrix adjugate() const {
         assert(h() == w());
         auto r = reduce(h(), true, nullptr, true);
-        Matrix out(h(), h());
-        fieldInverseAdjugateKernel(r.values.data(), impl::raw(out.data()), h(), r.rank,
+        Matrix output_value(h(), h());
+        fieldInverseAdjugateKernel(r.values.data(), impl::raw(output_value.data()), h(), r.rank,
                                    r.pivots.data(), r.determinant, impl::modulus<T>(),
                                    MontgomeryModint<T>, true);
-        return out;
+        return output_value;
     }
 };
 
@@ -687,7 +682,7 @@ template <class T> auto sum(const Matrix<T> &a) {
 }
 
 // 行列のハッシュ値を返す。計算量は a.hash と同じ。
-template <class T> auto hash(const Matrix<T> &a) {
+template <class T> auto hashValue(const Matrix<T> &a) {
     return a.hash();
 }
 
@@ -703,9 +698,9 @@ template <class T> auto solveLinearSystem(const Matrix<T> &a, const std::vector<
 }
 
 namespace std {
-template <class T> struct hash<cplib::Matrix<T>> {
+template <class T> struct hash<cplib::avx2_matrix::Matrix<T>> {
     // 行列のハッシュ値を返す。計算量は a.hash() と同じ。
-    size_t operator()(const cplib::Matrix<T> &a) const {
+    size_t operator()(const cplib::avx2_matrix::Matrix<T> &a) const {
         return a.hash();
     }
 };

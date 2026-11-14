@@ -38,9 +38,9 @@ class Factoradic {
             node.right = buildProducts(nodes, mid, last);
             node.product = nodes[node.left].product * nodes[node.right].product;
         }
-        Int out = nodes.size();
+        Int output_value = nodes.size();
         nodes.push_back(std::move(node));
-        return out;
+        return output_value;
     }
 
     static void restoreBlock(BigInt value, const std::vector<ProductNode> &nodes, Int index,
@@ -86,9 +86,9 @@ class Factoradic {
     }
 
     static Factoradic addAbs(const Factoradic &a, const Factoradic &b) {
-        Factoradic out;
+        Factoradic output_value;
         Int n = std::max(a.data_.size(), b.data_.size());
-        out.data_.resize(n);
+        output_value.data_.resize(n);
         Int carry = 0;
         for (Int i = 0; i < n; ++i) {
             Int digit = carry;
@@ -96,18 +96,18 @@ class Factoradic {
                 digit += a.data_[i];
             if (i < Int(b.data_.size()))
                 digit += b.data_[i];
-            out.data_[i] = digit % (i + 1);
+            output_value.data_[i] = digit % (i + 1);
             carry = digit / (i + 1);
         }
         if (carry)
-            out.data_.push_back(carry);
-        return out;
+            output_value.data_.push_back(carry);
+        return output_value;
     }
 
     static Factoradic subAbs(const Factoradic &a, const Factoradic &b) {
-        Factoradic out;
+        Factoradic output_value;
         Int n = std::max(a.data_.size(), b.data_.size());
-        out.data_.resize(n);
+        output_value.data_.resize(n);
         Int borrow = 0;
         for (Int i = 0; i < n; ++i) {
             Int digit = -borrow;
@@ -118,11 +118,11 @@ class Factoradic {
             borrow = digit < 0;
             if (borrow)
                 digit += i + 1;
-            out.data_[i] = digit;
+            output_value.data_[i] = digit;
         }
         assert(!borrow);
-        out.normalize();
-        return out;
+        output_value.normalize();
+        return output_value;
     }
 
     bool fitsInt() const {
@@ -131,10 +131,10 @@ class Factoradic {
     }
 
     static std::vector<Int> counts(Int n) {
-        std::vector<Int> out(n + 1);
+        std::vector<Int> output_value(n + 1);
         for (Int i = 1; i <= n; ++i)
-            out[i] = i & -i;
-        return out;
+            output_value[i] = i & -i;
+        return output_value;
     }
 
     static void removeValue(std::vector<Int> &counts, Int value) {
@@ -198,17 +198,17 @@ public:
 
     // 絶対値を返す。計算量 O(N+1)。
     Factoradic abs() const {
-        auto out = *this;
-        out.negative_ = false;
-        return out;
+        auto output_value = *this;
+        output_value.negative_ = false;
+        return output_value;
     }
 
     // 符号反転した値を返す。計算量 O(N+1)。
     Factoradic operator-() const {
-        auto out = *this;
-        if (!out.data_.empty())
-            out.negative_ = !out.negative_;
-        return out;
+        auto output_value = *this;
+        if (!output_value.data_.empty())
+            output_value.negative_ = !output_value.negative_;
+        return output_value;
     }
 
     // 値を複製する。計算量 O(N+1)。
@@ -224,33 +224,33 @@ public:
     // n!を階乗進数で返す。O(n+1)時間・領域。0!=1、nは非負とする。
     static Factoradic factorial(Int n) {
         assert(n >= 0);
-        Factoradic out;
+        Factoradic output_value;
         Int index = std::max(n, Int(1));
-        out.data_.resize(index + 1);
-        out.data_[index] = 1;
-        return out;
+        output_value.data_.resize(index + 1);
+        output_value.data_[index] = 1;
+        return output_value;
     }
 
     // k!による非負の余り。非負値O(min(N,k)+1)、負値O(k+1)。
     Factoradic modFactorial(Int k) const {
         assert(k >= 0);
-        Factoradic out;
+        Factoradic output_value;
         Int size = std::min(Int(data_.size()), k);
-        out.data_.assign(data_.begin(), data_.begin() + size);
-        out.normalize();
-        if (negative_ && !out.data_.empty()) {
-            out.data_.resize(k);
+        output_value.data_.assign(data_.begin(), data_.begin() + size);
+        output_value.normalize();
+        if (negative_ && !output_value.data_.empty()) {
+            output_value.data_.resize(k);
             Int borrow = 0;
             for (Int i = 0; i < k; ++i) {
-                Int digit = -out.data_[i] - borrow;
+                Int digit = -output_value.data_[i] - borrow;
                 borrow = digit < 0;
                 if (borrow)
                     digit += i + 1;
-                out.data_[i] = digit;
+                output_value.data_[i] = digit;
             }
-            out.normalize();
+            output_value.normalize();
         }
-        return out;
+        return output_value;
     }
 
     // 絶対値の下位桁から並べたi!の係数を返す。0は空配列。O(桁数)。
@@ -301,13 +301,13 @@ public:
 
     // 多倍長整数に変換する。計算量 O(C(N))。
     BigInt toBigInt() const {
-        BigInt out;
+        BigInt output_value;
         if (Int(data_.size()) <= BlockSize + 1) {
             for (Int i = Int(data_.size()) - 1; i >= 1; --i)
-                out = out * BigInt(i + 1) + BigInt(data_[i]);
+                output_value = output_value * BigInt(i + 1) + BigInt(data_[i]);
         } else
-            out = blockValue(data_, 1, data_.size()).first;
-        return negative_ ? -out : out;
+            output_value = blockValue(data_, 1, data_.size()).first;
+        return negative_ ? -output_value : output_value;
     }
 
     // 十進文字列を返す。計算量 O(C(N))。
@@ -319,8 +319,8 @@ public:
     friend int cmp(const Factoradic &a, const Factoradic &b) {
         if (a.negative_ != b.negative_)
             return a.negative_ ? -1 : 1;
-        Int out = cmpAbs(a, b);
-        return a.negative_ ? -out : out;
+        Int output_value = cmpAbs(a, b);
+        return a.negative_ ? -output_value : output_value;
     }
 
     // 値が等しいか判定する。最大桁数 N に対し O(N+1)。
@@ -335,26 +335,26 @@ public:
 
     // ハッシュ値を返す。計算量 O(N+1)。
     std::size_t hash() const {
-        std::size_t out = negative_;
+        std::size_t output_value = negative_;
         for (auto d : data_)
-            out ^= std::hash<Int>{}(d) + 0x9e3779b97f4a7c15ULL + (out << 6) + (out >> 2);
-        return out;
+            output_value ^= std::hash<Int>{}(d) + 0x9e3779b97f4a7c15ULL + (output_value << 6) + (output_value >> 2);
+        return output_value;
     }
 
     // 和を返す。最大桁数 N に対し O(N+1)。
     friend Factoradic operator+(const Factoradic &a, const Factoradic &b) {
-        Factoradic out;
+        Factoradic output_value;
         if (a.negative_ == b.negative_) {
-            out = addAbs(a, b);
-            out.negative_ = a.negative_ && !out.data_.empty();
+            output_value = addAbs(a, b);
+            output_value.negative_ = a.negative_ && !output_value.data_.empty();
         } else if (cmpAbs(a, b) >= 0) {
-            out = subAbs(a, b);
-            out.negative_ = a.negative_ && !out.data_.empty();
+            output_value = subAbs(a, b);
+            output_value.negative_ = a.negative_ && !output_value.data_.empty();
         } else {
-            out = subAbs(b, a);
-            out.negative_ = b.negative_ && !out.data_.empty();
+            output_value = subAbs(b, a);
+            output_value.negative_ = b.negative_ && !output_value.data_.empty();
         }
-        return out;
+        return output_value;
     }
 
     // 差を返す。最大桁数 N に対し O(N+1)。
@@ -366,21 +366,21 @@ public:
     friend Factoradic operator*(const Factoradic &a, Int b) {
         if (!b || a.data_.empty())
             return {};
-        Factoradic out;
-        out.negative_ = a.negative_ != (b < 0);
+        Factoradic output_value;
+        output_value.negative_ = a.negative_ != (b < 0);
         UInt m = magnitude(b), carry = 0;
-        out.data_.resize(a.data_.size());
+        output_value.data_.resize(a.data_.size());
         for (std::size_t i = 0; i < a.data_.size(); ++i) {
             auto value = static_cast<unsigned __int128>(a.data_[i]) * m + carry;
-            out.data_[i] = Int(value % (i + 1));
+            output_value.data_[i] = Int(value % (i + 1));
             carry = value / (i + 1);
         }
         while (carry) {
-            UInt radix = out.data_.size() + 1;
-            out.data_.push_back(carry % radix);
+            UInt radix = output_value.data_.size() + 1;
+            output_value.data_.push_back(carry % radix);
             carry /= radix;
         }
-        return out;
+        return output_value;
     }
 
     // 固定幅整数との積を返す。計算量 O(N+1)。
@@ -474,18 +474,18 @@ public:
         Int n = permutation.size();
         auto bit = counts(n);
         std::vector<bool> used(n);
-        Factoradic out;
-        out.data_.resize(n);
+        Factoradic output_value;
+        output_value.data_.resize(n);
         for (Int i = 0; i < n; ++i) {
             Int value = permutation[i];
             assert(value >= 0 && value < n && !used[value]);
             used[value] = true;
             for (Int j = value; j > 0; j -= j & -j)
-                out.data_[n - 1 - i] += bit[j];
+                output_value.data_[n - 1 - i] += bit[j];
             removeValue(bit, value);
         }
-        out.normalize();
-        return out;
+        output_value.normalize();
+        return output_value;
     }
 
     // 辞書順でこの値を0始まりの順位とする0..<nの順列を復元する。O(n log n)時間・O(n)領域。
@@ -493,7 +493,7 @@ public:
     std::vector<Int> toPermutation(Int n) const {
         assert(n >= 0 && !negative_ && Int(data_.size()) <= n);
         auto bit = counts(n);
-        std::vector<Int> out(n);
+        std::vector<Int> output_value(n);
         Int step = 1;
         while (step <= n / 2)
             step *= 2;
@@ -506,10 +506,10 @@ public:
                     value = next;
                 }
             }
-            out[i] = value;
+            output_value[i] = value;
             removeValue(bit, value);
         }
-        return out;
+        return output_value;
     }
 };
 
@@ -518,30 +518,30 @@ public:
 inline FactoradicSmallDivision Factoradic::divmodTrunc(const Factoradic &a, Int b) {
     if (!b)
         throw std::domain_error("階乗進数の 0 除算");
-    FactoradicSmallDivision out;
-    out.quotient.data_.resize(a.data_.size());
+    FactoradicSmallDivision output_value;
+    output_value.quotient.data_.resize(a.data_.size());
     UInt m = magnitude(b), rem = 0;
     for (Int i = Int(a.data_.size()) - 1; i >= 1; --i) {
         auto value = static_cast<unsigned __int128>(rem) * UInt(i + 1) + UInt(a.data_[i]);
-        out.quotient.data_[i] = value / m;
+        output_value.quotient.data_[i] = value / m;
         rem = value % m;
     }
-    out.quotient.normalize();
+    output_value.quotient.normalize();
     if (a.negative_ != (b < 0))
-        out.quotient = -out.quotient;
-    out.remainder = a.negative_ ? -Int(rem) : Int(rem);
-    return out;
+        output_value.quotient = -output_value.quotient;
+    output_value.remainder = a.negative_ ? -Int(rem) : Int(rem);
+    return output_value;
 }
 
 // Pythonと同じ床除算の商とIntの余りをO(入力の桁数+1)時間・領域で返す。
 // 余りは除数と同符号。0除算はstd::domain_error。
 inline FactoradicSmallDivision Factoradic::divmod(const Factoradic &a, Int b) {
-    auto out = divmodTrunc(a, b);
-    if (out.remainder && a.negative_ != (b < 0)) {
-        out.quotient -= 1;
-        out.remainder += b;
+    auto output_value = divmodTrunc(a, b);
+    if (output_value.remainder && a.negative_ != (b < 0)) {
+        output_value.quotient -= 1;
+        output_value.remainder += b;
     }
-    return out;
+    return output_value;
 }
 
 // Pythonと同じ床除算の商と余りを返す。0除算はstd::domain_error。
@@ -549,8 +549,8 @@ inline FactoradicDivision Factoradic::divmod(const Factoradic &a, const Factorad
     if (b.data_.empty())
         throw std::domain_error("階乗進数の 0 除算");
     if (b.fitsInt()) {
-        auto out = divmod(a, b.toInt());
-        return {std::move(out.quotient), Factoradic(out.remainder)};
+        auto output_value = divmod(a, b.toInt());
+        return {std::move(output_value.quotient), Factoradic(output_value.remainder)};
     }
     Int order = cmpAbs(a, b);
     if (order < 0) {
@@ -560,8 +560,8 @@ inline FactoradicDivision Factoradic::divmod(const Factoradic &a, const Factorad
     }
     if (order == 0)
         return {Factoradic(a.negative_ != b.negative_ ? -1 : 1), Factoradic{}};
-    auto out = cplib::divmod(a.toBigInt(), b.toBigInt());
-    return {Factoradic(out.quotient), Factoradic(out.remainder)};
+    auto output_value = cplib::divmod(a.toBigInt(), b.toBigInt());
+    return {Factoradic(output_value.quotient), Factoradic(output_value.remainder)};
 }
 
 inline Factoradic operator/(const Factoradic &a, Int b) {
@@ -754,7 +754,7 @@ inline BigInt toBigInt(const Factoradic &a) {
 }
 
 // ハッシュ値を返す。計算量は a.hash() と同じ。
-inline std::size_t hash(const Factoradic &a) {
+inline std::size_t hashValue(const Factoradic &a) {
     return a.hash();
 }
 

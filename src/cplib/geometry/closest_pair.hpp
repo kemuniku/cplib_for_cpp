@@ -1,21 +1,20 @@
 #pragma once
 #include <cplib/geometry/base.hpp>
-#include <optional>
 #include <stdexcept>
 #include <tuple>
 
 namespace cplib {
-template <class T> struct ClosestPairResult {
-    T distanceSquared;
+namespace detail {
+template <class R> struct ClosestPairResult {
+    R distanceSquared;
     std::pair<Int, Int> indices;
 };
-// 最近点対の二乗距離と元の添字(i<j)を返す。2点未満はnullopt。時間 O(N log N)、領域 O(N)。
-// 整数は各軸の幅2*10^9以下、浮動小数点は有限座標・有限二乗距離と非零差の二乗が非零であること。
-// 整数はInt、浮動小数点はdoubleで計算し、不正な座標はinvalid_argument。
+
 template <class T> requires (std::is_signed_v<T>)
-auto closest_pair(const std::vector<Point<T>> &points)
-    -> std::optional<ClosestPairResult<std::conditional_t<std::is_integral_v<T>, Int, double>>> {
+auto closest_pair_result(const std::vector<Point<T>> &points)
+    -> ClosestPairResult<std::conditional_t<std::is_integral_v<T>, Int, double>> {
     using R = std::conditional_t<std::is_integral_v<T>, Int, double>;
+    assert(points.size() >= 2);
     struct Site {
         R x, y;
         Int id;
@@ -29,8 +28,6 @@ auto closest_pair(const std::vector<Point<T>> &points)
         }
         sites.push_back(p);
     }
-    if (sites.empty())
-        return std::nullopt;
     auto xOrder = [](Site a, Site b) { return std::tie(a.x, a.y, a.id) < std::tie(b.x, b.y, b.id); };
     auto yOrder = [](Site a, Site b) { return std::tie(a.y, a.x, a.id) < std::tie(b.y, b.x, b.id); };
     std::sort(sites.begin(), sites.end(), xOrder);
@@ -51,20 +48,20 @@ auto closest_pair(const std::vector<Point<T>> &points)
                 throw std::invalid_argument("座標差の二乗がアンダーフローしています");
         }
     }
-    if (sites.size() < 2)
-        return std::nullopt;
     for (std::size_t i = 1; i < sites.size(); ++i)
         if (sites[i - 1].x == sites[i].x && sites[i - 1].y == sites[i].y)
-            return ClosestPairResult<R>{R(0), std::minmax(sites[i - 1].id, sites[i].id)};
+            return {R(0), {std::min(sites[i - 1].id, sites[i].id),
+                           std::max(sites[i - 1].id, sites[i].id)}};
     auto squared = [](Site a, Site b) {
         R dx = a.x - b.x, dy = a.y - b.y;
         return dx * dx + dy * dy;
     };
-    ClosestPairResult<R> best{squared(sites[0], sites[1]), std::minmax(sites[0].id, sites[1].id)};
+    ClosestPairResult<R> best{squared(sites[0], sites[1]),
+                              {std::min(sites[0].id, sites[1].id), std::max(sites[0].id, sites[1].id)}};
     auto consider = [&](Site a, Site b) {
         R distance = squared(a, b);
         if (distance < best.distanceSquared)
-            best = {distance, std::minmax(a.id, b.id)};
+            best = {distance, {std::min(a.id, b.id), std::max(a.id, b.id)}};
     };
     auto solve = [&](auto &&self, Int first, Int last) -> void {
         if (last - first <= 3) {
@@ -98,5 +95,20 @@ auto closest_pair(const std::vector<Point<T>> &points)
     };
     solve(solve, 0, sites.size());
     return best;
+}
+}
+
+// 最近点対の元の添字(i<j)を返す。2点未満は不可。時間 O(N log N)、領域 O(N)。
+// 整数は各軸の幅2*10^9以下、浮動小数点は有限座標・有限二乗距離と非零差の二乗が非零であること。
+// 整数はInt、浮動小数点はdoubleで計算し、不正な座標はinvalid_argument。
+template <class T> requires (std::is_signed_v<T>)
+std::pair<Int, Int> closest_pair(const std::vector<Point<T>> &points) {
+    return detail::closest_pair_result(points).indices;
+}
+
+// 最近点対の距離を返す。2点未満は不可。時間 O(N log N)、領域 O(N)。
+template <class T> requires (std::is_signed_v<T>)
+double closest_pair_distance(const std::vector<Point<T>> &points) {
+    return std::sqrt(double(detail::closest_pair_result(points).distanceSquared));
 }
 }

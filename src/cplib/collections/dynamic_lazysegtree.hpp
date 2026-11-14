@@ -301,13 +301,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return length;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return length;
     }
 
     // 保持する区間数K（確保したノード数）をO(1)で返します。
@@ -330,11 +325,6 @@ auto initDynamicLazySegmentTree(Int n, Op op, S e, Map map, Comp comp, F id, Ini
 // 長さと演算・作用・初期区間の積を指定して構築する。各コールバックがO(1)ならO(1)。
 template <class... Args> auto newDynamicLazySegWith(Args &&...args) {
     return initDynamicLazySegmentTree(std::forward<Args>(args)...);
-}
-
-// 要素数を返す。O(1)。
-template <class S, class F> Int len(const DynamicLazySegmentTree<S, F> &t) {
-    return t.len();
 }
 
 // 保持する区間数を返す。O(1)。

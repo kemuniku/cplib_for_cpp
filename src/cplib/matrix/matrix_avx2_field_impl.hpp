@@ -56,7 +56,7 @@ struct Field : cplib::detail::mat_kernel::Mod {
         return red(uint64_t(u) * r2);
     }
 
-    void read(const uint32_t *src, uint32_t *dst, size_t count, bool montgomery) const {
+    void readValues(const uint32_t *src, uint32_t *dst, size_t count, bool montgomery) const {
         // modint内部値を8個ずつ正規化したMontgomery表現に変換する。
         size_t i = 0;
         __m256i r = _mm256_set1_epi32(r2);
@@ -122,9 +122,9 @@ static inline void prepare(const uint32_t *src, const uint32_t *rhs, uint32_t *d
     size_t stride = size_t(w) + extra;
     for (int i = 0; i < h; i++) {
         if (w)
-            f.read(src + size_t(i) * sourceStride, dst + size_t(i) * stride, w, montgomery);
+            f.readValues(src + size_t(i) * sourceStride, dst + size_t(i) * stride, w, montgomery);
         if (rhs)
-            f.read(rhs + i, dst + size_t(i) * stride + w, 1, montgomery);
+            f.readValues(rhs + i, dst + size_t(i) * stride + w, 1, montgomery);
         if (identity)
             dst[size_t(i) * stride + w + i] = f.one();
     }
@@ -276,7 +276,7 @@ static inline uint32_t hafnian(const uint32_t *src, int n, uint32_t modulus, boo
     std::vector<uint32_t> a(size_t(n) * (n ? size_t(n) - 1 : 0) / 2 * h.stride);
     for (int i = 0; i < n; i++)
         for (int j = 0; j < i; j++)
-            h.f.read(src + size_t(i) * sourceStride + j,
+            h.f.readValues(src + size_t(i) * sourceStride + j,
                      a.data() + (size_t(i) * (i - 1) / 2 + j) * h.stride, 1, montgomery);
     return h.f.red(h.solve(a, n)[h.degree]);
 }

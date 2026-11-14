@@ -30,7 +30,7 @@ inline CompressedTriePtr initCompressedTrie(std::vector<StaticString<char>> stri
         while (!startsWith(s, stack.back()->s))
             stack.pop_back();
         Int l = lcp(stack.back()->s, s);
-        if (l == s.len()) {
+        if (l == s.size()) {
             ++stack.back()->cnt;
             continue;
         }
@@ -85,7 +85,7 @@ inline auto toGraph(const CompressedTriePtr &root) {
         for (const auto &child : node->child)
             if (child) {
                 Int l = lcp(node->s, child->s), next = p.size();
-                p.emplace_back(id, child->s.substr(l, child->s.len()));
+                p.emplace_back(id, child->s.substr(l, child->s.size()));
                 self(self, child, next);
             }
     };
@@ -103,29 +103,29 @@ struct VirtualTrieNode {
     // 文字cで遷移できるか判定する。計算量 O(1)。
     bool has_child(char c) const {
         assert('a' <= c && c <= 'z');
-        if (!now.len())
+        if (!now.size())
             return bool(current_node->child[c - 'a']);
-        return current_node->child[now[0] - 'a']->s[current_node->s.len() + now.len()] == c;
+        return current_node->child[now[0] - 'a']->s[current_node->s.size() + now.size()] == c;
     }
 
     // 文字cで遷移した仮想節点を返す。計算量 O(1)。
     VirtualTrieNode get_child(char c) const {
         assert(has_child(c));
-        auto child = current_node->child[(now.len() ? now[0] : c) - 'a'];
-        Int n = current_node->s.len(), length = now.len() + 1;
-        if (child->s.len() == n + length)
+        auto child = current_node->child[(now.size() ? now[0] : c) - 'a'];
+        Int n = current_node->s.size(), length = now.size() + 1;
+        if (child->s.size() == n + length)
             return {child, now.substr(0, 0)};
         return {current_node, child->s.substr(n, n + length)};
     }
 
     // 現在位置に完全一致する文字列の個数を返す。計算量 O(1)。
     Int get_cnt() const {
-        return now.len() ? 0 : current_node->cnt;
+        return now.size() ? 0 : current_node->cnt;
     }
 
     // 現在位置を接頭辞とする文字列の総数を返す。計算量 O(1)。
     Int get_subtree_sum() const {
-        return now.len() ? current_node->child[now[0] - 'a']->subtree_sum
+        return now.size() ? current_node->child[now[0] - 'a']->subtree_sum
                          : current_node->subtree_sum;
     }
 };

@@ -82,17 +82,17 @@ public:
 
     // 行列を文字列に変換する。計算量 O(H(W+1))。
     std::string str() const {
-        std::string out;
+        std::string output_value;
         for (Int i = 0; i < H; ++i) {
             if (i)
-                out += '\n';
+                output_value += '\n';
             for (Int j = 0; j < W; ++j) {
                 if (j)
-                    out += ' ';
-                out += (*this)(i, j) ? '1' : '0';
+                    output_value += ' ';
+                output_value += (*this)(i, j) ? '1' : '0';
             }
         }
-        return out;
+        return output_value;
     }
 
     // 文字列の0・1で行を設定する。計算量 O(ceil(W/64)+values.size())。
@@ -107,35 +107,35 @@ public:
     // 行の先頭 width 要素を0・1の文字列で返す。計算量 O(width)。
     std::string rowBits(Int i, Int width = W) const {
         assert(0 <= i && i < H && 0 <= width && width <= W);
-        std::string out(width, '0');
+        std::string output_value(width, '0');
         for (Int j = 0; j < width; ++j)
-            out[j] = char('0' + ((rows_[i][j >> 6] >> (j & 63)) & 1));
-        return out;
+            output_value[j] = char('0' + ((rows_[i][j >> 6] >> (j & 63)) & 1));
+        return output_value;
     }
 
     // 単位行列を返す。計算量 O(H ceil(W/64)+H)。
     static StaticMatrixMod2 identity()
         requires(H == W)
     {
-        StaticMatrixMod2 out;
+        StaticMatrixMod2 output_value;
         for (Int i = 0; i < H; ++i)
-            out(i, i) = true;
-        return out;
+            output_value(i, i) = true;
+        return output_value;
     }
 
     // 転置行列を返す。計算量 O(HW+W ceil(H/64))。
     auto transposed() const {
-        StaticMatrixMod2<W, H> out;
+        StaticMatrixMod2<W, H> output_value;
         for (Int i = 0; i < H; ++i)
             for (Int j = 0; j < W; ++j)
                 if ((*this)(i, j))
-                    out(j, i) = true;
-        return out;
+                    output_value(j, i) = true;
+        return output_value;
     }
 
     // GF(2)の行列積を返す。右行列の列数 C に対し、最悪 O((H+1)(W+1)(C+1))。
     template <Int C> auto operator*(const StaticMatrixMod2<W, C> &b) const {
-        StaticMatrixMod2<H, C> out;
+        StaticMatrixMod2<H, C> output_value;
         if constexpr (H < 40 || W < 64) {
             auto bt = b.transposed();
             for (Int i = 0; i < H; ++i)
@@ -144,7 +144,7 @@ public:
                     for (Int k = 0; k < Stride; ++k)
                         parity ^= std::popcount(rows_[i][k] & bt.rows_[j][k]) & 1;
                     if (parity)
-                        out(i, j) = true;
+                        output_value(i, j) = true;
                 }
         } else {
             constexpr Int count = (C + 63) / 64;
@@ -160,11 +160,11 @@ public:
                 for (Int i = 0; i < H; ++i) {
                     Int index = (rows_[i][start >> 6] >> (start & 63)) & mask;
                     for (Int k = 0; k < count; ++k)
-                        out.rows_[i][k] ^= table[index][k];
+                        output_value.rows_[i][k] ^= table[index][k];
                 }
             }
         }
-        return out;
+        return output_value;
     }
 
     // 右から行列を掛ける。計算量は行列積と同じ。
@@ -180,14 +180,14 @@ public:
         requires(H == W)
     {
         assert(exponent >= 0);
-        auto out = identity(), base = *this;
+        auto output_value = identity(), base = *this;
         for (; exponent; exponent >>= 1) {
             if (exponent & 1)
-                out *= base;
+                output_value *= base;
             if (exponent > 1)
                 base *= base;
         }
-        return out;
+        return output_value;
     }
 
     // 元の固定長版と同じくrankの作業行列はヒープに置く。
@@ -274,11 +274,11 @@ public:
     StaticMatrixMod2 adjugate() const {
         assert(H == W);
         auto rows = *fieldAdjugateInverse(matrixRows(*this, H, W), true);
-        StaticMatrixMod2 out;
+        StaticMatrixMod2 output_value;
         for (Int i = 0; i < H; ++i)
             for (Int j = 0; j < W; ++j)
-                out(i, j) = bool(rows[i][j]);
-        return out;
+                output_value(i, j) = bool(rows[i][j]);
+        return output_value;
     }
 };
 

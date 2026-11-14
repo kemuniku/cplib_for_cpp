@@ -17,8 +17,8 @@ template <class T> class MaxHeapQueue {
 
     void down(Int i) {
         T x = std::move(data[i]);
-        for (Int c = i * 2 + 1; c < len(); c = i * 2 + 1) {
-            if (c + 1 < len() && !(data[c + 1] < data[c]))
+        for (Int c = i * 2 + 1; c < size(); c = i * 2 + 1) {
+            if (c + 1 < size() && !(data[c + 1] < data[c]))
                 ++c;
             if (!(x < data[c]))
                 break;
@@ -34,18 +34,13 @@ public:
 
     // 配列の要素からキューを作る。O(N)。
     explicit MaxHeapQueue(std::span<const T> v) : data(v.begin(), v.end()) {
-        for (Int i = len() / 2; i-- > 0;)
+        for (Int i = size() / 2; i-- > 0;)
             down(i);
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return data.size();
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return data.size();
     }
 
     // 内部配列の i 番目を参照する。最大値は添字 0 で、全体は未整列。O(1)。
@@ -67,16 +62,16 @@ public:
     // 要素を追加する。償却 O(log N)。
     void push(T x) {
         data.push_back(std::move(x));
-        up(len() - 1);
+        up(size() - 1);
     }
 
     // 最大値を取り除いて返す。空のキューには使用不可。O(log N)。
     T pop() {
-        assert(len());
+        assert(size());
         T x = std::move(data[0]);
         T last = std::move(data.back());
         data.pop_back();
-        if (len()) {
+        if (size()) {
             data[0] = std::move(last);
             down(0);
         }
@@ -96,10 +91,10 @@ public:
 
     // 指定した添字の要素を削除する。O(log N)。
     void del(Int i) {
-        assert(0 <= i && i < len());
+        assert(0 <= i && i < size());
         std::swap(data[i], data.back());
         data.pop_back();
-        if (i < len()) {
+        if (i < size()) {
             if (i && data[(i - 1) / 2] < data[i])
                 up(i);
             else
@@ -109,7 +104,7 @@ public:
 
     // 最大値を取り除いて返し、xを追加する。空には使用不可。O(log N)。
     T replace(T x) {
-        assert(len());
+        assert(size());
         std::swap(x, data[0]);
         down(0);
         return x;
@@ -117,7 +112,7 @@ public:
 
     // xの追加後に最大値を取り除いて返す。空ならxを返す。O(log N)。
     T pushpop(T x) {
-        if (len() && x < data[0]) {
+        if (size() && x < data[0]) {
             std::swap(x, data[0]);
             down(0);
         }

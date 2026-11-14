@@ -79,13 +79,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return length_;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return length_;
     }
 
     // 位置pの値を更新する。O(log(N+1)+D)、Dは遅延伝播時に失敗して子へ降りた回数。
@@ -218,11 +213,6 @@ void initSegmentTreeBeatsInPlace(SegmentTreeBeats<S, F> &tree, const V &v, Op op
     tree = SegmentTreeBeats<S, F>(v, op, e, mapping, composition, id);
 }
 
-// 要素数を返す。O(1)。
-template <class S, class F> Int len(const SegmentTreeBeats<S, F> &tree) {
-    return tree.len();
-}
-
 // 点を更新する。O(log(N+1)+D)、Dは伝播中のmapping失敗回数。
 template <class S, class F> void update(SegmentTreeBeats<S, F> &tree, Int p, const S &value) {
     tree.update(p, value);
@@ -257,7 +247,7 @@ template <class S, class F> std::string to_string(SegmentTreeBeats<S, F> &tree) 
 
 // 初期配列または要素数から木を構築する。演算がO(1)ならO(N+1)。
 template <class V, class Op, class S, class Map, class Comp, class F>
-auto newLazySegWith(const V &v, Op op, S e, Map mapping, Comp composition, F id) {
+auto newSegmentTreeBeatsWith(const V &v, Op op, S e, Map mapping, Comp composition, F id) {
     return initSegmentTreeBeats(v, op, e, mapping, composition, id);
 }
 }

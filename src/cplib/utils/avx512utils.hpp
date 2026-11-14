@@ -171,32 +171,32 @@ void binary(std::span<const T> a, std::span<const T> b, std::span<T> dst) {
 template <bool Maximum, Avx512Integer T> T reduce(std::span<const T> a) {
     if (a.empty())
         throw std::invalid_argument("empty reduction");
-    T out = a[0];
+    T output_value = a[0];
 #ifdef CPLIB_AVX512UTILS_NATIVE
     if (avx512Available<T>()) {
         if constexpr (sizeof(T) == 1 && std::is_signed_v<T> == true)
-            cplib_avx512_reduce_i8(const_cast<T *>(a.data()), &out, a.size(), Maximum);
+            cplib_avx512_reduce_i8(const_cast<T *>(a.data()), &output_value, a.size(), Maximum);
         if constexpr (sizeof(T) == 1 && std::is_signed_v<T> == false)
-            cplib_avx512_reduce_u8(const_cast<T *>(a.data()), &out, a.size(), Maximum);
+            cplib_avx512_reduce_u8(const_cast<T *>(a.data()), &output_value, a.size(), Maximum);
         if constexpr (sizeof(T) == 2 && std::is_signed_v<T> == true)
-            cplib_avx512_reduce_i16(const_cast<T *>(a.data()), &out, a.size(), Maximum);
+            cplib_avx512_reduce_i16(const_cast<T *>(a.data()), &output_value, a.size(), Maximum);
         if constexpr (sizeof(T) == 2 && std::is_signed_v<T> == false)
-            cplib_avx512_reduce_u16(const_cast<T *>(a.data()), &out, a.size(), Maximum);
+            cplib_avx512_reduce_u16(const_cast<T *>(a.data()), &output_value, a.size(), Maximum);
         if constexpr (sizeof(T) == 4 && std::is_signed_v<T> == true)
-            cplib_avx512_reduce_i32(const_cast<T *>(a.data()), &out, a.size(), Maximum);
+            cplib_avx512_reduce_i32(const_cast<T *>(a.data()), &output_value, a.size(), Maximum);
         if constexpr (sizeof(T) == 4 && std::is_signed_v<T> == false)
-            cplib_avx512_reduce_u32(const_cast<T *>(a.data()), &out, a.size(), Maximum);
+            cplib_avx512_reduce_u32(const_cast<T *>(a.data()), &output_value, a.size(), Maximum);
         if constexpr (sizeof(T) == 8 && std::is_signed_v<T> == true)
-            cplib_avx512_reduce_i64(const_cast<T *>(a.data()), &out, a.size(), Maximum);
+            cplib_avx512_reduce_i64(const_cast<T *>(a.data()), &output_value, a.size(), Maximum);
         if constexpr (sizeof(T) == 8 && std::is_signed_v<T> == false)
-            cplib_avx512_reduce_u64(const_cast<T *>(a.data()), &out, a.size(), Maximum);
-        return out;
+            cplib_avx512_reduce_u64(const_cast<T *>(a.data()), &output_value, a.size(), Maximum);
+        return output_value;
     }
 #endif
     for (T x : a)
-        if (Maximum ? out < x : x < out)
-            out = x;
-    return out;
+        if (Maximum ? output_value < x : x < output_value)
+            output_value = x;
+    return output_value;
 }
 }
 
@@ -211,17 +211,17 @@ template <class A, class B, class D> void avx512Add(const A &a, const B &b, D &d
 // 各要素の加算を新しいvectorで返す。時間・追加領域O(n)。
 template <class A, class B> auto avx512Add(const A &a, const B &b) {
     using T = typename A::value_type;
-    std::vector<T> out(a.size());
-    detail::avx512utils::binary<0, T>(a, b, out);
-    return out;
+    std::vector<T> output_value(a.size());
+    detail::avx512utils::binary<0, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素の加算を同じ型のarrayで返す。時間・追加領域O(n)。
 template <Avx512Integer T, std::size_t N>
 auto avx512Add(const std::array<T, N> &a, const std::array<T, N> &b) {
-    std::array<T, N> out;
-    detail::avx512utils::binary<0, T>(a, b, out);
-    return out;
+    std::array<T, N> output_value;
+    detail::avx512utils::binary<0, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素の減算をdstに格納する。O(n)、追加領域O(1)。完全な同一領域への上書きも可能。
@@ -235,17 +235,17 @@ template <class A, class B, class D> void avx512Sub(const A &a, const B &b, D &d
 // 各要素の減算を新しいvectorで返す。時間・追加領域O(n)。
 template <class A, class B> auto avx512Sub(const A &a, const B &b) {
     using T = typename A::value_type;
-    std::vector<T> out(a.size());
-    detail::avx512utils::binary<1, T>(a, b, out);
-    return out;
+    std::vector<T> output_value(a.size());
+    detail::avx512utils::binary<1, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素の減算を同じ型のarrayで返す。時間・追加領域O(n)。
 template <Avx512Integer T, std::size_t N>
 auto avx512Sub(const std::array<T, N> &a, const std::array<T, N> &b) {
-    std::array<T, N> out;
-    detail::avx512utils::binary<1, T>(a, b, out);
-    return out;
+    std::array<T, N> output_value;
+    detail::avx512utils::binary<1, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素の最小値をdstに格納する。O(n)、追加領域O(1)。完全な同一領域への上書きも可能。
@@ -258,17 +258,17 @@ template <class A, class B, class D> void avx512Min(const A &a, const B &b, D &d
 // 各要素の最小値を新しいvectorで返す。時間・追加領域O(n)。
 template <class A, class B> auto avx512Min(const A &a, const B &b) {
     using T = typename A::value_type;
-    std::vector<T> out(a.size());
-    detail::avx512utils::binary<2, T>(a, b, out);
-    return out;
+    std::vector<T> output_value(a.size());
+    detail::avx512utils::binary<2, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素の最小値を同じ型のarrayで返す。時間・追加領域O(n)。
 template <Avx512Integer T, std::size_t N>
 auto avx512Min(const std::array<T, N> &a, const std::array<T, N> &b) {
-    std::array<T, N> out;
-    detail::avx512utils::binary<2, T>(a, b, out);
-    return out;
+    std::array<T, N> output_value;
+    detail::avx512utils::binary<2, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素の最大値をdstに格納する。O(n)、追加領域O(1)。完全な同一領域への上書きも可能。
@@ -281,17 +281,17 @@ template <class A, class B, class D> void avx512Max(const A &a, const B &b, D &d
 // 各要素の最大値を新しいvectorで返す。時間・追加領域O(n)。
 template <class A, class B> auto avx512Max(const A &a, const B &b) {
     using T = typename A::value_type;
-    std::vector<T> out(a.size());
-    detail::avx512utils::binary<3, T>(a, b, out);
-    return out;
+    std::vector<T> output_value(a.size());
+    detail::avx512utils::binary<3, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素の最大値を同じ型のarrayで返す。時間・追加領域O(n)。
 template <Avx512Integer T, std::size_t N>
 auto avx512Max(const std::array<T, N> &a, const std::array<T, N> &b) {
-    std::array<T, N> out;
-    detail::avx512utils::binary<3, T>(a, b, out);
-    return out;
+    std::array<T, N> output_value;
+    detail::avx512utils::binary<3, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素のビットANDをdstに格納する。O(n)、追加領域O(1)。完全な同一領域への上書きも可能。
@@ -304,17 +304,17 @@ template <class A, class B, class D> void avx512And(const A &a, const B &b, D &d
 // 各要素のビットANDを新しいvectorで返す。時間・追加領域O(n)。
 template <class A, class B> auto avx512And(const A &a, const B &b) {
     using T = typename A::value_type;
-    std::vector<T> out(a.size());
-    detail::avx512utils::binary<4, T>(a, b, out);
-    return out;
+    std::vector<T> output_value(a.size());
+    detail::avx512utils::binary<4, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素のビットANDを同じ型のarrayで返す。時間・追加領域O(n)。
 template <Avx512Integer T, std::size_t N>
 auto avx512And(const std::array<T, N> &a, const std::array<T, N> &b) {
-    std::array<T, N> out;
-    detail::avx512utils::binary<4, T>(a, b, out);
-    return out;
+    std::array<T, N> output_value;
+    detail::avx512utils::binary<4, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素のビットORをdstに格納する。O(n)、追加領域O(1)。完全な同一領域への上書きも可能。
@@ -327,17 +327,17 @@ template <class A, class B, class D> void avx512Or(const A &a, const B &b, D &ds
 // 各要素のビットORを新しいvectorで返す。時間・追加領域O(n)。
 template <class A, class B> auto avx512Or(const A &a, const B &b) {
     using T = typename A::value_type;
-    std::vector<T> out(a.size());
-    detail::avx512utils::binary<5, T>(a, b, out);
-    return out;
+    std::vector<T> output_value(a.size());
+    detail::avx512utils::binary<5, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素のビットORを同じ型のarrayで返す。時間・追加領域O(n)。
 template <Avx512Integer T, std::size_t N>
 auto avx512Or(const std::array<T, N> &a, const std::array<T, N> &b) {
-    std::array<T, N> out;
-    detail::avx512utils::binary<5, T>(a, b, out);
-    return out;
+    std::array<T, N> output_value;
+    detail::avx512utils::binary<5, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素のビットXORをdstに格納する。O(n)、追加領域O(1)。完全な同一領域への上書きも可能。
@@ -350,17 +350,17 @@ template <class A, class B, class D> void avx512Xor(const A &a, const B &b, D &d
 // 各要素のビットXORを新しいvectorで返す。時間・追加領域O(n)。
 template <class A, class B> auto avx512Xor(const A &a, const B &b) {
     using T = typename A::value_type;
-    std::vector<T> out(a.size());
-    detail::avx512utils::binary<6, T>(a, b, out);
-    return out;
+    std::vector<T> output_value(a.size());
+    detail::avx512utils::binary<6, T>(a, b, output_value);
+    return output_value;
 }
 
 // 各要素のビットXORを同じ型のarrayで返す。時間・追加領域O(n)。
 template <Avx512Integer T, std::size_t N>
 auto avx512Xor(const std::array<T, N> &a, const std::array<T, N> &b) {
-    std::array<T, N> out;
-    detail::avx512utils::binary<6, T>(a, b, out);
-    return out;
+    std::array<T, N> output_value;
+    detail::avx512utils::binary<6, T>(a, b, output_value);
+    return output_value;
 }
 
 // 全要素の最小値を返す。O(n)、追加領域O(1)。空列はstd::invalid_argument。

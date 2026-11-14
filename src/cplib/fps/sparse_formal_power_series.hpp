@@ -19,18 +19,18 @@ template <class T> SparseFPS<T> initSparseFPS(SparseFPS<T> terms) {
     for (auto term : terms)
         assert(term.degree >= 0);
     std::sort(terms.begin(), terms.end(), [](auto a, auto b) { return a.degree < b.degree; });
-    SparseFPS<T> out;
+    SparseFPS<T> output_value;
     for (auto term : terms) {
         if (term.coefficient.val() == 0)
             continue;
-        if (!out.empty() && out.back().degree == term.degree) {
-            out.back().coefficient += term.coefficient;
-            if (out.back().coefficient.val() == 0)
-                out.pop_back();
+        if (!output_value.empty() && output_value.back().degree == term.degree) {
+            output_value.back().coefficient += term.coefficient;
+            if (output_value.back().coefficient.val() == 0)
+                output_value.pop_back();
         } else
-            out.push_back(term);
+            output_value.push_back(term);
     }
-    return out;
+    return output_value;
 }
 
 // 項の列を次数順に正規化する。K項に対して O(K log(K+1))。
@@ -107,17 +107,17 @@ public:
 
     // 式木の項を列挙する。式木のノード数を K として O(K)。
     SparseFPS<T> terms() const {
-        SparseFPS<T> out;
+        SparseFPS<T> output_value;
         auto visit = [&](auto &&self, const std::shared_ptr<const Node> &p, bool neg) -> void {
             if (!p->left) {
-                out.push_back({p->degree, neg ? -p->coefficient : p->coefficient});
+                output_value.push_back({p->degree, neg ? -p->coefficient : p->coefficient});
                 return;
             }
             self(self, p->left, neg);
             self(self, p->right, neg != p->subtract);
         };
         visit(visit, node, false);
-        return out;
+        return output_value;
     }
 };
 
@@ -191,27 +191,27 @@ template <class T> T constantTerm(const SparseFPS<T> &f) {
 template <class T> std::vector<T> toDense(const SparseFPS<T> &f, Int n) {
     if (n <= 0)
         return {};
-    std::vector<T> out(n);
+    std::vector<T> output_value(n);
     for (auto term : f) {
         if (term.degree >= n)
             break;
-        out[term.degree] = term.coefficient;
+        output_value[term.degree] = term.coefficient;
     }
-    return out;
+    return output_value;
 }
 
 // 密なFPSと疎なFPSの積を x^n で打ち切って返す。疎な側の項数を K として O(n(K+1))。
 template <class T> std::vector<T> mulPrefix(const std::vector<T> &f, const SparseFPS<T> &g, Int n) {
     if (n <= 0)
         return {};
-    std::vector<T> out(n);
+    std::vector<T> output_value(n);
     for (auto term : g) {
         if (term.degree >= n)
             break;
         for (Int i = 0; i < std::min(Int(f.size()), n - term.degree); ++i)
-            out[i + term.degree] += f[i] * term.coefficient;
+            output_value[i + term.degree] += f[i] * term.coefficient;
     }
-    return out;
+    return output_value;
 }
 
 // 密なFPSと疎なFPSの積を返す。計算量は mulPrefix と同じ。
@@ -233,13 +233,13 @@ template <class T> auto &operator*=(std::vector<T> &f, const SparseFPS<T> &g) {
 
 namespace detail {
 template <class T> SparseFPS<T> sparseTruncated(const SparseFPS<T> &f, Int n) {
-    SparseFPS<T> out;
+    SparseFPS<T> output_value;
     for (auto term : f) {
         if (term.degree >= n)
             break;
-        out.push_back(term);
+        output_value.push_back(term);
     }
-    return out;
+    return output_value;
 }
 
 template <class T>
@@ -277,8 +277,8 @@ std::vector<T> sparsePowUnit(const SparseFPS<T> &f, T exponent, T constantRoot, 
         return {};
     T constant = constantTerm(f);
     assert(constant.val() != 0 && n <= T::umod());
-    std::vector<T> out(n);
-    out[0] = constantRoot;
+    std::vector<T> output_value(n);
+    output_value[0] = constantRoot;
     T cinv = constant.inv();
 
     struct Term {
@@ -296,19 +296,19 @@ std::vector<T> sparsePowUnit(const SparseFPS<T> &f, T exponent, T constantRoot, 
         terms.push_back({term.degree, c, exponent * T(term.degree) * c});
     }
     if (terms.empty())
-        return out;
+        return output_value;
     auto inverses = fpsIndexInverses<T>(n);
     for (Int degree = terms[0].degree; degree < n; ++degree) {
         T value = 0;
         for (auto &term : terms) {
             if (term.degree > degree)
                 break;
-            value += term.weight * out[degree - term.degree];
+            value += term.weight * output_value[degree - term.degree];
             term.weight -= term.coefficient;
         }
-        out[degree] = value * inverses[degree];
+        output_value[degree] = value * inverses[degree];
     }
-    return out;
+    return output_value;
 }
 }
 
@@ -317,9 +317,9 @@ std::vector<T> sparsePowUnit(const SparseFPS<T> &f, T exponent, T constantRoot, 
 template <class T> std::vector<T> divPrefix(const std::vector<T> &f, const SparseFPS<T> &g, Int n) {
     if (n <= 0)
         return {};
-    auto out = prefix(f, n);
-    detail::sparseDivideInPlace(out, g, f.size());
-    return out;
+    auto output_value = prefix(f, n);
+    detail::sparseDivideInPlace(output_value, g, f.size());
+    return output_value;
 }
 
 // f.size() 項まで密なFPSを疎なFPSで割る。計算量は divPrefix と同じ。
@@ -342,8 +342,8 @@ template <class T> std::vector<T> exp(const SparseFPS<T> &f, Int n) {
     if (n <= 0)
         return {};
     assert(n <= T::umod() && constantTerm(f).val() == 0);
-    std::vector<T> out(n);
-    out[0] = 1;
+    std::vector<T> output_value(n);
+    output_value[0] = 1;
     SparseFPS<T> terms;
     for (auto term : f) {
         if (term.degree >= n)
@@ -352,18 +352,18 @@ template <class T> std::vector<T> exp(const SparseFPS<T> &f, Int n) {
             terms.push_back({term.degree, term.coefficient * T(term.degree)});
     }
     if (terms.empty())
-        return out;
+        return output_value;
     auto inverses = detail::fpsIndexInverses<T>(n);
     for (Int degree = terms[0].degree; degree < n; ++degree) {
         T value = 0;
         for (auto term : terms) {
             if (term.degree > degree)
                 break;
-            value += term.coefficient * out[degree - term.degree];
+            value += term.coefficient * output_value[degree - term.degree];
         }
-        out[degree] = value * inverses[degree];
+        output_value[degree] = value * inverses[degree];
     }
-    return out;
+    return output_value;
 }
 
 // 疎なFPSの形式的対数をx^nで打ち切る。素数法で非零項数をkとしてO(nk)。
@@ -371,19 +371,19 @@ template <class T> std::vector<T> log(const SparseFPS<T> &f, Int n) {
     if (n <= 0)
         return {};
     assert(n <= T::umod() && constantTerm(f).val() == 1);
-    std::vector<T> out(n);
+    std::vector<T> output_value(n);
     if (f.size() <= 1 || f[1].degree >= n)
-        return out;
+        return output_value;
     for (auto term : f) {
         if (term.degree >= n)
             break;
-        out[term.degree] = term.coefficient * T(term.degree);
+        output_value[term.degree] = term.coefficient * T(term.degree);
     }
-    detail::sparseDivideInPlace(out, f, n);
+    detail::sparseDivideInPlace(output_value, f, n);
     auto inverses = detail::fpsIndexInverses<T>(n);
     for (Int d = 1; d < n; ++d)
-        out[d] *= inverses[d];
-    return out;
+        output_value[d] *= inverses[d];
+    return output_value;
 }
 
 // 疎なFPSの非負整数冪を x^n で打ち切って返す。素数法で K 項なら O(n(K+1)+log(k+1))。
@@ -393,9 +393,9 @@ template <class T> std::vector<T> pow(const SparseFPS<T> &f, Int k, Int n) {
         return {};
     assert(n <= T::umod());
     if (k == 0) {
-        std::vector<T> out(n);
-        out[0] = 1;
-        return out;
+        std::vector<T> output_value(n);
+        output_value[0] = 1;
+        return output_value;
     }
     if (k == 1)
         return toDense(f, n);
@@ -412,9 +412,9 @@ template <class T> std::vector<T> pow(const SparseFPS<T> &f, Int k, Int n) {
     auto body = detail::sparsePowUnit(unit, T(k % T::umod()), leading.pow(k), n - shift);
     if (shift == 0)
         return body;
-    std::vector<T> out(n);
-    std::copy(body.begin(), body.end(), out.begin() + shift);
-    return out;
+    std::vector<T> output_value(n);
+    std::copy(body.begin(), body.end(), output_value.begin() + shift);
+    return output_value;
 }
 
 // 疎なFPSの形式的平方根を x^n で打ち切って返す。素数法で O(n(K+1)+S(mod))。
@@ -441,9 +441,9 @@ template <class T> std::optional<std::vector<T>> sqrt(const SparseFPS<T> &f, Int
     auto body = detail::sparsePowUnit(unit, T(1) / T(2), (*leadingRoot)[0], n - shift);
     if (shift == 0)
         return body;
-    std::vector<T> out(n);
-    std::copy(body.begin(), body.end(), out.begin() + shift);
-    return out;
+    std::vector<T> output_value(n);
+    std::copy(body.begin(), body.end(), output_value.begin() + shift);
+    return output_value;
 }
 
 namespace detail {
@@ -454,7 +454,7 @@ template <class T> struct LinearPolynomial {
 template <Modint T>
 auto multiplyPolynomialMatrices(const std::vector<std::vector<T>> &a,
                                 const std::vector<std::vector<T>> &b, Int d) {
-    std::vector<std::vector<T>> out(d * d);
+    std::vector<std::vector<T>> output_value(d * d);
     for (Int row = 0; row < d; ++row)
         for (Int middle = 0; middle < d; ++middle) {
             const auto &left = a[row * d + middle];
@@ -463,10 +463,10 @@ auto multiplyPolynomialMatrices(const std::vector<std::vector<T>> &a,
             for (Int col = 0; col < d; ++col) {
                 const auto &right = b[middle * d + col];
                 if (!right.empty())
-                    out[row * d + col] += convolution(left, right);
+                    output_value[row * d + col] += convolution(left, right);
             }
         }
-    return out;
+    return output_value;
 }
 
 template <Modint T> std::vector<T> shiftedLinearPolynomial(LinearPolynomial<T> p, Int shift) {
@@ -482,10 +482,10 @@ template <Modint T>
 std::vector<std::vector<T>> blockMatrixProduct(const std::vector<LinearPolynomial<T>> &transition,
                                                Int dimension, Int left, Int right) {
     if (right - left == 1) {
-        std::vector<std::vector<T>> out(dimension * dimension);
-        for (Int i = 0; i < Int(out.size()); ++i)
-            out[i] = shiftedLinearPolynomial(transition[i], left);
-        return out;
+        std::vector<std::vector<T>> output_value(dimension * dimension);
+        for (Int i = 0; i < Int(output_value.size()); ++i)
+            output_value[i] = shiftedLinearPolynomial(transition[i], left);
+        return output_value;
     }
     Int middle = (left + right) >> 1;
     auto lower = blockMatrixProduct(transition, dimension, left, middle),
@@ -560,27 +560,27 @@ template <class T> struct PolynomialRecurrence {
 };
 
 template <Modint T> PolynomialRecurrence<T> expTransition(const SparseFPS<T> &f, Int d) {
-    PolynomialRecurrence<T> out{std::vector<LinearPolynomial<T>>(d * d), {T(d), T(1)}};
+    PolynomialRecurrence<T> output_value{std::vector<LinearPolynomial<T>>(d * d), {T(d), T(1)}};
     for (Int row = 0; row < d - 1; ++row)
-        out.matrix[row * d + row + 1] = out.denominator;
+        output_value.matrix[row * d + row + 1] = output_value.denominator;
     for (auto term : f)
         if (term.degree > 0 && term.degree <= d)
-            out.matrix[(d - 1) * d + d - term.degree].constant = T(term.degree) * term.coefficient;
-    return out;
+            output_value.matrix[(d - 1) * d + d - term.degree].constant = T(term.degree) * term.coefficient;
+    return output_value;
 }
 
 template <Modint T>
 PolynomialRecurrence<T> powTransition(const SparseFPS<T> &f, T exponent, Int d) {
     T constant = constantTerm(f);
-    PolynomialRecurrence<T> out{std::vector<LinearPolynomial<T>>(d * d),
+    PolynomialRecurrence<T> output_value{std::vector<LinearPolynomial<T>>(d * d),
                                 {T(d) * constant, constant}};
     for (Int row = 0; row < d - 1; ++row)
-        out.matrix[row * d + row + 1] = out.denominator;
+        output_value.matrix[row * d + row + 1] = output_value.denominator;
     for (auto term : f)
         if (term.degree > 0 && term.degree <= d)
-            out.matrix[(d - 1) * d + d - term.degree] = {
+            output_value.matrix[(d - 1) * d + d - term.degree] = {
                 ((exponent + T(1)) * T(term.degree) - T(d)) * term.coefficient, -term.coefficient};
-    return out;
+    return output_value;
 }
 }
 

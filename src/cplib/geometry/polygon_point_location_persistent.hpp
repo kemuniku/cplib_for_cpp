@@ -1,0 +1,211 @@
+#pragma once
+#include <cplib/geometry/polygon.hpp>
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <type_traits>
+#include <vector>
+
+namespace cplib {
+
+// 単純多角形のオンライン点位置探索。整数座標専用。
+// 構築 O(N log N)、領域 O(N log N)、包含判定 O(log N)。
+// 外積と辺の高さ比較には __int128 を使う。座標の絶対値が 10^12 以下なら中間値も収まる。
+template <class T> class PersistentPolygonPointLocator {
+    static_assert(std::is_integral_v<T> && sizeof(T) <= 8);
+    using Wide = __int128_t;
+    using P = Point<T>;
+    struct Edge {
+        P a, b; // 入力多角形の周回方向
+        P left, right;
+        Wide dx, dy;
+    };
+    struct Node {
+        int edge, left, right, height;
+    };
+    struct Vertical {
+        T x, lo, hi;
+        bool operator<(const Vertical &other) const {
+            return x == other.x ? lo < other.lo : x < other.x;
+        }
+    };
+    std::vector<Edge> edges_;
+    std::vector<Node> nodes_;
+    std::vector<T> xs_;
+    std::vector<int> roots_;
+    std::vector<P> vertices_;
+    std::vector<Vertical> vertical_;
+    bool ccw_ = true;
+
+    static int sign(Wide x) { return (x > 0) - (x < 0); }
+    int height(int node) const { return node < 0 ? 0 : nodes_[node].height; }
+    int make(int edge, int left, int right) {
+        nodes_.push_back({edge, left, right, 1 + std::max(height(left), height(right))});
+        return int(nodes_.size()) - 1;
+    }
+    int rotate_left(int root) {
+        Node a = nodes_[root], b = nodes_[a.right];
+        int child = make(a.edge, a.left, b.left);
+        return make(b.edge, child, b.right);
+    }
+    int rotate_right(int root) {
+        Node a = nodes_[root], b = nodes_[a.left];
+        int child = make(a.edge, b.right, a.right);
+        return make(b.edge, b.left, child);
+    }
+    int balance(int root) {
+        Node a = nodes_[root];
+        if (height(a.left) - height(a.right) > 1) {
+            Node b = nodes_[a.left];
+            if (height(b.left) < height(b.right))
+                root = make(a.edge, rotate_left(a.left), a.right);
+            return rotate_right(root);
+        }
+        if (height(a.right) - height(a.left) > 1) {
+            Node b = nodes_[a.right];
+            if (height(b.right) < height(b.left))
+                root = make(a.edge, a.left, rotate_right(a.right));
+            return rotate_left(root);
+        }
+        return root;
+    }
+    // y_edge(x) - p.y の符号。dx > 0 で割る前の整数演算。
+    int compare_point(int edge, P p) const {
+        const Edge &e = edges_[edge];
+        return sign(e.dy * (Wide(p.x) - e.left.x) - e.dx * (Wide(p.y) - e.left.y));
+    }
+    // 更新対象の辺には x に端点がある。x の直前/直後での高さ順を比較する。
+    int compare_update(int edge, int other, int side) const {
+        if (edge == other)
+            return 0;
+        const Edge &a = edges_[edge], &b = edges_[other];
+        P endpoint = side < 0 ? a.right : a.left;
+        int at_x = -compare_point(other, endpoint);
+        if (at_x)
+            return at_x;
+        int slope = sign(a.dy * b.dx - b.dy * a.dx);
+        assert(slope != 0); // 同じ側に重なる辺は単純多角形にはない
+        return side * slope;
+    }
+    int insert(int root, int edge) {
+        if (root < 0)
+            return make(edge, -1, -1);
+        Node a = nodes_[root];
+        int cmp = compare_update(edge, a.edge, +1);
+        assert(cmp != 0);
+        if (cmp < 0)
+            a.left = insert(a.left, edge);
+        else
+            a.right = insert(a.right, edge);
+        return balance(make(a.edge, a.left, a.right));
+    }
+    std::pair<int, int> remove_min(int root) {
+        Node a = nodes_[root];
+        if (a.left < 0)
+            return {a.edge, a.right};
+        auto [edge, left] = remove_min(a.left);
+        return {edge, balance(make(a.edge, left, a.right))};
+    }
+    int erase(int root, int edge) {
+        assert(root >= 0);
+        Node a = nodes_[root];
+        int cmp = compare_update(edge, a.edge, -1);
+        if (cmp < 0)
+            return balance(make(a.edge, erase(a.left, edge), a.right));
+        if (cmp > 0)
+            return balance(make(a.edge, a.left, erase(a.right, edge)));
+        if (a.left < 0)
+            return a.right;
+        if (a.right < 0)
+            return a.left;
+        auto [next, right] = remove_min(a.right);
+        return balance(make(next, a.left, right));
+    }
+
+public:
+    explicit PersistentPolygonPointLocator(const Polygon<T> &polygon) {
+        const int n = int(polygon.size());
+        assert(n >= 3);
+        Wide twice_area = 0;
+        vertices_.assign(polygon.begin(), polygon.end());
+        std::sort(vertices_.begin(), vertices_.end());
+        for (int i = 0; i < n; ++i) {
+            P a = polygon[i], b = polygon[(i + 1) % n];
+            assert(!exact_equal(a, b));
+            twice_area += Wide(a.x) * b.y - Wide(a.y) * b.x;
+            if (a.x == b.x) {
+                vertical_.push_back({a.x, std::min(a.y, b.y), std::max(a.y, b.y)});
+            } else {
+                P left = a.x < b.x ? a : b, right = a.x < b.x ? b : a;
+                edges_.push_back({a, b, left, right, Wide(right.x) - left.x,
+                                  Wide(right.y) - left.y});
+            }
+        }
+        assert(twice_area != 0);
+        ccw_ = twice_area > 0;
+        std::sort(vertical_.begin(), vertical_.end());
+        xs_.reserve(vertices_.size());
+        for (P p : vertices_)
+            if (xs_.empty() || xs_.back() != p.x)
+                xs_.push_back(p.x);
+        std::vector<std::vector<int>> starts(xs_.size()), ends(xs_.size());
+        for (int i = 0; i < int(edges_.size()); ++i) {
+            int l = int(std::lower_bound(xs_.begin(), xs_.end(), edges_[i].left.x) - xs_.begin());
+            int r = int(std::lower_bound(xs_.begin(), xs_.end(), edges_[i].right.x) - xs_.begin());
+            starts[l].push_back(i);
+            ends[r].push_back(i);
+        }
+        roots_.reserve(xs_.size());
+        int root = -1;
+        for (int i = 0; i < int(xs_.size()); ++i) {
+            for (int edge : ends[i])
+                root = erase(root, edge);
+            for (int edge : starts[i])
+                root = insert(root, edge);
+            roots_.push_back(root);
+        }
+    }
+
+    // 0: 外部、1: 境界、2: 内部。
+    Int contains(P p) const {
+        if (std::binary_search(vertices_.begin(), vertices_.end(), p))
+            return 1;
+        auto it = std::upper_bound(vertical_.begin(), vertical_.end(), Vertical{p.x, p.y, T(0)});
+        if (it != vertical_.begin()) {
+            --it;
+            if (it->x == p.x && it->lo <= p.y && p.y <= it->hi)
+                return 1;
+        }
+        auto xi = std::upper_bound(xs_.begin(), xs_.end(), p.x);
+        if (xi == xs_.begin())
+            return 0;
+        int root = roots_[xi - xs_.begin() - 1];
+        int below = -1;
+        while (root >= 0) {
+            Node node = nodes_[root];
+            int cmp = compare_point(node.edge, p);
+            if (cmp == 0)
+                return 1;
+            if (cmp < 0) {
+                below = node.edge;
+                root = node.right;
+            } else {
+                root = node.left;
+            }
+        }
+        if (below < 0)
+            return 0;
+        bool inside_above = (edges_[below].b.x > edges_[below].a.x) == ccw_;
+        return inside_above ? 2 : 0;
+    }
+};
+
+template <class T> auto initPersistentPolygonPointLocator(const Polygon<T> &polygon) {
+    return PersistentPolygonPointLocator<T>(polygon);
+}
+
+template <class T> Int contains(const PersistentPolygonPointLocator<T> &locator, Point<T> p) {
+    return locator.contains(p);
+}
+
+} // namespace cplib

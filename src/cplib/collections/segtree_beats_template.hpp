@@ -97,13 +97,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return seg.len();
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return seg.size();
     }
 
     // 位置pをvalueで上書きする。O(log(N+1)+D)、Dは伝播時の失敗回数。
@@ -145,7 +140,7 @@ public:
 
     // 末尾から指定した位置の参照を返す。取得と更新はO(log(N+1)+D)、Dは伝播時の失敗回数。
     Reference operator[](BackwardsIndex p) {
-        return (*this)[len() - p.value];
+        return (*this)[size() - p.value];
     }
 
     // O(log(N+1)+D)、Dは伝播時の失敗回数。
@@ -222,11 +217,6 @@ template <class T> auto initRangeChminChmaxRangeSumMaxMin(const std::vector<T> &
 // 位置pをvalueで上書きする。O(log(N+1)+D)、Dは伝播時の失敗回数。
 template <class T> void update(RangeChminChmaxRangeSumMaxMin<T> &tree, Int p, T value) {
     tree.update(p, value);
-}
-
-// 要素数を返す。O(1)。
-template <class T> Int len(const RangeChminChmaxRangeSumMaxMin<T> &tree) {
-    return tree.len();
 }
 
 // 全要素の集約情報を文字列で返す。出力長L、全取得の失敗回数の合計DとしてO(N log(N+1)+D+L)。

@@ -101,13 +101,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return length;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return length;
     }
 
     // 確保済みのノード数を返す。O(1)。
@@ -190,11 +185,6 @@ template <class T, class Op> auto initDynamicSegmentTree(Int n, Op op, T e) {
 // 長さnの単位元列と演算を指定して空の木を生成する。O(1)。
 template <class Op, class T> auto newDynamicSegWith(Int n, Op op, T e) {
     return initDynamicSegmentTree(n, op, e);
-}
-
-// 要素数を返す。O(1)。
-template <class T> Int len(const DynamicSegmentTree<T> &s) {
-    return s.len();
 }
 
 // 確保済みのノード数を返す。O(1)。

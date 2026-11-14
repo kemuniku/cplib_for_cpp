@@ -31,13 +31,8 @@ public:
     }
 
     // 要素数を返す。O(1)。
-    Int len() const {
-        return size_;
-    }
-
-    // 要素数を返す。O(1)。
     Int size() const {
-        return len();
+        return size_;
     }
 
     // 一点加算。O(log n)。
@@ -124,7 +119,7 @@ public:
     CPLIB_BACKWARDS_INDEX_OVERLOADS
     // 両端を含む区間の和を返す。O(log(n+1))。
     template <class L, class R> T operator[](ClosedSlice<L, R> segment) const {
-        return get(resolve_index(len(), segment.a), resolve_index(len(), segment.b) + 1);
+        return get(resolve_index(size(), segment.a), resolve_index(size(), segment.b) + 1);
     }
 };
 
@@ -141,11 +136,6 @@ template <class T> FenwickTree<T> initFenwickTree(std::span<const T> a) {
 // 配列から構築する。要素演算がO(1)ならO(n)。
 template <class T> FenwickTree<T> initFenwickTree(const std::vector<T> &a) {
     return FenwickTree<T>(a);
-}
-
-// 要素数を返す。O(1)。
-template <class T> Int len(const FenwickTree<T> &f) {
-    return f.len();
 }
 
 // p番目に加算する。O(log(n+1))。

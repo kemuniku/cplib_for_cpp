@@ -22,9 +22,9 @@ template <Modint T> struct PolynomialProductTree {
     // 点数 N、f の長さ F、畳み込みの計算量 M に対し O(M(F+N) + M(N)log(N+1))。
     // 木の構築に使ったすべての点でfを評価する。
     std::vector<T> evaluate(const std::vector<T> &f) const {
-        std::vector<T> out(pointCount);
+        std::vector<T> output_value(pointCount);
         if (!pointCount)
-            return out;
+            return output_value;
         Int directLevel = leafCount, pointsPerNode = 1;
         while (pointsPerNode < 64 && directLevel > 1) {
             directLevel /= 2;
@@ -40,9 +40,9 @@ template <Modint T> struct PolynomialProductTree {
             Int first = (node - directLevel) * pointsPerNode,
                 last = std::min(first + pointsPerNode, pointCount);
             for (Int i = first; i < last; ++i)
-                out[i] = eval(rem[node], -nodes[leafCount + i][0]);
+                output_value[i] = eval(rem[node], -nodes[leafCount + i][0]);
         }
-        return out;
+        return output_value;
     }
 };
 
@@ -101,7 +101,7 @@ std::vector<T> multipointEvaluation(const std::vector<T> &f, const std::vector<T
         transformed[node * 2] = {left.begin() + childSize, left.begin() + childSize * 2};
         transformed[node * 2 + 1] = {right.begin() + childSize, right.begin() + childSize * 2};
     }
-    std::vector<T> out(xs.size());
+    std::vector<T> output_value(xs.size());
     for (Int block = 0; block < blockCount; ++block) {
         const auto &tb = transformed[blockCount + block];
         const auto &rb = reversedProducts[blockCount + block];
@@ -112,8 +112,8 @@ std::vector<T> multipointEvaluation(const std::vector<T> &f, const std::vector<T
         std::reverse(rem.begin(), rem.end());
         Int first = block * blockSize, last = std::min(first + blockSize, Int(xs.size()));
         for (Int i = first; i < last; ++i)
-            out[i] = eval(rem, xs[i]);
+            output_value[i] = eval(rem, xs[i]);
     }
-    return out;
+    return output_value;
 }
 }
