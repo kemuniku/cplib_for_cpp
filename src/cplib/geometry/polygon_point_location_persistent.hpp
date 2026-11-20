@@ -1,5 +1,6 @@
 #pragma once
 #include <cplib/geometry/polygon.hpp>
+#include <cplib/geometry/private/persistent_edge_order.hpp>
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -22,9 +23,6 @@ template <class T> class PersistentPolygonPointLocator {
         P left, right;
         Wide dx, dy;
     };
-    struct Node {
-        int edge, left, right, height;
-    };
     struct Vertical {
         T x, lo, hi;
         bool operator<(const Vertical &other) const {
@@ -32,7 +30,7 @@ template <class T> class PersistentPolygonPointLocator {
         }
     };
     std::vector<Edge> edges_;
-    std::vector<Node> nodes_;
+    detail::PersistentEdgeOrder edge_order_;
     std::vector<T> xs_;
     std::vector<int> roots_;
     std::vector<P> vertices_;
@@ -40,37 +38,6 @@ template <class T> class PersistentPolygonPointLocator {
     bool ccw_ = true;
 
     static int sign(Wide x) { return (x > 0) - (x < 0); }
-    int height(int node) const { return node < 0 ? 0 : nodes_[node].height; }
-    int make(int edge, int left, int right) {
-        nodes_.push_back({edge, left, right, 1 + std::max(height(left), height(right))});
-        return int(nodes_.size()) - 1;
-    }
-    int rotate_left(int root) {
-        Node a = nodes_[root], b = nodes_[a.right];
-        int child = make(a.edge, a.left, b.left);
-        return make(b.edge, child, b.right);
-    }
-    int rotate_right(int root) {
-        Node a = nodes_[root], b = nodes_[a.left];
-        int child = make(a.edge, b.right, a.right);
-        return make(b.edge, b.left, child);
-    }
-    int balance(int root) {
-        Node a = nodes_[root];
-        if (height(a.left) - height(a.right) > 1) {
-            Node b = nodes_[a.left];
-            if (height(b.left) < height(b.right))
-                root = make(a.edge, rotate_left(a.left), a.right);
-            return rotate_right(root);
-        }
-        if (height(a.right) - height(a.left) > 1) {
-            Node b = nodes_[a.right];
-            if (height(b.right) < height(b.left))
-                root = make(a.edge, a.left, rotate_right(a.right));
-            return rotate_left(root);
-        }
-        return root;
-    }
     // y_edge(x) - p.y の符号。dx > 0 で割る前の整数演算。
     int compare_point(int edge, P p) const {
         const Edge &e = edges_[edge];
@@ -88,40 +55,6 @@ template <class T> class PersistentPolygonPointLocator {
         int slope = sign(a.dy * b.dx - b.dy * a.dx);
         assert(slope != 0); // 同じ側に重なる辺は単純多角形にはない
         return side * slope;
-    }
-    int insert(int root, int edge) {
-        if (root < 0)
-            return make(edge, -1, -1);
-        Node a = nodes_[root];
-        int cmp = compare_update(edge, a.edge, +1);
-        assert(cmp != 0);
-        if (cmp < 0)
-            a.left = insert(a.left, edge);
-        else
-            a.right = insert(a.right, edge);
-        return balance(make(a.edge, a.left, a.right));
-    }
-    std::pair<int, int> remove_min(int root) {
-        Node a = nodes_[root];
-        if (a.left < 0)
-            return {a.edge, a.right};
-        auto [edge, left] = remove_min(a.left);
-        return {edge, balance(make(a.edge, left, a.right))};
-    }
-    int erase(int root, int edge) {
-        assert(root >= 0);
-        Node a = nodes_[root];
-        int cmp = compare_update(edge, a.edge, -1);
-        if (cmp < 0)
-            return balance(make(a.edge, erase(a.left, edge), a.right));
-        if (cmp > 0)
-            return balance(make(a.edge, a.left, erase(a.right, edge)));
-        if (a.left < 0)
-            return a.right;
-        if (a.right < 0)
-            return a.left;
-        auto [next, right] = remove_min(a.right);
-        return balance(make(next, a.left, right));
     }
 
 public:
@@ -163,9 +96,9 @@ public:
         int root = -1;
         for (int i = 0; i < int(xs_.size()); ++i) {
             for (int edge : ends[i])
-                root = erase(root, edge);
+                root = edge_order_.erase(root, edge, [&](int a, int b) { return compare_update(a, b, -1); });
             for (int edge : starts[i])
-                root = insert(root, edge);
+                root = edge_order_.insert(root, edge, [&](int a, int b) { return compare_update(a, b, +1); });
             roots_.push_back(root);
         }
     }
@@ -187,7 +120,7 @@ public:
         int root = roots_[xi - xs_.begin() - 1];
         int below = -1;
         while (root >= 0) {
-            Node node = nodes_[root];
+            auto node = edge_order_[root];
             int cmp = compare_point(node.edge, p);
             if (cmp == 0)
                 return 1;

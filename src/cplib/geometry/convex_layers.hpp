@@ -1,5 +1,5 @@
 #pragma once
-#include <cplib/geometry/base.hpp>
+#include <cplib/geometry/private/convex_hull_bridge.hpp>
 #include <stdexcept>
 
 namespace cplib {
@@ -21,43 +21,18 @@ class ConvexLayersHull {
     WidePoint point(Int i) const {
         return reversed_ ? -points_[points_.size() - 1 - i] : points_[i];
     }
-    static __int128 turn(WidePoint a, WidePoint b, WidePoint c) {
-        return cross(b - a, c - a);
-    }
     bool leaf(Int node) const {
         return nodes_[node].left == -1;
     }
 
-    // 両子の接線をたどって共通接線を探す。毎回どちらかの子へ降りるのでO(log N)。
-    // 厳密な不等号で判定し、接線上の共線点も凸包に残す。
     void pull(Int node) {
         Int left = nodes_[node].left, right = nodes_[node].right;
-        const __int128 split = point(nodes_[right].first).y;
-        while (!leaf(left) || !leaf(right)) {
-            const auto a = point(nodes_[left].bridgeLeft);
-            const auto b = point(nodes_[left].bridgeRight);
-            const auto c = point(nodes_[right].bridgeLeft);
-            const auto d = point(nodes_[right].bridgeRight);
-            if (!leaf(left) && turn(a, b, c) > 0) {
-                left = nodes_[left].left;
-            } else if (!leaf(right) && turn(b, c, d) > 0) {
-                right = nodes_[right].right;
-            } else if (leaf(left)) {
-                right = nodes_[right].left;
-            } else if (leaf(right)) {
-                left = nodes_[left].right;
-            } else {
-                const __int128 s = turn(a, b, c), t = turn(b, a, d);
-                // 接線の交点と分割線の位置を、除算せず比較する。
-                // 絶対座標を掛けず差を使うため、必要な整数幅は座標幅だけに依存する。
-                if (s + t == 0 || s * (d.y - split) + t * (c.y - split) < 0)
-                    left = nodes_[left].right;
-                else
-                    right = nodes_[right].left;
-            }
-        }
-        nodes_[node].bridgeLeft = nodes_[left].first;
-        nodes_[node].bridgeRight = nodes_[right].first;
+        auto [a, b] = convexHullBridge(
+            left, right, point(nodes_[right].first).y, [&](Int i) { return leaf(i); },
+            [&](Int i, bool next) { return next ? nodes_[i].right : nodes_[i].left; },
+            [&](Int i) { return std::pair{point(nodes_[i].bridgeLeft), point(nodes_[i].bridgeRight)}; });
+        nodes_[node].bridgeLeft = nodes_[a].first;
+        nodes_[node].bridgeRight = nodes_[b].first;
     }
     Int build(Int first, Int last) {
         Int node = nodes_.size();

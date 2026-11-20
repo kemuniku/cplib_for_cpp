@@ -11,6 +11,37 @@ template <class T> bool convexOnSegment(Point<T> a, Point<T> b, Point<T> p) {
         return p == a;
     return convexSign(cross(b - a, p - a)) == 0 && geometry_le(dot(p - a, p - b), T(0));
 }
+
+// 座標を取得する関数を受け取り、問い合わせ側で必要な演算幅に昇格できるようにする。
+template <class T, class Vertex> Int convexSupportIndex(Int n, const Vertex &vertex, Point<T> direction) {
+    assert(n > 0);
+    if (n == 1 || (direction.x == T(0) && direction.y == T(0)))
+        return 0;
+    if (n == 2)
+        return dot(direction, vertex(1) - vertex(0)) > T(0) ? 1 : 0;
+
+    // 最初の辺を基準に、内積が増加から非増加に変わる辺の方向を二分探索する。
+    const Point<T> tangent{T(-direction.y), direction.x};
+    const Point<T> anchor = vertex(1) - vertex(0);
+    auto first_half = [&](Point<T> v) {
+        T c = cross(anchor, v);
+        return c > T(0) || (c == T(0) && dot(anchor, v) > T(0));
+    };
+    const bool tangent_first_half = first_half(tangent);
+    Int lo = 0, hi = n;
+    while (lo < hi) {
+        Int mid = lo + (hi - lo) / 2;
+        Point<T> edge = vertex((mid + 1) % n) - vertex(mid);
+        bool edge_first_half = first_half(edge);
+        bool before_tangent = edge_first_half != tangent_first_half
+            ? edge_first_half : cross(edge, tangent) > T(0);
+        if (before_tangent)
+            lo = mid + 1;
+        else
+            hi = mid;
+    }
+    return lo == n ? 0 : lo;
+}
 }
 template <class T, class Id = void> class ConvexPolygon : public std::vector<Point<T, Id>> {
     using Base = std::vector<Point<T, Id>>;
@@ -123,33 +154,7 @@ public:
     Int support_index(Point<T> direction) const {
         const Base &vertices = *this;
         const Int n = static_cast<Int>(vertices.size());
-        assert(n > 0);
-        if (n == 1 || (direction.x == T(0) && direction.y == T(0)))
-            return 0;
-        if (n == 2)
-            return dot(direction, vertices[1] - vertices[0]) > T(0) ? 1 : 0;
-
-        // 最初の辺を基準に、内積が増加から非増加に変わる辺の方向を二分探索する。
-        const Point<T> tangent{T(-direction.y), direction.x};
-        const Point<T> anchor = vertices[1] - vertices[0];
-        auto first_half = [&](Point<T> v) {
-            T c = cross(anchor, v);
-            return c > T(0) || (c == T(0) && dot(anchor, v) > T(0));
-        };
-        const bool tangent_first_half = first_half(tangent);
-        Int lo = 0, hi = n;
-        while (lo < hi) {
-            Int mid = lo + (hi - lo) / 2;
-            Point<T> edge = vertices[(mid + 1) % n] - vertices[mid];
-            bool edge_first_half = first_half(edge);
-            bool before_tangent = edge_first_half != tangent_first_half
-                ? edge_first_half : cross(edge, tangent) > T(0);
-            if (before_tangent)
-                lo = mid + 1;
-            else
-                hi = mid;
-        }
-        return lo == n ? 0 : lo;
+        return detail::convexSupportIndex(n, [&](Int i) -> Point<T> { return vertices[i]; }, direction);
     }
     // dot(direction, p) を最大にする頂点を返す。頂点のIDも保持する。条件・計算量・整数幅はsupport_indexと同じ。
     Point<T, Id> support_point(Point<T> direction) const {
