@@ -1,0 +1,5 @@
+#!/bin/bash
+
+SOURCE_FILE="${1:-Main.cpp}"
+
+g++ -g -std=c++23 -fsanitize=undefined  -ftrapv -Wall -Wextra -DLOCAL_TEST -D_GLIBCXX_DEBUG -I./src/ $SOURCE_FILE

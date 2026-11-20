@@ -156,6 +156,11 @@ inline std::string to_string(Int128 x) {
     return detail::to_string(x);
 }
 
+// 十進表記と改行を標準出力へ書き込む。計算量は出力桁数に比例する。
+inline void put_inner(Int128 x) {
+    detail::output_int128(x);
+}
+
 // 標準出力に十進整数を出力する。計算量は出力桁数に比例する。
 inline void put(Int128 x) {
     detail::output_int128(x);

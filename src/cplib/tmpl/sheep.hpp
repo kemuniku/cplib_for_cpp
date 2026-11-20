@@ -266,6 +266,8 @@ inline ll sqrtll(ll x) {
 }
 
 // ★★★★ chmax, chmin
+using detail::template_support::chmax;
+using detail::template_support::chmin;
 
 // ★★★★★ vector を直接cinできるようにする
 // map, set, multiset とかを直接 cout できるようにする

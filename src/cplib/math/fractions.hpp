@@ -31,10 +31,15 @@ template <class T> struct Fraction {
     void reduce() {
         if (isNaN())
             return;
-        using std::abs;
-        auto g = std::gcd(abs(num), abs(den));
-        num /= g;
-        den /= g;
+        T a = num < T(0) ? -num : num;
+        T b = den < T(0) ? -den : den;
+        while (b != T(0)) {
+            T remainder = a % b;
+            a = std::move(b);
+            b = std::move(remainder);
+        }
+        num /= a;
+        den /= a;
         if (den < 0) {
             den = -den;
             num = -num;

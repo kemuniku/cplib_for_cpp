@@ -10,7 +10,9 @@ namespace cplib {
 
 // 単純多角形のオンライン点位置探索。整数座標専用。
 // 構築 O(N log N)、領域 O(N log N)、包含判定 O(log N)。
-// 外積と辺の高さ比較には __int128 を使う。座標の絶対値が 10^12 以下なら中間値も収まる。
+// 整数幅: 差・外積・面積累積を__int128へ昇格。B=max(8M^2,2NM^2)、W(B)<=128が条件。
+// Mには問い合わせ点も含む。M=10^9なら入力はintで可、10^12ならlong longで可。
+// Nと内部ノード数はintに収まること。このNの範囲でM<=10^12なら上記Bは128ビットに収まる。
 template <class T> class PersistentPolygonPointLocator {
     static_assert(std::is_integral_v<T> && sizeof(T) <= 8);
     using Wide = __int128_t;
@@ -123,7 +125,9 @@ template <class T> class PersistentPolygonPointLocator {
     }
 
 public:
-    explicit PersistentPolygonPointLocator(const Polygon<T> &polygon) {
+    // 整数幅: クラス冒頭のB=max(8M^2,2NM^2)。内部は128ビット、M=10^9なら入力はint可。
+    template <class Id>
+    explicit PersistentPolygonPointLocator(const Polygon<T, Id> &polygon) {
         const int n = int(polygon.size());
         assert(n >= 3);
         Wide twice_area = 0;
@@ -167,6 +171,7 @@ public:
     }
 
     // 0: 外部、1: 境界、2: 内部。
+    // 整数幅: 頂点とpの座標上限をMとしてB=8M^2。内部は128ビット、M=10^9なら入力はint可。
     Int contains(P p) const {
         if (std::binary_search(vertices_.begin(), vertices_.end(), p))
             return 1;
@@ -200,10 +205,12 @@ public:
     }
 };
 
-template <class T> auto initPersistentPolygonPointLocator(const Polygon<T> &polygon) {
+// 整数幅: 構築と同じB=max(8M^2,2NM^2)。内部は128ビット、M=10^9なら入力はint可。
+template <class T, class Id = void> auto initPersistentPolygonPointLocator(const Polygon<T, Id> &polygon) {
     return PersistentPolygonPointLocator<T>(polygon);
 }
 
+// 整数幅: メンバーcontainsと同じB=8M^2。内部は128ビット、M=10^9なら入力はint可。
 template <class T> Int contains(const PersistentPolygonPointLocator<T> &locator, Point<T> p) {
     return locator.contains(p);
 }

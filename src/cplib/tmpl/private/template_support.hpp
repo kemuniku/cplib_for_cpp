@@ -1,5 +1,6 @@
 #pragma once
 #include <cplib/common.hpp>
+#include <cplib/tmpl/private/chmin_chmax.hpp>
 #include <cplib/utils/constants.hpp>
 #include <cplib/utils/backwards_index.hpp>
 #include <array>
@@ -164,24 +165,6 @@ inline void floor_mod_assign(Int &x, Int y) {
 // 床除算の商をxに代入する。計算量 O(1)。
 inline void floor_div_assign(Int &x, Int y) {
     x = floor_div(x, y);
-}
-
-// yが小さければxを更新し、更新したか返す。比較を1回、必要な場合に代入を1回行う。
-template <class T> bool chmin(T &x, const T &y) {
-    if (x > y) {
-        x = y;
-        return true;
-    }
-    return false;
-}
-
-// yが大きければxを更新し、更新したか返す。比較を1回、必要な場合に代入を1回行う。
-template <class T> bool chmax(T &x, const T &y) {
-    if (x < y) {
-        x = y;
-        return true;
-    }
-    return false;
 }
 
 // yが小さければxを更新する。比較を1回、必要な場合に代入を1回行う。

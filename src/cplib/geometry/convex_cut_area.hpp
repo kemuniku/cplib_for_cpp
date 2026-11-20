@@ -6,35 +6,12 @@ namespace cplib {
 // 構築は時間・領域 O(N)、各問い合わせは O(log N)。
 template <class T> requires (!std::is_integral_v<T>)
 class ConvexCutArea {
-    std::vector<Point<T>> vertices_;
+    ConvexPolygon<T> vertices_;
     std::vector<T> prefix_;
 
-    // 辺の方向を、最初の辺を基準に偏角順で比較する。
-    Int support_index(Point<T> direction) const {
-        const Int n = static_cast<Int>(vertices_.size());
-        Point<T> anchor = vertices_[1] - vertices_[0];
-        auto half = [&](Point<T> v) {
-            T c = cross(anchor, v);
-            return c > T(0) || (c == T(0) && dot(anchor, v) > T(0)) ? 0 : 1;
-        };
-        auto less_angle = [&](Point<T> a, Point<T> b) {
-            int ha = half(a), hb = half(b);
-            return ha != hb ? ha < hb : cross(a, b) > T(0);
-        };
-        Int lo = 0, hi = n;
-        while (lo < hi) {
-            Int mid = lo + (hi - lo) / 2;
-            Point<T> edge = vertices_[(mid + 1) % n] - vertices_[mid];
-            if (less_angle(edge, direction))
-                lo = mid + 1;
-            else
-                hi = mid;
-        }
-        return lo == n ? 0 : lo;
-    }
-
 public:
-    explicit ConvexCutArea(const ConvexPolygon<T> &poly) : vertices_(poly.begin(), poly.end()) {
+    template <class Id>
+    explicit ConvexCutArea(const ConvexPolygon<T, Id> &poly) : vertices_(poly.begin(), poly.end()) {
         const Int n = static_cast<Int>(vertices_.size());
         prefix_.reserve(2 * n + 1);
         prefix_.push_back(T(0));
@@ -50,8 +27,9 @@ public:
             return T(0);
         Point<T> direction = toVector(line);
         auto side = [&](Int i) { return cross(direction, vertices_[i % n] - line.s); };
-        Int minimum = support_index(direction);
-        Int maximum = support_index(-direction);
+        Point<T> normal{-direction.y, direction.x};
+        Int minimum = vertices_.support_index(-normal);
+        Int maximum = vertices_.support_index(normal);
         Int min_sign = detail::convexSign(side(minimum));
         Int max_sign = detail::convexSign(side(maximum));
         if (min_sign >= 0)
@@ -102,8 +80,8 @@ public:
     }
 };
 
-template <class T> requires (!std::is_integral_v<T>)
-ConvexCutArea<T> initConvexCutArea(const ConvexPolygon<T> &poly) {
+template <class T, class Id = void> requires (!std::is_integral_v<T>)
+ConvexCutArea<T> initConvexCutArea(const ConvexPolygon<T, Id> &poly) {
     return ConvexCutArea<T>(poly);
 }
 }

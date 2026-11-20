@@ -7,11 +7,13 @@
 namespace cplib {
 // マンハッタン距離の最小全域木を元の頂点番号の組で返す。時間 O(N log N)、領域 O(N)。
 // 座標の絶対値はIntの最大値/4以下。重複点は別頂点として扱う。
-template <class T> requires (std::is_integral_v<T> && std::is_signed_v<T>)
-std::vector<std::pair<Int, Int>> manhattan_mst(const std::vector<Point<T>> &points) {
+template <class T, class Id = void> requires (std::is_integral_v<T> && std::is_signed_v<T>)
+// 整数幅: 内部でIntへ昇格し、B=4M（符号反転・座標和・辺の重みを含む）。
+// M=10^9なら内部は33ビット必要だが、入力はPoint<int>/pair<int,int>で可。総重みは計算しない。
+std::vector<std::pair<Int, Int>> manhattan_mst(const std::vector<Point<T, Id>> &points) {
     constexpr Int bound = std::numeric_limits<Int>::max() / 4;
     std::vector<Point<Int>> sites;
-    for (auto p : points) {
+    for (const auto &p : points) {
         assert(-bound <= p.x && p.x <= bound && -bound <= p.y && p.y <= bound);
         sites.push_back({Int(p.x), Int(p.y)});
     }
@@ -55,6 +57,8 @@ std::vector<std::pair<Int, Int>> manhattan_mst(const std::vector<Point<T>> &poin
 }
 // 座標の組からマンハッタン最小全域木を返す。時間 O(N log N)、領域 O(N)。
 template <class T> requires (std::is_integral_v<T> && std::is_signed_v<T>)
+// 整数幅: 内部でIntへ昇格し、B=4M（符号反転・座標和・辺の重みを含む）。
+// M=10^9なら内部は33ビット必要だが、入力はPoint<int>/pair<int,int>で可。総重みは計算しない。
 auto manhattan_mst(const std::vector<std::pair<T, T>> &points) {
     std::vector<Point<T>> converted;
     for (auto [x, y] : points)

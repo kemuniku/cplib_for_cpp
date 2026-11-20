@@ -10,10 +10,10 @@ template <class R> struct ClosestPairResult {
     std::pair<Int, Int> indices;
 };
 
-template <class T> requires (std::is_signed_v<T>)
-auto closest_pair_result(const std::vector<Point<T>> &points)
-    -> ClosestPairResult<std::conditional_t<std::is_integral_v<T>, Int, double>> {
-    using R = std::conditional_t<std::is_integral_v<T>, Int, double>;
+template <class T, class Id = void> requires (std::is_signed_v<T> || cplib::isFloatingPoint<T>)
+auto closest_pair_result(const std::vector<Point<T, Id>> &points)
+    -> ClosestPairResult<std::conditional_t<std::is_integral_v<T>, Int, std::common_type_t<T, double>>> {
+    using R = std::conditional_t<std::is_integral_v<T>, Int, std::common_type_t<T, double>>;
     assert(points.size() >= 2);
     struct Site {
         R x, y;
@@ -23,7 +23,7 @@ auto closest_pair_result(const std::vector<Point<T>> &points)
     for (Int i = 0; i < Int(points.size()); ++i) {
         Site p{R(points[i].x), R(points[i].y), i};
         if constexpr (!std::is_integral_v<T>) {
-            if (!std::isfinite(p.x) || !std::isfinite(p.y))
+            if (!isfinite(p.x) || !isfinite(p.y))
                 throw std::invalid_argument("座標は有限である必要があります");
         }
         sites.push_back(p);
@@ -39,7 +39,7 @@ auto closest_pair_result(const std::vector<Point<T>> &points)
             throw std::invalid_argument("各軸の座標幅は2*10^9以下である必要があります");
     } else {
         R dx = sites.back().x - sites.front().x, dy = scratch.back().y - scratch.front().y;
-        if (!std::isfinite(dx * dx + dy * dy))
+        if (!isfinite(dx * dx + dy * dy))
             throw std::invalid_argument("座標範囲の二乗距離が有限である必要があります");
         for (std::size_t i = 1; i < sites.size(); ++i) {
             dx = sites[i].x - sites[i - 1].x;
@@ -100,15 +100,20 @@ auto closest_pair_result(const std::vector<Point<T>> &points)
 
 // 最近点対の元の添字(i<j)を返す。2点未満は不可。時間 O(N log N)、領域 O(N)。
 // 整数は各軸の幅2*10^9以下、浮動小数点は有限座標・有限二乗距離と非零差の二乗が非零であること。
-// 整数はInt、浮動小数点はdoubleで計算し、不正な座標はinvalid_argument。
-template <class T> requires (std::is_signed_v<T>)
-std::pair<Int, Int> closest_pair(const std::vector<Point<T>> &points) {
+// 整数はInt、浮動小数点はdouble以上で計算し、long doubleの精度を保つ。不正な座標はinvalid_argument。
+template <class T, class Id = void> requires (std::is_signed_v<T> || cplib::isFloatingPoint<T>)
+// 整数幅: 座標をIntへ変換後に計算。各軸幅D<=2*10^9なら二乗和<=2D^2<=8*10^18（64ビット）。
+// |座標|<=10^9ならPoint<int>のまま渡せる。入力自体はIntに収まること。
+std::pair<Int, Int> closest_pair(const std::vector<Point<T, Id>> &points) {
     return detail::closest_pair_result(points).indices;
 }
 
 // 最近点対の距離を返す。2点未満は不可。時間 O(N log N)、領域 O(N)。
-template <class T> requires (std::is_signed_v<T>)
-double closest_pair_distance(const std::vector<Point<T>> &points) {
-    return std::sqrt(double(detail::closest_pair_result(points).distanceSquared));
+template <class T, class Id = void> requires (std::is_signed_v<T> || cplib::isFloatingPoint<T>)
+// 整数幅: 座標をIntへ変換後に計算。各軸幅D<=2*10^9なら二乗和<=2D^2<=8*10^18（64ビット）。
+// |座標|<=10^9ならPoint<int>のまま渡せる。入力自体はIntに収まること。
+auto closest_pair_distance(const std::vector<Point<T, Id>> &points) {
+    using F = std::conditional_t<std::is_integral_v<T>, double, std::common_type_t<T, double>>;
+    return sqrt(F(detail::closest_pair_result(points).distanceSquared));
 }
 }

@@ -193,17 +193,15 @@ void testGeometry(std::mt19937_64 &rng) {
         std::vector<Point<Int>> points(rng() % 45);
         for (auto &p : points)
             p = {Int(rng() % 31) - 15, Int(rng() % 31) - 15};
-        auto closest = closest_pair(points);
-        if (points.size() < 2) {
-            assert(!closest);
-        } else {
+        if (points.size() >= 2) {
             Int expected = std::numeric_limits<Int>::max();
             for (Int i = 0; i < Int(points.size()); ++i)
                 for (Int j = i + 1; j < Int(points.size()); ++j)
                     expected = std::min(expected, norm(points[i] - points[j]));
-            assert(closest->distanceSquared == expected);
-            auto [i, j] = closest->indices;
-            assert(i < j && norm(points[i] - points[j]) == expected);
+            auto [i, j] = closest_pair(points);
+            assert(0 <= i && i < j && j < Int(points.size()));
+            assert(norm(points[i] - points[j]) == expected);
+            assert(closest_pair_distance(points) == std::sqrt(double(expected)));
         }
         auto edges = manhattan_mst(points);
         assert(edges.size() == (points.empty() ? 0 : points.size() - 1));
@@ -228,22 +226,22 @@ void testGeometry(std::mt19937_64 &rng) {
         assert(total == expected);
         auto hull = convex_hull(points, false);
         auto convex = initConvexPolygon(hull);
-        auto diam = convex.diameter();
-        Int maxDistance = 0;
-        for (auto a : points)
-            for (auto b : points)
-                maxDistance = std::max(maxDistance, norm(a - b));
-        assert(points.empty() ? !diam : diam && diam->distance_sq == maxDistance);
+        if (!points.empty()) {
+            Int maxDistance = 0;
+            for (auto a : points)
+                for (auto b : points)
+                    maxDistance = std::max(maxDistance, norm(a - b));
+            assert(convex.diameter() == maxDistance);
+        }
         for (Int q = 0; q < 30; ++q) {
             Point<Int> p{Int(rng() % 41) - 20, Int(rng() % 41) - 20};
-            assert(convex.contains(p) == contains(hull, p));
+            assert(convex.contains(p) == contains(hull, p, false));
             assert(convex.contains(p, true) == contains(hull, p, true));
             assert(convex.on_edge(p) == on_edge(hull, p));
         }
     }
     std::vector<Point<double>> points{{1e10, 1e10}, {1e10 + 0.01, 1e10}, {1e10 + 1, 1e10 + 1}};
-    auto near = closest_pair(points);
-    assert(near && near->indices == (std::pair<Int, Int>{0, 1}));
+    assert((closest_pair(points) == std::pair<Int, Int>{0, 1}));
     auto square = initPolygon<double>({{0, 0}, {2, 0}, {2, 2}, {0, 2}});
     auto clipped = convex_cut(square, initLine(Point<double>{1, -1}, Point<double>{1, 3}));
     assert(std::abs(area(clipped) - 2) < 1e-9);

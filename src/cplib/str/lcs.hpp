@@ -24,12 +24,21 @@ template <class A, class B> auto lcs_table(const A &a, const B &b) {
 }
 }
 
-// 最長共通部分列長を求める。O(|a||b|)時間・領域。
+// 最長共通部分列の長さを求める。時間 O(|a||b|)、追加領域 O(|a|)。
 template <class A, class B> Int LCS(const A &a, const B &b) {
     if (a.empty() || b.empty())
         return 0;
-    auto dp = detail::lcs_table(a, b);
-    return *std::max_element(dp.back().begin(), dp.back().end());
+    std::vector<Int> dp(a.size());
+    for (const auto &value : b) {
+        Int best = 0;
+        for (std::size_t j = 0; j < a.size(); ++j) {
+            Int previous = dp[j];
+            if (a[j] == value)
+                dp[j] = best + 1;
+            best = std::max(best, previous);
+        }
+    }
+    return *std::max_element(dp.begin(), dp.end());
 }
 
 // 元実装と同じ後方走査でLCSを復元する。O(|a||b|)時間・領域。
