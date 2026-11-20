@@ -12,6 +12,7 @@
 #include <cplib/geometry/convex_polygon.hpp>
 #include <cplib/geometry/distance.hpp>
 #include <cplib/geometry/euclidean_mst.hpp>
+#include <cplib/geometry/half_plane_count.hpp>
 #include <cplib/geometry/half_plane_intersection.hpp>
 #include <cplib/geometry/intersect.hpp>
 #include <cplib/geometry/manhattan_mst.hpp>
