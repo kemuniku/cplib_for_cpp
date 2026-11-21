@@ -17,6 +17,7 @@
 #include <cplib/geometry/distance.hpp>
 #include <cplib/geometry/dynamic_convex_hull.hpp>
 #include <cplib/geometry/euclidean_mst.hpp>
+#include <cplib/geometry/half_plane_convex_polygon.hpp>
 #include <cplib/geometry/half_plane_count.hpp>
 #include <cplib/geometry/half_plane_intersection.hpp>
 #include <cplib/geometry/intersect.hpp>

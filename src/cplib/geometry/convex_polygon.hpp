@@ -12,17 +12,11 @@ template <class T> bool convexOnSegment(Point<T> a, Point<T> b, Point<T> p) {
     return convexSign(cross(b - a, p - a)) == 0 && geometry_le(dot(p - a, p - b), T(0));
 }
 
-// 座標を取得する関数を受け取り、問い合わせ側で必要な演算幅に昇格できるようにする。
-template <class T, class Vertex> Int convexSupportIndex(Int n, const Vertex &vertex, Point<T> direction) {
-    assert(n > 0);
-    if (n == 1 || (direction.x == T(0) && direction.y == T(0)))
-        return 0;
-    if (n == 2)
-        return dot(direction, vertex(1) - vertex(0)) > T(0) ? 1 : 0;
-
+// 反時計回りに並ぶ辺の方向から、内積が最大となる頂点を O(log N) で探す。
+template <class T, class Edge> Int convexEdgeSupportIndex(Int n, const Edge &edgeAt, Point<T> direction) {
     // 最初の辺を基準に、内積が増加から非増加に変わる辺の方向を二分探索する。
     const Point<T> tangent{T(-direction.y), direction.x};
-    const Point<T> anchor = vertex(1) - vertex(0);
+    const Point<T> anchor = edgeAt(0);
     auto first_half = [&](Point<T> v) {
         T c = cross(anchor, v);
         return c > T(0) || (c == T(0) && dot(anchor, v) > T(0));
@@ -31,7 +25,7 @@ template <class T, class Vertex> Int convexSupportIndex(Int n, const Vertex &ver
     Int lo = 0, hi = n;
     while (lo < hi) {
         Int mid = lo + (hi - lo) / 2;
-        Point<T> edge = vertex((mid + 1) % n) - vertex(mid);
+        Point<T> edge = edgeAt(mid);
         bool edge_first_half = first_half(edge);
         bool before_tangent = edge_first_half != tangent_first_half
             ? edge_first_half : cross(edge, tangent) > T(0);
@@ -41,6 +35,15 @@ template <class T, class Vertex> Int convexSupportIndex(Int n, const Vertex &ver
             hi = mid;
     }
     return lo == n ? 0 : lo;
+}
+
+template <class T, class Vertex> Int convexSupportIndex(Int n, const Vertex &vertex, Point<T> direction) {
+    assert(n > 0);
+    if (n == 1 || (direction.x == T(0) && direction.y == T(0)))
+        return 0;
+    if (n == 2)
+        return dot(direction, vertex(1) - vertex(0)) > T(0) ? 1 : 0;
+    return convexEdgeSupportIndex(n, [&](Int i) { return vertex((i + 1) % n) - vertex(i); }, direction);
 }
 }
 template <class T, class Id = void> class ConvexPolygon : public std::vector<Point<T, Id>> {

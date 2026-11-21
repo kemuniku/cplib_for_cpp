@@ -322,7 +322,7 @@ template <class T> struct Line {
     std::array<T, 3> toCoefficients() const {
         T a = t.y - s.y;
         T b = s.x - t.x;
-        return {a, b, -a * s.x - b * s.y};
+        return {a, b, T(-a * s.x - b * s.y)};
     }
 
     // ax+by+c=0 を表す整数係数 (a,b,c) で、gcd(a,b,c)=1 を満たす辞書順最小のものを返す。

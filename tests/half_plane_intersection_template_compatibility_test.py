@@ -9,7 +9,7 @@ import tempfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-HEADERS = ["cplib/geometry/half_plane_intersection.hpp"]
+HEADERS = ["cplib/geometry/half_plane_convex_polygon.hpp"]
 BODY = r"""
 int main() {
     ll count = 3;
@@ -24,6 +24,11 @@ int main() {
         {{2, 2}, {0, 2}},
         {{0, 2}, {0, 0}}
     };
+    HalfPlaneConvexPolygon<double> polygon(square);
+    assert(polygon.contains({1, 1}, true));
+    assert(polygon.on_edge({0, 1}));
+    assert(polygon.half_planes().size() == 4);
+
     auto bounded = half_plane_intersection(square);
     assert(bounded.kind == hpiBounded);
     assert(bounded.dimension == 2);
