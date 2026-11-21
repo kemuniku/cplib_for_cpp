@@ -56,6 +56,7 @@ template <class T> Bound<T> maximum(const Bound<T> &a, const Bound<T> &b) {
 
 template <class T> struct Function {
     T slope, intercept;
+    std::size_t source;
 };
 
 template <class T> struct Envelope {
@@ -95,11 +96,10 @@ template <class T> Envelope<T> makeEnvelope(std::vector<Function<T>> lines) {
     return result;
 }
 
-// 包絡線上の値を二分探索で求める。O(log N) 演算。
-template <class T> T valueAt(const Envelope<T> &envelope, const T &x) {
-    std::size_t low = 0;
-    std::size_t high = envelope.starts.size();
-    const auto bound = finiteBound(x);
+// x で有効な包絡線の関数を返す。O(log N) 回の比較。
+template <class Envelope, class Bound>
+const auto &functionAt(const Envelope &envelope, const Bound &bound) {
+    std::size_t low = 0, high = envelope.starts.size();
     while (high - low > 1) {
         const auto middle = low + (high - low) / 2;
         if (compare(envelope.starts[middle], bound) <= 0)
@@ -107,9 +107,41 @@ template <class T> T valueAt(const Envelope<T> &envelope, const T &x) {
         else
             high = middle;
     }
-    const auto &line = envelope.functions[low];
+    return envelope.functions[low];
+}
+
+template <class T> T valueAt(const Envelope<T> &envelope, const T &x) {
+    const auto bound = finiteBound(x);
+    const auto &line = functionAt(envelope, bound);
     return checked(line.slope * x + line.intercept);
 }
+
+template <class Bound, class Envelope> struct IntersectionBoundary {
+    HalfPlaneIntersectionKind kind = hpiEmpty;
+    Int dimension = -1;
+    Bound left, right;
+    bool leftMeet = false, rightMeet = false;
+    Envelope lower, upper;
+    std::size_t leftVertical = 0, rightVertical = 0;
+
+    // 有界な2次元領域の各辺に対応する入力添字を反時計回りに列挙する。
+    template <class Emit> void forEdges(const Emit &emit) const {
+        auto active = [&](const Envelope &envelope, std::size_t i) {
+            return compare(envelope.starts[i], right) < 0 &&
+                   (i + 1 == envelope.starts.size() || compare(left, envelope.starts[i + 1]) < 0);
+        };
+        for (std::size_t i = 0; i < lower.functions.size(); ++i)
+            if (active(lower, i))
+                emit(lower.functions[i].source);
+        if (!rightMeet)
+            emit(rightVertical);
+        for (std::size_t i = upper.functions.size(); i-- > 0;)
+            if (active(upper, i))
+                emit(upper.functions[i].source);
+        if (!leftMeet)
+            emit(leftVertical);
+    }
+};
 
 } // namespace detail::hpi
 
@@ -153,29 +185,21 @@ template <class T> struct HalfPlaneIntersection {
     }
 };
 
-// 有向直線の左閉半平面の共通部分を求める。O(N log(N+1)) 演算、O(N) 空間。
-// T は浮動小数点型または Fraction。計算量では座標型の四則演算・比較を1演算と数える。
-// 分数の分母は正で、中間整数演算がオーバーフローしないこと。
-// vertices は下側を x 昇順、上側を x 降順に並べ、有界な面なら反時計回り。
-// 非有界領域の全体は constraints で表し、制約なしは全平面を返す。
-// 入力は有限座標かつ異なる端点。非有限の入力・計算結果は invalid_argument。
-// 浮動小数点の比較には EPS を使わず、GEOMETRY_EPS も参照しない。
-// 丸めにより退化・平行・近接を誤分類し得るため、厳密な判定には Fraction を使う。
-template <class T>
-HalfPlaneIntersection<T> half_plane_intersection(std::span<const Line<T>> lines) {
-    using namespace detail::hpi;
+namespace detail::hpi {
+
+template <class T> auto intersectionBoundary(std::span<const Line<T>> lines) {
     static_assert(cplib::isFloatingPoint<T> || IsFraction<T>::value,
                   "half_plane_intersection requires floating point or Fraction coordinates");
     const T zero(0);
     const Bound<T> negativeInfinity{-1, T{}};
     const Bound<T> positiveInfinity{1, T{}};
-    HalfPlaneIntersection<T> result;
-    result.constraints.assign(lines.begin(), lines.end());
+    IntersectionBoundary<Bound<T>, Envelope<T>> result;
 
     std::vector<Function<T>> lowerLines, negativeUpperLines;
     auto xmin = negativeInfinity;
     auto xmax = positiveInfinity;
-    for (const auto &line : lines) {
+    for (std::size_t source = 0; source < lines.size(); ++source) {
+        const auto &line = lines[source];
         checked(line.s.x);
         checked(line.s.y);
         checked(line.t.x);
@@ -185,21 +209,25 @@ HalfPlaneIntersection<T> half_plane_intersection(std::span<const Line<T>> lines)
         if (dx == zero && dy == zero)
             throw std::invalid_argument("半平面の端点は異なる必要があります");
         if (dx == zero) {
-            if (dy > zero)
-                xmax = minimum(xmax, finiteBound(line.s.x));
-            else
-                xmin = maximum(xmin, finiteBound(line.s.x));
+            const auto x = finiteBound(line.s.x);
+            if (dy > zero && compare(x, xmax) < 0) {
+                xmax = x;
+                result.rightVertical = source;
+            } else if (dy < zero && compare(xmin, x) < 0) {
+                xmin = x;
+                result.leftVertical = source;
+            }
         } else {
             const T slope = checked(dy / dx);
             const T intercept = checked(checked(dx * line.s.y - dy * line.s.x) / dx);
             if (dx > zero)
-                lowerLines.push_back({slope, intercept});
+                lowerLines.push_back({slope, intercept, source});
             else
-                negativeUpperLines.push_back({-slope, -intercept});
+                negativeUpperLines.push_back({-slope, -intercept, source});
         }
     }
-    const auto lower = makeEnvelope(std::move(lowerLines));
-    const auto upper = makeEnvelope(std::move(negativeUpperLines));
+    const auto &lower = result.lower = makeEnvelope(std::move(lowerLines));
+    const auto &upper = result.upper = makeEnvelope(std::move(negativeUpperLines));
     if (compare(xmin, xmax) > 0)
         return result;
 
@@ -270,6 +298,36 @@ HalfPlaneIntersection<T> half_plane_intersection(std::span<const Line<T>> lines)
         result.dimension = bothSides && (leftMeet || rightMeet) ? 0 : 1;
     else
         result.dimension = hasArea ? 2 : 1;
+    result.left = std::move(left);
+    result.right = std::move(right);
+    result.leftMeet = leftMeet;
+    result.rightMeet = rightMeet;
+    return result;
+}
+
+} // namespace detail::hpi
+
+// 有向直線の左閉半平面の共通部分を求める。O(N log(N+1)) 演算、O(N) 空間。
+// T は浮動小数点型または Fraction。計算量では座標型の四則演算・比較を1演算と数える。
+// 分数の分母は正で、中間整数演算がオーバーフローしないこと。
+// vertices は下側を x 昇順、上側を x 降順に並べ、有界な面なら反時計回り。
+// 非有界領域の全体は constraints で表し、制約なしは全平面を返す。
+// 入力は有限座標かつ異なる端点。非有限の入力・計算結果は invalid_argument。
+// 浮動小数点の比較には EPS を使わず、GEOMETRY_EPS も参照しない。
+// 丸めにより退化・平行・近接を誤分類し得るため、厳密な判定には Fraction を使う。
+template <class T>
+HalfPlaneIntersection<T> half_plane_intersection(std::span<const Line<T>> lines) {
+    using namespace detail::hpi;
+    const auto boundary = intersectionBoundary(lines);
+    HalfPlaneIntersection<T> result;
+    result.constraints.assign(lines.begin(), lines.end());
+    result.kind = boundary.kind;
+    result.dimension = boundary.dimension;
+    if (result.kind == hpiEmpty)
+        return result;
+    const auto &lower = boundary.lower, &upper = boundary.upper;
+    const auto &left = boundary.left, &right = boundary.right;
+    const bool leftMeet = boundary.leftMeet, rightMeet = boundary.rightMeet;
 
     // 下側を左から右、上側を右から左へ出力し、つなぎ目の重複を除く。
     auto append = [&](Point<T> point) {
@@ -407,6 +465,7 @@ IntegerBound<T> maximum(const IntegerBound<T> &a, const IntegerBound<T> &b) {
 // (p*x+q)/d を表す。d>0で、係数は入力の大きさを保つ。
 template <IntegerCoefficient T> struct IntegerFunction {
     T p, q, d;
+    std::size_t source;
 };
 
 template <IntegerCoefficient T> struct IntegerEnvelope {
@@ -456,15 +515,7 @@ Fraction<T> integerValueAt(const IntegerFunction<T> &line, const IntegerBound<T>
 
 template <IntegerCoefficient T>
 Fraction<T> integerValueAt(const IntegerEnvelope<T> &envelope, const IntegerBound<T> &x) {
-    std::size_t low = 0, high = envelope.starts.size();
-    while (high - low > 1) {
-        const auto middle = low + (high - low) / 2;
-        if (compare(envelope.starts[middle], x) <= 0)
-            low = middle;
-        else
-            high = middle;
-    }
-    return integerValueAt(envelope.functions[low], x);
+    return integerValueAt(functionAt(envelope, x), x);
 }
 
 } // namespace detail::hpi
@@ -524,37 +575,41 @@ template <detail::hpi::IntegerCoefficient T> struct IntegerHalfPlaneIntersection
 // 分数比較は交差積を作らず除算で行い、汎用Fractionの四則演算は使わない。
 // 中間値上限をMとしてO(N log(N+1)+N log(M+1))整数演算、O(N)空間。
 // 返した頂点に対する後続の面積・凸多角形演算のオーバーフロー条件は別途必要。
-template <detail::hpi::IntegerCoefficient T>
-// 整数幅: B=max(4*A^2*C,2*A^3)としてW(B)ビット（base.hppの定義）。
-// 全係数の絶対値<=10^9ならB<=4*10^27、93ビット、T=__int128で十分（long long不可）。
-// 座標上限MのLineをtoCoefficientsした場合はA<=2M,C<=4M^2なのでB<=64M^4。
-// M=10^9なら127ビット。係数を作る型と、この関数へ渡す型の両方に注意。
-IntegerHalfPlaneIntersection<T> half_plane_intersection(std::span<const std::array<T, 3>> lines) {
-    using namespace detail::hpi;
+namespace detail::hpi {
+
+template <IntegerCoefficient T>
+auto integerIntersectionBoundary(std::span<const std::array<T, 3>> lines) {
     using Bound = IntegerBound<T>;
     const T zero(0);
     const Bound negativeInfinity{-1}, positiveInfinity{1};
-    IntegerHalfPlaneIntersection<T> result;
-    result.constraints.assign(lines.begin(), lines.end());
+    IntersectionBoundary<Bound, IntegerEnvelope<T>> result;
     std::vector<IntegerFunction<T>> lowerLines, negativeUpperLines;
     auto xmin = negativeInfinity, xmax = positiveInfinity;
-    for (const auto &[a, b, c] : lines) {
+    for (std::size_t source = 0; source < lines.size(); ++source) {
+        const auto &[a, b, c] = lines[source];
         if (b == zero) {
-            if (a > zero)
-                xmax = minimum(xmax, integerBound<T>(-c, a));
-            else if (a < zero)
-                xmin = maximum(xmin, integerBound<T>(-c, a));
-            else if (c > zero)
-                return result;
+            if (a == zero) {
+                if (c > zero)
+                    return result;
+            } else {
+                const auto x = integerBound<T>(-c, a);
+                if (a > zero && compare(x, xmax) < 0) {
+                    xmax = x;
+                    result.rightVertical = source;
+                } else if (a < zero && compare(xmin, x) < 0) {
+                    xmin = x;
+                    result.leftVertical = source;
+                }
+            }
         } else if (b < zero)
-            lowerLines.push_back({a, c, -b});
+            lowerLines.push_back({a, c, T(-b), source});
         else
-            negativeUpperLines.push_back({a, c, b});
+            negativeUpperLines.push_back({a, c, b, source});
     }
     if (compare(xmin, xmax) > 0)
         return result;
-    const auto lower = makeIntegerEnvelope(std::move(lowerLines));
-    const auto upper = makeIntegerEnvelope(std::move(negativeUpperLines));
+    const auto &lower = result.lower = makeIntegerEnvelope(std::move(lowerLines));
+    const auto &upper = result.upper = makeIntegerEnvelope(std::move(negativeUpperLines));
     auto left = xmin, right = xmax;
     bool hasArea = false, leftMeet = false, rightMeet = false;
     if (!lower.functions.empty() && !upper.functions.empty()) {
@@ -619,6 +674,33 @@ IntegerHalfPlaneIntersection<T> half_plane_intersection(std::span<const std::arr
         result.dimension = bothSides && (leftMeet || rightMeet) ? 0 : 1;
     else
         result.dimension = hasArea ? 2 : 1;
+    result.left = std::move(left);
+    result.right = std::move(right);
+    result.leftMeet = leftMeet;
+    result.rightMeet = rightMeet;
+    return result;
+}
+
+} // namespace detail::hpi
+
+template <detail::hpi::IntegerCoefficient T>
+// 整数幅: B=max(4*A^2*C,2*A^3)としてW(B)ビット（base.hppの定義）。
+// 全係数の絶対値<=10^9ならB<=4*10^27、93ビット、T=__int128で十分（long long不可）。
+// 座標上限MのLineをtoCoefficientsした場合はA<=2M,C<=4M^2なのでB<=64M^4。
+// M=10^9なら127ビット。係数を作る型と、この関数へ渡す型の両方に注意。
+IntegerHalfPlaneIntersection<T> half_plane_intersection(std::span<const std::array<T, 3>> lines) {
+    using namespace detail::hpi;
+    using Bound = IntegerBound<T>;
+    const auto boundary = integerIntersectionBoundary(lines);
+    IntegerHalfPlaneIntersection<T> result;
+    result.constraints.assign(lines.begin(), lines.end());
+    result.kind = boundary.kind;
+    result.dimension = boundary.dimension;
+    if (result.kind == hpiEmpty)
+        return result;
+    const auto &lower = boundary.lower, &upper = boundary.upper;
+    const auto &left = boundary.left, &right = boundary.right;
+    const bool leftMeet = boundary.leftMeet, rightMeet = boundary.rightMeet;
 
     // 全座標をここで約分する。同値比較にも分子・分母の交差積を使わない。
     auto samePoint = [](const auto &a, const auto &b) {
